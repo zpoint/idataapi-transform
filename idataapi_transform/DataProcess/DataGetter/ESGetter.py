@@ -30,7 +30,7 @@ class ESScrollGetter(BaseGetter):
         if self.total_size is None:
             self.result = await self.es_client.search(self.config.indices, self.config.doc_type, scroll="1m", body=self.config.query_body)
             self.total_size = self.result['hits']['total']
-            self.config.max_limit = self.total_size if (self.config.max_limit and self.config.max_limit < self.result['hits']['total']) else self.result['hits']['total']
+            self.total_size = self.config.max_limit if (self.config.max_limit and self.config.max_limit < self.result['hits']['total']) else self.total_size
             self.curr_size += len(self.result['hits']['hits'])
             logging.info("Get %d items from %s, percentage: %.2f%%" %
                          (len(self.result['hits']['hits']), self.config.indices + "->" + self.config.doc_type,
