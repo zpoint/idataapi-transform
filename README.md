@@ -2,8 +2,18 @@
 
 data transform toolkit for [IDataAPI](http://www.idataapi.cn/) for efficiency work
 
+-------------------
+
+### catalog
+
+[TOC]
+
+-------------------
+
 #### Requirment
 * python version >= 3.5
+
+-------------------
 
 #### Installation
 
@@ -12,7 +22,9 @@ data transform toolkit for [IDataAPI](http://www.idataapi.cn/) for efficiency wo
     transform --help # explanation of each parameter and create configure file
     # edit ~/idataapi-transform.ini to config elasticsearch hosts and etc...
 
-#### Command line interface
+-------------------
+
+#### Command line interface Example
 
 * Read data from **[API, ES, CSV, XLSX, JSON]**
 * Write data to **[CSV, XLSX, JSON, TXT, ES]**
@@ -49,6 +61,7 @@ will read all items from given api url, until no more next page, and save to des
 
     	transform ES csv "knowledge20170517:question" --w_encoding gbk --query_body '{"size": 100, "_source": {"includes": ["location", "title", "city", "id"]}}' --filter ./my_filter.py
 
+-------------------
 
 #### build complex routine easily
 
@@ -75,3 +88,9 @@ will read all items from given api url, until no more next page, and save to des
 	if __name__ == "__main__":
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
+
+-------------------
+
+#### License
+
+http://rem.mit-license.org
