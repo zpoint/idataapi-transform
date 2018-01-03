@@ -6,13 +6,13 @@ data transform toolkit for [IDataAPI](http://www.idataapi.cn/) for efficiency wo
 
 ### catalog
 
-* [Requirment](#Requirment)
-* [Installation](#Installation)
-* [Command line interface Example](#Command-line-interface-Example)
-* [build complex routine](#build-complex-routine)
+* [Requirment](#requirment)
+* [Installation](#installation)
+* [Command line interface Example](#command-line-interface-example)
+* [build complex routine](#build-complex-routine-easily)
 * [doc string](#doc-string)
-* [Update](#Update)
-* [License](#License)
+* [Update](#ipdate)
+* [License](#license)
 
 -------------------
 
@@ -134,7 +134,7 @@ will read all items from given api url, until no more next page, and save to des
 
 v.0.3
 * doc string for each config
-* RAPUBulkConfig support
+* RAPIBulkConfig support
 
 -------------------
 
