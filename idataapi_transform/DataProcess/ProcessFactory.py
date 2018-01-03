@@ -6,7 +6,7 @@ from .Config.ConfigUtil import WriterConfig
 
 from .DataGetter.ESGetter import ESScrollGetter
 from .DataGetter.CSVGetter import CSVGetter
-from .DataGetter.APIGetter import APIGetter
+from .DataGetter.APIGetter import APIGetter, APIBulkGetter
 from .DataGetter.JsonGetter import JsonGetter
 from .DataGetter.XLSXGetter import XLSXGetter
 
@@ -34,9 +34,11 @@ class ProcessFactory(object):
             return JsonGetter(config)
         elif isinstance(config, GetterConfig.RXLSXConfig):
             return XLSXGetter(config)
+        elif isinstance(config, GetterConfig.RAPUBulkConfig):
+            return APIBulkGetter(config)
         else:
             raise ValueError("create_getter must pass one of the instance of [RAPIConfig, RCSVConfig, "
-                             "RESConfig, RJsonConfig, RXLSXConfig]")
+                             "RESConfig, RJsonConfig, RXLSXConfig, APIBulkGetter]")
 
     @staticmethod
     def create_writer(config):

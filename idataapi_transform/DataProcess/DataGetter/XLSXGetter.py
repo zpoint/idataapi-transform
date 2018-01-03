@@ -10,7 +10,7 @@ class XLSXGetter(BaseGetter):
         self.wb = load_workbook(filename=self.config.filename, read_only=True)
         if not self.wb.worksheets:
             raise ValueError("Empty file: %s" % (self.config.filename, ))
-        self.sheet = self.wb.worksheets[0]
+        self.sheet = self.wb.worksheets[self.config.sheet_index]
         self.headers = self.generate_headers()
 
         self.max_row = self.sheet.max_row

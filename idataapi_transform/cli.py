@@ -89,7 +89,7 @@ writer_config_map = {
 def get_arg():
     parser = argparse.ArgumentParser(prog="idataapi_transform",
                                      description='convert data from a format to another format, '
-                                                 'read/write from local file or database, suitable for iDataAPI')
+                                                 'read/write from file or database, suitable for iDataAPI')
     parser.add_argument("from", choices=Args.from_choices, help=Args.from_desc, type=str.upper)
     parser.add_argument("to", choices=Args.to_choices, help=Args.to_desc, type=str.lower)
 

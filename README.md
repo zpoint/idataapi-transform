@@ -83,7 +83,7 @@ will read all items from given api url, until no more next page, and save to des
         }
         es_config = RESConfig("post20170630", "news", max_limit=1000, query_body=body)
         es_getter = ProcessFactory.create_getter(es_config)
-        csv_config = WCSVConfig("./result.csv", encoding="utf8", headers=["likeCount", "id", "title"])
+        csv_config = WCSVConfig("./result.csv")
         with ProcessFactory.create_writer(csv_config) as csv_writer:
             async for items in es_getter:
                 # do whatever you want with items
@@ -92,6 +92,47 @@ will read all items from given api url, until no more next page, and save to des
 	if __name__ == "__main__":
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
+
+
+-------------------
+
+#### explanation
+
+	from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RAPIConfig, RCSVConfig, RESConfig, RJsonConfig, RXLSXConfig, RAPUBulkConfig
+    from idataapi_transform.DataProcess.Config.ConfigUtil.WriterConfig import WCSVConfig, WESConfig, WJsonConfig, WTXTConfig, WXLSXConfig
+
+    # run help on config to see detail
+    help(RAPIConfig)
+    """
+    ...
+    will request until no more next_page to get, or get "max_limit" items
+
+    :param source: API to get, i.e. "http://..."
+    :param per_limit: how many items to get per time
+    :param max_limit: get at most max_limit items, if not set, get all
+    :param max_retry: if request fail, retry max_retry times
+    :param random_min_sleep: if request fail, random sleep at least random_min_sleep seconds before request again
+    :param random_max_sleep: if request fail, random sleep at most random_min_sleep seconds before request again
+    :param session: aiohttp session to perform request
+    :param args:
+    :param kwargs:
+
+    Example:
+        api_config = RAPIConfig("http://...")
+        api_getter = ProcessFactory.create_getter(api_config)
+        async for items in api_getter:
+            print(items)
+    ...
+	"""
+
+
+-------------------
+
+#### Update
+
+v.0.3
+* doc string for each config
+* RAPUBulkConfig support
 
 -------------------
 

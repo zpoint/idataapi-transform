@@ -121,3 +121,54 @@ class APIGetter(BaseGetter):
 
     def __iter__(self):
         raise ValueError("APIGetter must be used with async generator, not normal generator")
+
+
+class APIBulkGetter(BaseGetter):
+    def __init__(self, config):
+        super().__init__()
+        self.config = config
+        self.api_configs = self.to_generator(self.config.configs)
+
+        self.pending_tasks = list()
+        self.buffers = list()
+        self.success_task = 0
+        self.need_clear = False
+
+    @staticmethod
+    def to_generator(items):
+        for i in items:
+            yield i
+
+    async def fetch_items(self, api_config):
+        async for items in APIGetter(api_config):
+            self.buffers.extend(items)
+
+    def fill_tasks(self):
+        if len(self.pending_tasks) >= self.config.concurrency:
+            return
+
+        for api_config in self.api_configs:
+            self.pending_tasks.append(self.fetch_items(api_config))
+            if len(self.pending_tasks) >= self.config.concurrency:
+                return
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        if self.need_clear:
+            self.buffers.clear()
+
+        self.fill_tasks()
+        while self.pending_tasks:
+            done, pending = await asyncio.wait(self.pending_tasks, timeout=self.config.interval)
+            self.pending_tasks = list(pending)
+            self.success_task += len(done)
+            self.need_clear = True
+            return self.buffers
+
+        logging.info("APIBulkGetter Done, total perform: %d items" % (self.success_task, ))
+        raise StopAsyncIteration
+
+    def __iter__(self):
+        raise ValueError("APIBulkGetter must be used with async generator, not normal generator")
