@@ -10,6 +10,8 @@ data transform toolkit for [IDataAPI](http://www.idataapi.cn/) for efficiency wo
 * [Installation](#Installation)
 * [Command line interface Example](#Command-line-interface-Example)
 * [build complex routine](#build-complex-routine)
+* [doc string](#doc-string)
+* [Update](#Update)
 * [License](#License)
 
 -------------------
@@ -96,7 +98,7 @@ will read all items from given api url, until no more next page, and save to des
 
 -------------------
 
-#### explanation
+#### doc string
 
 	from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RAPIConfig, RCSVConfig, RESConfig, RJsonConfig, RXLSXConfig, RAPUBulkConfig
     from idataapi_transform.DataProcess.Config.ConfigUtil.WriterConfig import WCSVConfig, WESConfig, WJsonConfig, WTXTConfig, WXLSXConfig

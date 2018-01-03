@@ -177,7 +177,7 @@ class RXLSXConfig(BaseGetterConfig):
         self.sheet_index = sheet_index
 
 
-class RAPUBulkConfig(BaseGetterConfig):
+class RAPIBulkConfig(BaseGetterConfig):
     def __init__(self, sources, interval=DefaultVal.interval, concurrency=main_config["main"].getint("concurrency"),
                  **kwargs):
         """

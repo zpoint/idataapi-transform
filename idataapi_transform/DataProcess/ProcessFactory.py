@@ -34,7 +34,7 @@ class ProcessFactory(object):
             return JsonGetter(config)
         elif isinstance(config, GetterConfig.RXLSXConfig):
             return XLSXGetter(config)
-        elif isinstance(config, GetterConfig.RAPUBulkConfig):
+        elif isinstance(config, GetterConfig.RAPIBulkConfig):
             return APIBulkGetter(config)
         else:
             raise ValueError("create_getter must pass one of the instance of [RAPIConfig, RCSVConfig, "
