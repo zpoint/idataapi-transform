@@ -31,6 +31,9 @@ random_max_sleep = 3
 # elasticsearch headers when perform http request
 # headers = {"Host": "localhost", "value": "value"}
 
+# request timeout, seconds
+# timeout = 10
+
 [log]
 # a directory to save log file
 # path = /Users/zpoint/Desktop/idataapi-transform/logs/
@@ -70,6 +73,7 @@ class MainConfig(object):
 
     def config_es(self):
         hosts = self.__instance["es"].get("hosts")
+        timeout = self.__instance["es"].getint("timeout")
         if hosts:
             try:
                 hosts = json.loads(hosts)
@@ -85,7 +89,7 @@ class MainConfig(object):
 
         else:
             headers = None
-        return init_es(hosts, headers)
+        return init_es(hosts, headers, timeout)
 
 
 main_config = MainConfig()

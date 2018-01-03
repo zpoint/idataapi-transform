@@ -76,18 +76,16 @@ class APIGetter(BaseGetter):
                 continue
 
             if "data" in result:
-                if not result["data"]:
-                    if self.responses:
-                        self.done = self.need_clear = True
-                        return self.responses
+                # success
+                self.responses.extend(result["data"])
+                self.curr_size += len(self.responses)
 
-            self.responses.extend(result["data"])
-            self.curr_size += len(self.responses)
-
+            # get next page if success, retry if fail
             if "pageToken" in result:
                 if not result["pageToken"]:
+                    self.done = True
                     if self.responses:
-                        self.done = self.need_clear = True
+                        self.need_clear = True
                         return self.responses
 
                 self.retry_count = 0
@@ -118,6 +116,9 @@ class APIGetter(BaseGetter):
             elif len(self.responses) >= self.config.per_limit:
                 self.need_clear = True
                 return self.responses
+            elif self.done:
+                # buffer has empty data, and done fetching
+                raise StopAsyncIteration
 
     def __iter__(self):
         raise ValueError("APIGetter must be used with async generator, not normal generator")
@@ -164,8 +165,15 @@ class APIBulkGetter(BaseGetter):
             done, pending = await asyncio.wait(self.pending_tasks, timeout=self.config.interval)
             self.pending_tasks = list(pending)
             self.success_task += len(done)
-            self.need_clear = True
-            return self.buffers
+            if self.buffers:
+                self.need_clear = True
+                return self.buffers
+            else:
+                # after interval seconds, no item fetched
+                self.fill_tasks()
+                logging.info("After %.2f seconds, no new item fetched, current success task: %d, pending tasks: %d" %
+                             (float(self.config.interval), self.success_task, len(self.pending_tasks)))
+                continue
 
         logging.info("APIBulkGetter Done, total perform: %d items" % (self.success_task, ))
         raise StopAsyncIteration

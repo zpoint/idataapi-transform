@@ -199,6 +199,7 @@ class RAPIBulkConfig(BaseGetterConfig):
         super().__init__()
         self.configs = (self.to_config(i) for i in sources)
         self.interval = interval
+        self.concurrency = concurrency
         self.session = session_manger._generate_session(concurrency_limit=concurrency) if \
             concurrency != main_config["main"].getint("concurrency") else None
 
@@ -209,4 +210,5 @@ class RAPIBulkConfig(BaseGetterConfig):
             return RAPIConfig(item, session=self.session)
 
     def __del__(self):
-        self.session.close()
+        if self.session:
+            self.session.close()

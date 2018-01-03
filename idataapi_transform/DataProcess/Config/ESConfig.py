@@ -2,6 +2,7 @@ import asyncio
 import aiohttp
 import hashlib
 import json
+import logging
 from elasticsearch_async.connection import AIOHttpConnection as OriginAIOHttpConnection
 from aiohttp.client_exceptions import ServerFingerprintMismatch
 from elasticsearch.exceptions import ConnectionError, ConnectionTimeout, SSLError
@@ -12,7 +13,7 @@ from elasticsearch_async import AsyncElasticsearch
 es_hosts = None
 
 
-def init_es(hosts, es_headers):
+def init_es(hosts, es_headers, timeout_):
     global es_hosts, AsyncElasticsearch
     es_hosts = hosts
     if not es_hosts:
@@ -33,7 +34,7 @@ def init_es(hosts, es_headers):
             start = self.loop.time()
             response = None
             try:
-                with aiohttp.Timeout(timeout or self.timeout):
+                with aiohttp.Timeout(timeout_ or timeout or self.timeout):
                     response = yield from self.session.request(method, url, data=body, headers=es_headers)
                     raw_data = yield from response.text()
                 duration = self.loop.time() - start
@@ -69,7 +70,7 @@ def init_es(hosts, es_headers):
                 value = str(item).encode("utf8")
             return hashlib.md5(value).hexdigest()
 
-        async def add_dict_to_es(self, indices, doc_type, items, id_hash_func=None):
+        async def add_dict_to_es(self, indices, doc_type, items, time_out=None, id_hash_func=None):
             if not id_hash_func:
                 id_hash_func = self.default_id_hash_func
             body = ""
@@ -82,8 +83,12 @@ def init_es(hosts, es_headers):
                     }
                 }
                 body += json.dumps(action) + "\n" + json.dumps(item) + "\n"
-            r = await self.transport.perform_request("POST", "/_bulk?pretty", body=body)
-            return r
+            try:
+                r = await self.transport.perform_request("POST", "/_bulk?pretty", body=body)
+                return r
+            except Exception as e:
+                logging.error("elasticsearch Exception, give up: %s" % (str(e), ))
+                return None
 
     if es_headers:
         OriginAIOHttpConnection.perform_request = AIOHttpConnection.perform_request
