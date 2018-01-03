@@ -133,6 +133,7 @@ class APIBulkGetter(BaseGetter):
         self.pending_tasks = list()
         self.buffers = list()
         self.success_task = 0
+        self.curr_size = 0
         self.need_clear = False
 
     @staticmethod
@@ -167,6 +168,7 @@ class APIBulkGetter(BaseGetter):
             self.success_task += len(done)
             if self.buffers:
                 self.need_clear = True
+                self.curr_size += len(self.buffers)
                 return self.buffers
             else:
                 # after interval seconds, no item fetched
@@ -175,7 +177,7 @@ class APIBulkGetter(BaseGetter):
                              (float(self.config.interval), self.success_task, len(self.pending_tasks)))
                 continue
 
-        logging.info("APIBulkGetter Done, total perform: %d items" % (self.success_task, ))
+        logging.info("APIBulkGetter Done, total perform: %d tasks. fetch: %d items" % (self.success_task, self.curr_size))
         raise StopAsyncIteration
 
     def __iter__(self):
