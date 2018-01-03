@@ -37,7 +37,7 @@ class ESScrollGetter(BaseGetter):
                           self.curr_size / self.total_size * 100))
             return [i["_source"] for i in self.result['hits']['hits']] if self.config.return_source else self.result
 
-        if "_scroll_id" in self.result and self.result["_scroll_id"] and self.curr_size < self.config.max_limit:
+        if "_scroll_id" in self.result and self.result["_scroll_id"] and self.curr_size < self.total_size:
             try:
                 self.result = await self.es_client.scroll(scroll_id=self.result["_scroll_id"], scroll="1m")
             except Exception as e:

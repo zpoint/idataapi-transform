@@ -35,13 +35,14 @@ class WCSVConfig(BaseWriterConfig):
 
 
 class WESConfig(BaseWriterConfig):
-    def __init__(self, indices, doc_type, filter_=None, expand=None, id_hash_func=None, **kwargs):
+    def __init__(self, indices, doc_type, filter_=None, expand=None, id_hash_func=None, appCode=None, **kwargs):
         """
         :param indices: elasticsearch indices
         :param doc_type: elasticsearch doc_type
         :param filter_: run "transform --help" to see command line interface explanation for detail
         :param expand: run "transform --help" to see command line interface explanation for detail
         :param id_hash_func: function to generate id_ for each item
+         :param appCode: if not None, add appCode to each item before write to es
         :param kwargs:
 
         Example:
@@ -58,6 +59,7 @@ class WESConfig(BaseWriterConfig):
         self.expand = expand
         self.id_hash_func = id_hash_func
         self.es_client = get_es_client()
+        self.app_code = appCode
 
     def __del__(self):
         self.es_client.transport.close()

@@ -70,11 +70,13 @@ def init_es(hosts, es_headers, timeout_):
                 value = str(item).encode("utf8")
             return hashlib.md5(value).hexdigest()
 
-        async def add_dict_to_es(self, indices, doc_type, items, time_out=None, id_hash_func=None):
+        async def add_dict_to_es(self, indices, doc_type, items, id_hash_func=None, app_code=None):
             if not id_hash_func:
                 id_hash_func = self.default_id_hash_func
             body = ""
             for item in items:
+                if app_code:
+                    item["appCode"] = app_code
                 action = {
                     "index": {
                         "_index": indices,
