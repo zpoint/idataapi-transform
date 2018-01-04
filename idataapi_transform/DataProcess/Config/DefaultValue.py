@@ -24,7 +24,7 @@ class DefaultVal(object):
     title = "example"
     qsn = None
 
-    query_body = '{"query": {"match_all": {}}}'
+    query_body = None
     dest = os.getcwd() + "/result"
     interval = 5
     concurrency = 50
