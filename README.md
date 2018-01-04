@@ -132,6 +132,10 @@ will read all items from given api url, until no more next page, and save to des
 
 #### Update
 
+v.0.5
+* fetch more items for ESGetter in CLI per request
+* per_limit param fix for ESGetter in CLI
+
 v.0.4
 * appCode for ESWriter Config
 * ESGetter CLI bug fix
