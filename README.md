@@ -132,6 +132,10 @@ will read all items from given api url, until no more next page, and save to des
 
 #### Update
 
+v.0.4
+* appCode for ESWriter Config
+* ESGetter CLI bug fix
+
 v.0.3
 * doc string for each config
 * RAPIBulkConfig support
