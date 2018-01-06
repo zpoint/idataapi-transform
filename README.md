@@ -71,6 +71,8 @@ will read all items from given api url, until no more next page, and save to des
 
 #### build complex routine easily
 
+ES to csv
+
     import asyncio
     from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
     from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RESConfig
@@ -90,6 +92,28 @@ will read all items from given api url, until no more next page, and save to des
             async for items in es_getter:
                 # do whatever you want with items
                 csv_writer.write(items)
+
+	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+
+lots of items from API, to ES
+
+    import asyncio
+    from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
+    from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RAPUBulkConfig
+    from idataapi_transform.DataProcess.Config.ConfigUtil.WriterConfig import WESConfig
+
+	async def example():
+    	urls = ["http://xxxx", "http://xxxx", "http://xxxx", ...]
+        api_bulk_config = RAPUBulkConfig(urls)
+        api_bulk_getter = ProcessFactory.create_getter(api_bulk_config)
+        es_config = WESConfig("profile201712", "user")
+        with ProcessFactory.create_writer(es_config) as es_writer:
+            async for items in api_bulk_getter:
+                # do whatever you want with items
+                await es_writer.write(items)
 
 	if __name__ == "__main__":
         loop = asyncio.get_event_loop()
