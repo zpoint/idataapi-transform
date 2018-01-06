@@ -93,22 +93,23 @@ class APIGetter(BaseGetter):
                 self.update_base_url()
 
             elif "retcode" in result and result["retcode"] == "100002":
+                self.done = True
+                if self.responses:
+                    self.need_clear = True
+                    return self.responses
+
+                raise StopAsyncIteration
+            else:
                 if self.retry_count >= self.config.max_retry:
+                    logging.error("Give up, Unable to get url: %s " % (self.base_url, ))
+                    self.done = True
                     if self.responses:
-                        self.done = self.need_clear = True
+                        self.need_clear = True
                         return self.responses
 
                 self.retry_count += 1
-                continue
-            else:
-                if self.retry_count >= self.config.max_retry:
-                    logging.error("Unable to get url: %s " % (self.base_url, ))
-                    if self.responses:
-                        self.done = self.need_clear = True
-                        return self.responses
-                self.retry_count += 1
                 await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
-                continue
+                return await self.__anext__()
 
             if self.config.max_limit and self.curr_size > self.config.max_limit:
                 self.done = self.need_clear = True

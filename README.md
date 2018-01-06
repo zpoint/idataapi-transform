@@ -98,6 +98,27 @@ ES to csv
         loop.run_until_complete(example())
 
 
+API to xlsx
+
+    import asyncio
+    from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
+    from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RAPIConfig
+    from idataapi_transform.DataProcess.Config.ConfigUtil.WriterConfig import WXLSXConfig
+
+	async def example():
+        api_config = RAPIConfig("http://xxxx")
+        getter = ProcessFactory.create_getter(api_config)
+        xlsx_config = WCSVConfig("./result.xlsx")
+        with ProcessFactory.create_writer(xlsx_config) as xlsx_writer:
+        	async for items in getter:
+                # do whatever you want with items
+                xlsx_writer.write(items)
+
+	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+
 concurrent read lots of items from API, to ES
 
     import asyncio
@@ -157,6 +178,9 @@ concurrent read lots of items from API, to ES
 -------------------
 
 #### Update
+
+v.0.7
+* remove APIGetter infinity loop for empty result
 
 v.0.6
 * No error when read empty item from ESGetter
