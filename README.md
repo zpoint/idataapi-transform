@@ -98,15 +98,16 @@ ES to csv
         loop.run_until_complete(example())
 
 
-lots of items from API, to ES
+concurrent read lots of items from API, to ES
 
     import asyncio
     from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
     from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RAPIBulkConfig
     from idataapi_transform.DataProcess.Config.ConfigUtil.WriterConfig import WESConfig
 
-	async def example():
-    	# urls can be any iterable object, each item can be api url or RAPIConfig
+
+    async def example():
+        # urls can be any iterable object, each item can be api url or RAPIConfig
         urls = ["http://xxxx", "http://xxxx", "http://xxxx", ...]
         api_bulk_config = RAPIBulkConfig(urls, concurrency=100)
         api_bulk_getter = ProcessFactory.create_getter(api_bulk_config)
