@@ -132,6 +132,9 @@ will read all items from given api url, until no more next page, and save to des
 
 #### Update
 
+v.0.6
+* No error when read empty item from ESGetter
+
 v.0.5
 * fetch more items for ESGetter in CLI per request
 * per_limit param fix for ESGetter in CLI

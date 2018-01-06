@@ -34,7 +34,7 @@ class ESScrollGetter(BaseGetter):
             self.curr_size += len(self.result['hits']['hits'])
             logging.info("Get %d items from %s, percentage: %.2f%%" %
                          (len(self.result['hits']['hits']), self.config.indices + "->" + self.config.doc_type,
-                          self.curr_size / self.total_size * 100))
+                          (self.curr_size / self.total_size * 100) if self.total_size else 0))
             return [i["_source"] for i in self.result['hits']['hits']] if self.config.return_source else self.result
 
         if "_scroll_id" in self.result and self.result["_scroll_id"] and self.curr_size < self.total_size:
@@ -51,7 +51,7 @@ class ESScrollGetter(BaseGetter):
             self.curr_size += len(self.result['hits']['hits'])
             logging.info("Get %d items from %s, percentage: %.2f%%" %
                          (len(self.result['hits']['hits']), self.config.indices + "->" + self.config.doc_type,
-                          self.curr_size / self.total_size * 100))
+                          (self.curr_size / self.total_size * 100) if self.total_size else 0))
             return [i["_source"] for i in self.result['hits']['hits']] if self.config.return_source else self.result
 
         self.init_val()
@@ -68,7 +68,7 @@ class ESScrollGetter(BaseGetter):
             }
         }
         result = await self.config.es_client.delete_by_query(index=self.config.indices, doc_type=self.config.doc_type,
-                                                             body=body)
+                                                             body=body, params={"conflicts": "proceed"})
         return result
 
     def __iter__(self):
