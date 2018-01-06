@@ -102,12 +102,13 @@ lots of items from API, to ES
 
     import asyncio
     from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
-    from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RAPUBulkConfig
+    from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RAPIBulkConfig
     from idataapi_transform.DataProcess.Config.ConfigUtil.WriterConfig import WESConfig
 
 	async def example():
-    	urls = ["http://xxxx", "http://xxxx", "http://xxxx", ...]
-        api_bulk_config = RAPUBulkConfig(urls)
+    	# urls can be any iterable object, each item can be api url or RAPIConfig
+        urls = ["http://xxxx", "http://xxxx", "http://xxxx", ...]
+        api_bulk_config = RAPIBulkConfig(urls, concurrency=100)
         api_bulk_getter = ProcessFactory.create_getter(api_bulk_config)
         es_config = WESConfig("profile201712", "user")
         with ProcessFactory.create_writer(es_config) as es_writer:
