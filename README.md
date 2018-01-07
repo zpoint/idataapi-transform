@@ -179,6 +179,12 @@ concurrent read lots of items from API, to ES
 
 #### Update
 
+v.0.8
+* error logging when unable to insert to target for ESWriter
+* actions parameter add for WESConfig
+* id_hash func change for ESWriter
+
+
 v.0.7
 * remove APIGetter infinity loop for empty result
 

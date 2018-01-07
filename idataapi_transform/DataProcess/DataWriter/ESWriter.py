@@ -24,7 +24,9 @@ class ESWriter(BaseWriter):
             if self.config.expand:
                 responses = [self.expand_dict(i) for i in responses]
 
-            r = await self.config.es_client.add_dict_to_es(self.config.indices, self.config.doc_type, responses, self.config.id_hash_func, self.config.app_code)
+            r = await self.config.es_client.add_dict_to_es(self.config.indices, self.config.doc_type, responses,
+                                                           self.config.id_hash_func, self.config.app_code,
+                                                           self.config.actions)
             if r:
                 self.success_count += len(responses)
         else:

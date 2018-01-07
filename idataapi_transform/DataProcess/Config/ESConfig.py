@@ -2,6 +2,7 @@ import asyncio
 import aiohttp
 import hashlib
 import json
+import time
 import logging
 from elasticsearch_async.connection import AIOHttpConnection as OriginAIOHttpConnection
 from aiohttp.client_exceptions import ServerFingerprintMismatch
@@ -65,12 +66,16 @@ def init_es(hosts, es_headers, timeout_):
         @staticmethod
         def default_id_hash_func(item):
             if "appCode" in item and item["appCode"] and "id" in item and item["id"]:
-                value = (item["appCode"] + item["id"]).encode("utf8")
+                value = (item["appCode"] + "_" + item["id"]).encode("utf8")
             else:
                 value = str(item).encode("utf8")
+            if "createDate" not in item:
+                item["createDate"] = int(time.time())
             return hashlib.md5(value).hexdigest()
 
-        async def add_dict_to_es(self, indices, doc_type, items, id_hash_func=None, app_code=None):
+        async def add_dict_to_es(self, indices, doc_type, items, id_hash_func=None, app_code=None, actions=None):
+            if not actions:
+                actions = "index"
             if not id_hash_func:
                 id_hash_func = self.default_id_hash_func
             body = ""
@@ -78,7 +83,7 @@ def init_es(hosts, es_headers, timeout_):
                 if app_code:
                     item["appCode"] = app_code
                 action = {
-                    "index": {
+                    actions: {
                         "_index": indices,
                         "_type": doc_type,
                         "_id": id_hash_func(item)
@@ -87,6 +92,12 @@ def init_es(hosts, es_headers, timeout_):
                 body += json.dumps(action) + "\n" + json.dumps(item) + "\n"
             try:
                 r = await self.transport.perform_request("POST", "/_bulk?pretty", body=body)
+                if r["errors"]:
+                    for item in r["items"]:
+                        for k, v in item.items():
+                            if "error" in v:
+                                logging.error(json.dumps(v["error"]))
+                    r = None
                 return r
             except Exception as e:
                 logging.error("elasticsearch Exception, give up: %s" % (str(e), ))
