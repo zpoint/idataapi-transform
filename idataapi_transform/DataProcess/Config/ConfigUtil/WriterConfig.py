@@ -36,7 +36,7 @@ class WCSVConfig(BaseWriterConfig):
 
 class WESConfig(BaseWriterConfig):
     def __init__(self, indices, doc_type, filter_=None, expand=None, id_hash_func=None, appCode=None,
-                 actions=None, **kwargs):
+                 actions=None, createDate=None, **kwargs):
         """
         :param indices: elasticsearch indices
         :param doc_type: elasticsearch doc_type
@@ -45,6 +45,7 @@ class WESConfig(BaseWriterConfig):
         :param id_hash_func: function to generate id_ for each item
         :param appCode: if not None, add appCode to each item before write to es
         :param actions: if not None, will set actions to user define actions, else default actions is 'index'
+        :param appCode: if not None, add createDate to each item before write to es
         :param kwargs:
 
         Example:
@@ -63,6 +64,7 @@ class WESConfig(BaseWriterConfig):
         self.es_client = get_es_client()
         self.app_code = appCode
         self.actions = actions
+        self.create_date = createDate
 
     def __del__(self):
         self.es_client.transport.close()

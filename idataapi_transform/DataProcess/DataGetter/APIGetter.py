@@ -18,6 +18,8 @@ class APIGetter(BaseGetter):
         self.done = False
         self.need_clear = False
         self.page_token = ""
+        self.miss_count = 0
+        self.total_count = 0
 
     def init_val(self):
         self.base_url = self.config.source
@@ -27,6 +29,8 @@ class APIGetter(BaseGetter):
         self.done = False
         self.need_clear = False
         self.page_token = ""
+        self.miss_count = 0
+        self.total_count = 0
 
     def generate_sub_func(self):
         def sub_func(match):
@@ -59,7 +63,8 @@ class APIGetter(BaseGetter):
 
         if self.done:
             self.init_val()
-            logging.info("get source done: %s" % (self.config.source, ))
+            logging.info("get source done: %s, total get %d items, total filtered: %d items" %
+                         (self.config.source, self.total_count, self.miss_count))
             raise StopAsyncIteration
 
         while True:
@@ -77,8 +82,16 @@ class APIGetter(BaseGetter):
 
             if "data" in result:
                 # success
-                self.responses.extend(result["data"])
-                self.curr_size += len(self.responses)
+                origin_length = len(result["data"])
+                self.total_count += origin_length
+
+                if self.config.filter:
+                    curr_response = [self.config.filter(i) for i in result["data"]]
+                    self.miss_count += origin_length - len(curr_response)
+                else:
+                    curr_response = result["data"]
+                self.responses.extend(curr_response)
+                self.curr_size += len(curr_response)
 
             # get next page if success, retry if fail
             if "pageToken" in result:
@@ -98,10 +111,13 @@ class APIGetter(BaseGetter):
                     self.need_clear = True
                     return self.responses
 
+                logging.info("get source done: %s, total get %d items, total filtered: %d items" %
+                             (self.config.source, self.total_count, self.miss_count))
                 raise StopAsyncIteration
             else:
                 if self.retry_count >= self.config.max_retry:
-                    logging.error("Give up, Unable to get url: %s " % (self.base_url, ))
+                    logging.error("Give up, Unable to get url: %s, total get %d items, total filtered: %d items" %
+                                  (self.base_url, self.total_count, self.miss_count))
                     self.done = True
                     if self.responses:
                         self.need_clear = True
@@ -119,6 +135,8 @@ class APIGetter(BaseGetter):
                 return self.responses
             elif self.done:
                 # buffer has empty data, and done fetching
+                logging.info("get source done: %s, total get %d items, total filtered: %d items" %
+                             (self.config.source, self.total_count, self.miss_count))
                 raise StopAsyncIteration
 
     def __iter__(self):

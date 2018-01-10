@@ -179,6 +179,12 @@ concurrent read lots of items from API, to ES
 
 #### Update
 
+v.0.9
+* filter for every getter
+* createDate for ESWriter
+* APIGetter per_liimt bug fix
+* new session for all RAPIBulkConfig
+
 v.0.8
 * error logging when unable to insert to target for ESWriter
 * actions parameter add for WESConfig

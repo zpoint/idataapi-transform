@@ -22,6 +22,8 @@ class XLSXGetter(BaseGetter):
         self.curr_size = 0
         self.need_clear = False
         self.done = False
+        self.miss_count = 0
+        self.total_count = 0
 
     def init_val(self):
         self.row_num = 0
@@ -29,6 +31,8 @@ class XLSXGetter(BaseGetter):
         self.curr_size = 0
         self.need_clear = False
         self.done = False
+        self.miss_count = 0
+        self.total_count = 0
 
     def __aiter__(self):
         return self
@@ -39,7 +43,8 @@ class XLSXGetter(BaseGetter):
             self.need_clear = False
 
         if self.done:
-            logging.info("get source done: %s" % (self.config.filename,))
+            logging.info("get source done: %s, total get %d items, total filtered: %d items" %
+                         (self.config.filename, self.total_count, self.miss_count))
             self.init_val()
             raise StopAsyncIteration
 
@@ -48,7 +53,13 @@ class XLSXGetter(BaseGetter):
                 continue
 
             self.row_num += 1
+            self.total_count += 1
             row = self.get_row(self.row_num)
+            if self.config.filter:
+                row = self.config.filter(row)
+                if not row:
+                    self.miss_count += 1
+                    continue
             self.responses.append(row)
             if len(self.responses) > self.config.per_limit:
                 self.curr_size += len(self.responses)
@@ -59,7 +70,8 @@ class XLSXGetter(BaseGetter):
             self.need_clear = self.done = True
             return self.responses
 
-        logging.info("get source done: %s" % (self.config.filename,))
+        logging.info("get source done: %s, total get %d items, total filtered: %d items" %
+                     (self.config.filename, self.total_count, self.miss_count))
         self.init_val()
         raise StopAsyncIteration
 
@@ -82,7 +94,13 @@ class XLSXGetter(BaseGetter):
                 continue
 
             row_num += 1
+            self.total_count += 1
             row = self.get_row(row_num)
+            if self.config.filter:
+                row = self.config.filter(row)
+                if not row:
+                    self.miss_count += 1
+                    continue
             self.responses.append(row)
             if len(self.responses) > self.config.per_limit:
                 self.curr_size += len(self.responses)
@@ -92,7 +110,8 @@ class XLSXGetter(BaseGetter):
         if self.responses:
             yield self.responses
             self.init_val()
-            logging.info("get source done: %s" % (self.config.filename,))
+            logging.info("get source done: %s, total get %d items, total filtered: %d items" %
+                         (self.config.filename, self.total_count, self.miss_count))
 
     def __del__(self):
         self.wb.close()

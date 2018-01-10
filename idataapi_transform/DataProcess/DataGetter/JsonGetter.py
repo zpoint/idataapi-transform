@@ -13,6 +13,8 @@ class JsonGetter(BaseGetter):
         self.need_clear = False
         self.done = False
         self.f_in = open(self.config.filename, self.config.mode, encoding=self.config.encoding)
+        self.miss_count = 0
+        self.total_count = 0
 
     def init_val(self):
         self.responses = list()
@@ -21,6 +23,8 @@ class JsonGetter(BaseGetter):
         self.need_clear = False
         self.done = False
         self.f_in.seek(0, 0)
+        self.miss_count = 0
+        self.total_count = 0
 
     def __aiter__(self):
         return self
@@ -31,7 +35,8 @@ class JsonGetter(BaseGetter):
             self.need_clear = False
 
         if self.done:
-            logging.info("get source done: %s" % (self.config.filename,))
+            logging.info("get source done: %s, total get %d items, total filtered: %d items" %
+                         (self.config.filename, self.total_count, self.miss_count))
             self.init_val()
             raise StopAsyncIteration
 
@@ -42,6 +47,13 @@ class JsonGetter(BaseGetter):
             except json.decoder.JSONDecodeError:
                 logging.error("JSONDecodeError. give up. line: %d" % (self.line_num, ))
                 continue
+
+            self.total_count += 1
+            if self.config.filter:
+                json_obj = self.config.filter(json_obj)
+                if not json_obj:
+                    self.miss_count += 1
+                    continue
 
             self.responses.append(json_obj)
             self.curr_size += 1
@@ -58,7 +70,8 @@ class JsonGetter(BaseGetter):
         if self.responses:
             return self.responses
 
-        logging.info("get source done: %s" % (self.config.filename,))
+        logging.info("get source done: %s, total get %d items, total filtered: %d items" %
+                     (self.config.filename, self.total_count, self.miss_count))
         self.init_val()
         raise StopAsyncIteration
 
@@ -70,6 +83,13 @@ class JsonGetter(BaseGetter):
             except json.decoder.JSONDecodeError:
                 logging.error("JSONDecodeError. give up. line: %d" % (self.line_num, ))
                 continue
+
+            self.total_count += 1
+            if self.config.filter:
+                json_obj = self.config.filter(json_obj)
+                if not json_obj:
+                    self.miss_count += 1
+                    continue
 
             self.responses.append(json_obj)
             self.curr_size += 1
@@ -86,7 +106,8 @@ class JsonGetter(BaseGetter):
         if self.responses:
             yield self.responses
         self.init_val()
-        logging.info("get source done: %s" % (self.config.filename,))
+        logging.info("get source done: %s, total get %d items, total filtered: %d items" %
+                     (self.config.filename, self.total_count, self.miss_count))
 
     def __del__(self):
         self.f_in.close()

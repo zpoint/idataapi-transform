@@ -73,7 +73,8 @@ def init_es(hosts, es_headers, timeout_):
                 item["createDate"] = int(time.time())
             return hashlib.md5(value).hexdigest()
 
-        async def add_dict_to_es(self, indices, doc_type, items, id_hash_func=None, app_code=None, actions=None):
+        async def add_dict_to_es(self, indices, doc_type, items, id_hash_func=None, app_code=None, actions=None,
+                                 create_date=None):
             if not actions:
                 actions = "index"
             if not id_hash_func:
@@ -82,6 +83,8 @@ def init_es(hosts, es_headers, timeout_):
             for item in items:
                 if app_code:
                     item["appCode"] = app_code
+                if create_date:
+                    item["createDate"] = create_date
                 action = {
                     actions: {
                         "_index": indices,

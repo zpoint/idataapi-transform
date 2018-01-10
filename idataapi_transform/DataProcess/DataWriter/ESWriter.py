@@ -26,7 +26,7 @@ class ESWriter(BaseWriter):
 
             r = await self.config.es_client.add_dict_to_es(self.config.indices, self.config.doc_type, responses,
                                                            self.config.id_hash_func, self.config.app_code,
-                                                           self.config.actions)
+                                                           self.config.actions, self.config.create_date)
             if r:
                 self.success_count += len(responses)
         else:
