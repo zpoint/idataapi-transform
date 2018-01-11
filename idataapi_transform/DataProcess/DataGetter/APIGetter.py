@@ -62,9 +62,9 @@ class APIGetter(BaseGetter):
             self.need_clear = False
 
         if self.done:
-            self.init_val()
             logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                          (self.config.source, self.total_count, self.miss_count))
+            self.init_val()
             raise StopAsyncIteration
 
         while True:
@@ -72,21 +72,32 @@ class APIGetter(BaseGetter):
                 async with self.config.session.get(self.base_url) as resp:
                     text = await resp.text()
                     result = json.loads(text)
-            except aiohttp.client_exceptions.ClientPayloadError:
-                await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
-                continue
             except Exception as e:
                 logging.error("%s: %s" % (str(e), self.base_url))
                 await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
-                continue
+                self.retry_count += 1
+                if self.retry_count <= self.config.max_retry:
+                    continue
+                else:
+                    # fail
+                    logging.error("Give up, Unable to get url: %s, total get %d items, total filtered: %d items" %
+                                  (self.base_url, self.total_count, self.miss_count))
+                    self.done = True
+                    if self.responses:
+                        self.need_clear = True
+                        return self.responses
+                    else:
+                        return await self.__anext__()
 
             if "data" in result:
                 # success
+                self.retry_count = 0
                 origin_length = len(result["data"])
                 self.total_count += origin_length
 
                 if self.config.filter:
                     curr_response = [self.config.filter(i) for i in result["data"]]
+                    curr_response = [i for i in curr_response if i]
                     self.miss_count += origin_length - len(curr_response)
                 else:
                     curr_response = result["data"]
@@ -101,7 +112,6 @@ class APIGetter(BaseGetter):
                         self.need_clear = True
                         return self.responses
 
-                self.retry_count = 0
                 self.page_token = str(result["pageToken"])
                 self.update_base_url()
 
@@ -113,7 +123,7 @@ class APIGetter(BaseGetter):
 
                 logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                              (self.config.source, self.total_count, self.miss_count))
-                raise StopAsyncIteration
+                return await self.__anext__()
             else:
                 if self.retry_count >= self.config.max_retry:
                     logging.error("Give up, Unable to get url: %s, total get %d items, total filtered: %d items" %
@@ -135,9 +145,7 @@ class APIGetter(BaseGetter):
                 return self.responses
             elif self.done:
                 # buffer has empty data, and done fetching
-                logging.info("get source done: %s, total get %d items, total filtered: %d items" %
-                             (self.config.source, self.total_count, self.miss_count))
-                raise StopAsyncIteration
+                return self.__anext__()
 
     def __iter__(self):
         raise ValueError("APIGetter must be used with async generator, not normal generator")
@@ -192,7 +200,7 @@ class APIBulkGetter(BaseGetter):
             else:
                 # after interval seconds, no item fetched
                 self.fill_tasks()
-                logging.info("After %.2f seconds, no new item fetched, current success task: %d, pending tasks: %d" %
+                logging.info("After %.2f seconds, no new item fetched, current done task: %d, pending tasks: %d" %
                              (float(self.config.interval), self.success_task, len(self.pending_tasks)))
                 continue
 

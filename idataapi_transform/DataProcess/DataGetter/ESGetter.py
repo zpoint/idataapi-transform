@@ -48,6 +48,7 @@ class ESScrollGetter(BaseGetter):
                 results = self.result
             if self.config.filter:
                 results = [self.config.filter(i) for i in results]
+                results = [i for i in results if i]
                 self.miss_count += origin_length - len(results)
             return results
 
@@ -77,6 +78,7 @@ class ESScrollGetter(BaseGetter):
                 results = self.result
             if self.config.filter:
                 results = [self.config.filter(i) for i in results]
+                results = [i for i in results if i]
                 self.miss_count += origin_length - len(results)
             return results
 
