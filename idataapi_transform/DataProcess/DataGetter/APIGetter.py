@@ -145,7 +145,7 @@ class APIGetter(BaseGetter):
                 return self.responses
             elif self.done:
                 # buffer has empty data, and done fetching
-                return self.__anext__()
+                return await self.__anext__()
 
     def __iter__(self):
         raise ValueError("APIGetter must be used with async generator, not normal generator")
