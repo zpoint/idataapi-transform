@@ -74,7 +74,7 @@ def init_es(hosts, es_headers, timeout_):
             return hashlib.md5(value).hexdigest()
 
         async def add_dict_to_es(self, indices, doc_type, items, id_hash_func=None, app_code=None, actions=None,
-                                 create_date=None):
+                                 create_date=None, error_if_fail=True):
             if not actions:
                 actions = "index"
             if not id_hash_func:
@@ -96,11 +96,12 @@ def init_es(hosts, es_headers, timeout_):
             try:
                 r = await self.transport.perform_request("POST", "/_bulk?pretty", body=body)
                 if r["errors"]:
+                    r = None
+                if error_if_fail and r["errors"]:
                     for item in r["items"]:
                         for k, v in item.items():
                             if "error" in v:
                                 logging.error(json.dumps(v["error"]))
-                    r = None
                 return r
             except Exception as e:
                 logging.error("elasticsearch Exception, give up: %s" % (str(e), ))
