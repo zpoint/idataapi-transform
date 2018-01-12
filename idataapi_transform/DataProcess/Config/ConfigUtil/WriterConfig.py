@@ -36,7 +36,7 @@ class WCSVConfig(BaseWriterConfig):
 
 class WESConfig(BaseWriterConfig):
     def __init__(self, indices, doc_type, filter_=None, expand=None, id_hash_func=None, appCode=None,
-                 actions=None, createDate=None, error_if_fail=True, **kwargs):
+                 actions=None, createDate=None, error_if_fail=True, timeout=None, **kwargs):
         """
         :param indices: elasticsearch indices
         :param doc_type: elasticsearch doc_type
@@ -47,6 +47,7 @@ class WESConfig(BaseWriterConfig):
         :param actions: if not None, will set actions to user define actions, else default actions is 'index'
         :param appCode: if not None, add createDate to each item before write to es
         :param error_if_fail: if True, log to error if fail to insert to es, else log nothing
+        :param timeout: http connection timeout when connect to es, seconds
         :param kwargs:
 
         Example:
@@ -67,6 +68,7 @@ class WESConfig(BaseWriterConfig):
         self.actions = actions
         self.create_date = createDate
         self.error_if_fail = error_if_fail
+        self.timeout = timeout
 
     def __del__(self):
         self.es_client.transport.close()
