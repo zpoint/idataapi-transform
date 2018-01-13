@@ -105,9 +105,10 @@ class JsonGetter(BaseGetter):
 
         if self.responses:
             yield self.responses
-        self.init_val()
+
         logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                      (self.config.filename, self.total_count, self.miss_count))
+        self.init_val()
 
     def __del__(self):
         self.f_in.close()

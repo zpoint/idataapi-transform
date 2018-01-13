@@ -179,6 +179,10 @@ concurrent read lots of items from API, to ES
 
 #### Update
 
+v.1.0
+* fix ESWriter log bug
+* timeout add for ESWriter
+
 v.0.9
 * filter for every getter
 * createDate for ESWriter

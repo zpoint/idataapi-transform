@@ -2,9 +2,13 @@ import re
 import json
 import random
 import logging
-import aiohttp
 import asyncio
 from .BaseGetter import BaseGetter
+
+headers = {
+    "Accept-Encoding": "gzip",
+    "Connection": "close"
+}
 
 
 class APIGetter(BaseGetter):
@@ -69,7 +73,7 @@ class APIGetter(BaseGetter):
 
         while True:
             try:
-                async with self.config.session.get(self.base_url) as resp:
+                async with self.config.session.get(self.base_url, headers=headers) as resp:
                     text = await resp.text()
                     result = json.loads(text)
             except Exception as e:

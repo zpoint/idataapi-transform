@@ -39,9 +39,9 @@ class CSVGetter(BaseGetter):
             self.need_clear = False
 
         if self.done:
-            self.init_val()
             logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                          (self.config.filename, self.total_count, self.miss_count))
+            self.init_val()
             raise StopAsyncIteration
 
         for row in self.reader:
@@ -66,9 +66,9 @@ class CSVGetter(BaseGetter):
             self.done = self.need_clear = True
             return self.responses
 
-        self.init_val()
         logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                      (self.config.filename, self.total_count, self.miss_count))
+        self.init_val()
         raise StopAsyncIteration
 
     def __iter__(self):
@@ -94,6 +94,6 @@ class CSVGetter(BaseGetter):
         if self.responses:
             yield self.responses
 
-        self.init_val()
         logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                      (self.config.filename, self.total_count, self.miss_count))
+        self.init_val()

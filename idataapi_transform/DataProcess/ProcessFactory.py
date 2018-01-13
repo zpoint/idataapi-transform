@@ -38,7 +38,7 @@ class ProcessFactory(object):
             return APIBulkGetter(config)
         else:
             raise ValueError("create_getter must pass one of the instance of [RAPIConfig, RCSVConfig, "
-                             "RESConfig, RJsonConfig, RXLSXConfig, APIBulkGetter]")
+                             "RESConfig, RJsonConfig, RXLSXConfig, RAPIBulkConfig]")
 
     @staticmethod
     def create_writer(config):

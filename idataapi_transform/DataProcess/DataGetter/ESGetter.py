@@ -82,9 +82,9 @@ class ESScrollGetter(BaseGetter):
                 self.miss_count += origin_length - len(results)
             return results
 
-        self.init_val()
         logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                      (self.config.indices + "->" + self.config.doc_type, self.total_count, self.miss_count))
+        self.init_val()
         raise StopAsyncIteration
 
     async def delete_all(self):
