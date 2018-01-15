@@ -34,7 +34,7 @@ class ESWriter(BaseWriter):
                 self.success_count += success
                 self.fail_count += fail
                 logging.info("Write %d items to index: %s, doc_type: %s, fail: %d, filtered: %d" % (
-                    len(responses), self.config.indices, self.config.doc_type, fail, success))
+                    len(responses), self.config.indices, self.config.doc_type, fail, miss_count))
             else:
                 # exception happened
                 logging.info("Write 0 items to index: %s, doc_type: %s" % (self.config.indices, self.config.doc_type))
