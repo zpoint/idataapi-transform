@@ -137,23 +137,26 @@ def init_es(hosts, es_headers, timeout_):
                 }
                 body += json.dumps(action) + "\n" + json.dumps(item) + "\n"
             try:
+                success = fail = 0
                 r = await self.transport.perform_request("POST", "/_bulk?pretty", body=body, timeout=timeout)
                 if r["errors"]:
-                    ret_r = list()
                     for item in r["items"]:
                         for k, v in item.items():
-                            if "error" in v and error_if_fail:
-                                # log error
-                                logging.error(json.dumps(v["error"]))
+                            if "error" in v:
+                                if error_if_fail:
+                                    # log error
+                                    logging.error(json.dumps(v["error"]))
+                                fail += 1
                             else:
-                                ret_r.append(item)
-                    r = ret_r
-                return r
+                                success += 1
+                else:
+                    success = len(r["items"])
+                return success, fail, r
             except Exception as e:
                 import traceback
                 logging.error(traceback.format_exc())
                 logging.error("elasticsearch Exception, give up: %s" % (str(e), ))
-                return None
+                return None, None, None
 
     OriginAIOHttpConnection.perform_request = AIOHttpConnection.perform_request
     OriginAsyncTransport.perform_request = MyAsyncTransport.perform_request

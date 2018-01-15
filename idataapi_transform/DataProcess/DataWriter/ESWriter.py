@@ -12,6 +12,7 @@ class ESWriter(BaseWriter):
         self.config = config
         self.total_miss_count = 0
         self.success_count = 0
+        self.fail_count = 0
 
     async def write(self, responses):
         origin_length = len(responses)
@@ -24,17 +25,23 @@ class ESWriter(BaseWriter):
             if self.config.expand:
                 responses = [self.expand_dict(i) for i in responses]
 
-            r = await self.config.es_client.add_dict_to_es(self.config.indices, self.config.doc_type, responses,
-                                                           self.config.id_hash_func, self.config.app_code,
-                                                           self.config.actions, self.config.create_date,
-                                                           self.config.error_if_fail, self.config.timeout)
-            if r:
-                self.success_count += len(responses)
+            success, fail, response = await self.config.es_client.add_dict_to_es(
+                self.config.indices, self.config.doc_type, responses,
+                self.config.id_hash_func, self.config.app_code,
+                self.config.actions, self.config.create_date,
+                self.config.error_if_fail, self.config.timeout)
+            if response is not None:
+                self.success_count += success
+                self.fail_count += fail
+                logging.info("Write %d items to index: %s, doc_type: %s, fail: %d, filtered: %d" % (
+                    len(responses), self.config.indices, self.config.doc_type, fail, success))
+            else:
+                # exception happened
+                logging.info("Write 0 items to index: %s, doc_type: %s" % (self.config.indices, self.config.doc_type))
+            return response
         else:
-            r = None
-        logging.info("Write %d items to index: %s, doc_type: %s" % (len(responses) if r else 0,
-                                                                    self.config.indices, self.config.doc_type))
-        return r
+            # all filtered, or pass empty result
+            logging.info("Write 0 items to index: %s, doc_type: %s" % (self.config.indices, self.config.doc_type))
 
     async def delete_all(self, body=None):
         """
@@ -54,5 +61,6 @@ class ESWriter(BaseWriter):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        logging.info("%s->%s write done, total filtered %d item, total write %d item" %
-                     (self.config.indices, self.config.doc_type, self.total_miss_count, self.success_count))
+        logging.info("%s->%s write done, total filtered %d item, total write %d item, total fail: %d item" %
+                     (self.config.indices, self.config.doc_type, self.total_miss_count, self.success_count,
+                      self.fail_count))
