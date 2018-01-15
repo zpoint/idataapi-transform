@@ -138,13 +138,16 @@ def init_es(hosts, es_headers, timeout_):
                 body += json.dumps(action) + "\n" + json.dumps(item) + "\n"
             try:
                 r = await self.transport.perform_request("POST", "/_bulk?pretty", body=body, timeout=timeout)
-                if error_if_fail and r["errors"]:
+                if r["errors"]:
+                    ret_r = list()
                     for item in r["items"]:
                         for k, v in item.items():
-                            if "error" in v:
+                            if "error" in v and error_if_fail:
+                                # log error
                                 logging.error(json.dumps(v["error"]))
-                if r["errors"]:
-                    r = None
+                            else:
+                                ret_r.append(item)
+                    r = ret_r
                 return r
             except Exception as e:
                 import traceback

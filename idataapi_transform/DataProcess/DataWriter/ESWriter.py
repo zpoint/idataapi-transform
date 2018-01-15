@@ -36,17 +36,18 @@ class ESWriter(BaseWriter):
                                                                     self.config.indices, self.config.doc_type))
         return r
 
-    async def delete_all(self):
+    async def delete_all(self, body=None):
         """
         inefficient delete
         """
-        body = {
-            "query": {
-                "match_all": {}
+        if not body:
+            body = {
+                "query": {
+                    "match_all": {}
+                }
             }
-        }
         result = await self.config.es_client.delete_by_query(index=self.config.indices, doc_type=self.config.doc_type,
-                                                             body=body)
+                                                             body=body, params={"conflicts": "proceed"})
         return result
 
     def __enter__(self):
