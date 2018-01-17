@@ -45,7 +45,7 @@ will read all items from given api url, until no more next page, and save to des
 
 will read items from json file, and save to **./result.csv**
 
-	transform JSON xlsx "/Users/zpoint/Desktop/a.json"
+	transform JSON csv "/Users/zpoint/Desktop/a.json"
 
 ##### read data from Elasticsearch, convert to CSV
 * save csv with file encoding "gbk" **(--w_encoding)**
