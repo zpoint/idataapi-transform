@@ -41,6 +41,12 @@ will read all items from given api url, until no more next page, and save to des
 
 	transform API xlsx "http://xxx/post/dengta?kw=中国石化&apikey=xxx" "/Users/zpoint/Desktop/result"
 
+##### read data from JSON, convert to csv
+
+will read all items from given api url, until no more next page, and save to **./result.csv**
+
+	transform json xlsx "/Users/zpoint/Desktop/a.json"
+
 ##### read data from Elasticsearch, convert to CSV
 * save csv with file encoding "gbk" **(--w_encoding)**
 * specific index: knowledge20170517, doc_type: question **(knowledge20170517:question)**
