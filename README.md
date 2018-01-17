@@ -43,9 +43,9 @@ will read all items from given api url, until no more next page, and save to des
 
 ##### read data from JSON, convert to csv
 
-will read all items from given api url, until no more next page, and save to **./result.csv**
+will read items from json file, and save to **./result.csv**
 
-	transform json xlsx "/Users/zpoint/Desktop/a.json"
+	transform JSON xlsx "/Users/zpoint/Desktop/a.json"
 
 ##### read data from Elasticsearch, convert to CSV
 * save csv with file encoding "gbk" **(--w_encoding)**
