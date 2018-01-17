@@ -131,7 +131,7 @@ class RESConfig(BaseGetterConfig):
 
 class RJsonConfig(BaseGetterConfig):
     def __init__(self, filename, mode=DefaultVal.default_file_mode_r, encoding=DefaultVal.default_encoding,
-                 per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit, filter_=None, *kwargs):
+                 per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit, filter_=None, **kwargs):
         """
         :param filename: line by line json file to read
         :param mode: file open mode, i.e "r"
