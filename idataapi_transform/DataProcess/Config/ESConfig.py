@@ -119,7 +119,7 @@ def init_es(hosts, es_headers, timeout_):
             response = None
             local_headers = es_headers
             if headers:
-                local_headers = copy.deepcopy(es_headers)
+                local_headers = copy.deepcopy(es_headers) if es_headers else dict()
                 local_headers.update(headers)
             try:
                 with aiohttp.Timeout(timeout or timeout_ or self.timeout):
