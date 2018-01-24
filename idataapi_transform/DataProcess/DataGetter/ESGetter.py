@@ -32,7 +32,8 @@ class ESScrollGetter(BaseGetter):
 
     async def __anext__(self, retry=1):
         if self.total_size is None:
-            self.result = await self.es_client.search(self.config.indices, self.config.doc_type, scroll="1m", body=self.config.query_body)
+            self.result = await self.es_client.search(self.config.indices, self.config.doc_type,
+                                                      scroll=self.config.scroll, body=self.config.query_body)
             self.total_size = self.result['hits']['total']
             self.total_size = self.config.max_limit if (self.config.max_limit and self.config.max_limit < self.result['hits']['total']) else self.total_size
             self.curr_size += len(self.result['hits']['hits'])
@@ -54,7 +55,8 @@ class ESScrollGetter(BaseGetter):
 
         if "_scroll_id" in self.result and self.result["_scroll_id"] and self.curr_size < self.total_size:
             try:
-                self.result = await self.es_client.scroll(scroll_id=self.result["_scroll_id"], scroll="1m")
+                self.result = await self.es_client.scroll(scroll_id=self.result["_scroll_id"],
+                                                          scroll=self.config.scroll)
             except Exception as e:
                 if retry < self.config.max_retry:
                     await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
