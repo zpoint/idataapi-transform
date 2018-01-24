@@ -4,10 +4,11 @@ import hashlib
 import json
 import time
 import logging
+import copy
 from elasticsearch_async.connection import AIOHttpConnection as OriginAIOHttpConnection
 from elasticsearch_async.transport import AsyncTransport as OriginAsyncTransport
 from elasticsearch_async.transport import ensure_future
-
+from elasticsearch import TransportError
 from aiohttp.client_exceptions import ServerFingerprintMismatch
 from elasticsearch.exceptions import ConnectionError, ConnectionTimeout, SSLError
 from elasticsearch.compat import urlencode
@@ -28,7 +29,7 @@ def init_es(hosts, es_headers, timeout_):
         """
         Override default AsyncTransport to add timeout
         """
-        def perform_request(self, method, url, params=None, body=None, timeout=None):
+        def perform_request(self, method, url, params=None, body=None, timeout=None, headers=None):
             if body is not None:
                 body = self.serializer.dumps(body)
 
@@ -60,8 +61,47 @@ def init_es(hosts, es_headers, timeout_):
 
             return ensure_future(self.main_loop(method, url, params, body,
                                                 ignore=ignore,
-                                                timeout=timeout),
+                                                timeout=timeout, headers=headers),
                                  loop=self.loop)
+
+        @asyncio.coroutine
+        def main_loop(self, method, url, params, body, ignore=(), timeout=None, headers=None):
+            for attempt in range(self.max_retries + 1):
+                connection = self.get_connection()
+
+                try:
+                    status, headers, data = yield from connection.perform_request(
+                        method, url, params, body, ignore=ignore, timeout=timeout, headers=headers)
+                except TransportError as e:
+                    if method == 'HEAD' and e.status_code == 404:
+                        return False
+
+                    retry = False
+                    if isinstance(e, ConnectionTimeout):
+                        retry = self.retry_on_timeout
+                    elif isinstance(e, ConnectionError):
+                        retry = True
+                    elif e.status_code in self.retry_on_status:
+                        retry = True
+
+                    if retry:
+                        # only mark as dead if we are retrying
+                        self.mark_dead(connection)
+                        # raise exception on last retry
+                        if attempt == self.max_retries:
+                            raise
+                    else:
+                        raise
+
+                else:
+                    if method == 'HEAD':
+                        return 200 <= status < 300
+
+                    # connection didn't fail, confirm it's live status
+                    self.connection_pool.mark_live(connection)
+                    if data:
+                        data = self.deserializer.loads(data, headers.get('content-type'))
+                    return data
 
     class AIOHttpConnection(OriginAIOHttpConnection):
         """
@@ -69,7 +109,7 @@ def init_es(hosts, es_headers, timeout_):
         """
 
         @asyncio.coroutine
-        def perform_request(self, method, url, params=None, body=None, timeout=None, ignore=()):
+        def perform_request(self, method, url, params=None, body=None, timeout=None, ignore=(), headers=None):
             url_path = url
             if params:
                 url_path = '%s?%s' % (url, urlencode(params or {}))
@@ -77,9 +117,13 @@ def init_es(hosts, es_headers, timeout_):
 
             start = self.loop.time()
             response = None
+            local_headers = es_headers
+            if headers:
+                local_headers = copy.deepcopy(es_headers)
+                local_headers.update(headers)
             try:
                 with aiohttp.Timeout(timeout or timeout_ or self.timeout):
-                    response = yield from self.session.request(method, url, data=body, headers=es_headers)
+                    response = yield from self.session.request(method, url, data=body, headers=local_headers)
                     raw_data = yield from response.text()
                 duration = self.loop.time() - start
 
@@ -160,6 +204,7 @@ def init_es(hosts, es_headers, timeout_):
 
     OriginAIOHttpConnection.perform_request = AIOHttpConnection.perform_request
     OriginAsyncTransport.perform_request = MyAsyncTransport.perform_request
+    OriginAsyncTransport.main_loop = MyAsyncTransport.main_loop
 
     AsyncElasticsearch = MyAsyncElasticsearch
     return True

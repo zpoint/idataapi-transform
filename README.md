@@ -184,6 +184,9 @@ concurrent read lots of items from API, to ES
 -------------------
 
 #### Update
+v.1.0.1 && 1.0.2
+* fix bug
+* es_client msearch support
 
 v.1.0
 * fix ESWriter log bug
