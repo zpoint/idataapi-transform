@@ -50,6 +50,7 @@ class XLSXGetter(BaseGetter):
 
         while self.row_num < self.max_row:
             if self.row_num == 0:
+                self.row_num += 1
                 continue
 
             self.row_num += 1
