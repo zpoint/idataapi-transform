@@ -47,6 +47,13 @@ will read items from json file, and save to **./result.csv**
 
 	transform JSON csv "/Users/zpoint/Desktop/a.json"
 
+##### read data from CSV, convert to xlsx
+
+will read items from csv file, and save to **./result.xlsx**
+
+	transform CSV xlsx "./a.csv"
+
+
 ##### read data from Elasticsearch, convert to CSV
 * save csv with file encoding "gbk" **(--w_encoding)**
 * specific index: knowledge20170517, doc_type: question **(knowledge20170517:question)**
@@ -114,9 +121,29 @@ API to xlsx
 	async def example():
         api_config = RAPIConfig("http://xxxx")
         getter = ProcessFactory.create_getter(api_config)
-        xlsx_config = WCSVConfig("./result.xlsx")
+        xlsx_config = WXLSXConfig("./result.xlsx")
         with ProcessFactory.create_writer(xlsx_config) as xlsx_writer:
         	async for items in getter:
+                # do whatever you want with items
+                xlsx_writer.write(items)
+
+	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+CSV to xlsx
+
+    import asyncio
+    from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
+    from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RCSVConfig
+    from idataapi_transform.DataProcess.Config.ConfigUtil.WriterConfig import WXLSXConfig
+
+	async def example():
+        csv_config = RAPIConfig("./result.csv")
+        getter = ProcessFactory.create_getter(csv_config)
+        xlsx_config = WXLSXConfig("./result.xlsx")
+        with ProcessFactory.create_writer(xlsx_config) as xlsx_writer:
+        	for items in getter:
                 # do whatever you want with items
                 xlsx_writer.write(items)
 
@@ -184,8 +211,8 @@ concurrent read lots of items from API, to ES
 -------------------
 
 #### Update
-v.1.0.1 && 1.0.2
-* fix bug
+v.1.0.1 && 1.0.2 && 1.0.3
+* fix bug (cli)
 * es_client msearch support
 
 v.1.0
