@@ -138,16 +138,17 @@ CSV to xlsx
     from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RCSVConfig
     from idataapi_transform.DataProcess.Config.ConfigUtil.WriterConfig import WXLSXConfig
 
-	async def example():
-        csv_config = RAPIConfig("./result.csv")
+
+    async def example():
+        csv_config = RCSVConfig("./result.csv")
         getter = ProcessFactory.create_getter(csv_config)
         xlsx_config = WXLSXConfig("./result.xlsx")
         with ProcessFactory.create_writer(xlsx_config) as xlsx_writer:
-        	for items in getter:
+            for items in getter:
                 # do whatever you want with items
                 xlsx_writer.write(items)
 
-	if __name__ == "__main__":
+    if __name__ == "__main__":
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
 
