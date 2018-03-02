@@ -1,7 +1,16 @@
 # idataapi-transform
 
 Toolkit for [IDataAPI](http://www.idataapi.cn/) for efficiency work
-Provide [Command line interface](#command-line-interface-example) and [Python API](#build-complex-routine-easily) to help read data from one of **[API([IDataAPI](http://www.idataapi.cn/)), ES(ElasticSearch), CSV, XLSX, JSON]**, and convert to **[CSV, XLSX, JSON, TXT, ES]**, with asyncio support and share same API.
+
+Provide [Command line interface](#command-line-interface-example) and [Python API](#build-complex-routine-easily) to help read data from one of 
+
+**[API([IDataAPI](http://www.idataapi.cn/)), ES(ElasticSearch), CSV, XLSX, JSON]**, 
+
+and convert to 
+
+**[CSV, XLSX, JSON, TXT, ES]**, 
+
+with asyncio support and share same API.
 
 -------------------
 
