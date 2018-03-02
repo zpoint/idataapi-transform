@@ -1,6 +1,7 @@
 # idataapi-transform
 
-data transform toolkit for [IDataAPI](http://www.idataapi.cn/) for efficiency work
+Toolkit for [IDataAPI](http://www.idataapi.cn/) for efficiency work
+Provide [Command line interface](#command-line-interface-example) and [Python API](#build-complex-routine-easily) to help read data from one of **[API([IDataAPI](http://www.idataapi.cn/)), ES(ElasticSearch), CSV, XLSX, JSON]**, and convert to **[CSV, XLSX, JSON, TXT, ES]**, with asyncio support and share same API.
 
 -------------------
 
@@ -9,7 +10,7 @@ data transform toolkit for [IDataAPI](http://www.idataapi.cn/) for efficiency wo
 * [Requirment](#requirment)
 * [Installation](#installation)
 * [Command line interface Example](#command-line-interface-example)
-* [build complex routine](#build-complex-routine-easily)
+* [Python API to build complex routine](#build-complex-routine-easily)
 * [doc string](#doc-string)
 * [Update](#ipdate)
 * [License](#license)
@@ -17,7 +18,7 @@ data transform toolkit for [IDataAPI](http://www.idataapi.cn/) for efficiency wo
 -------------------
 
 #### Requirment
-* python version >= 3.5
+* python version >= 3.5.2
 
 -------------------
 
