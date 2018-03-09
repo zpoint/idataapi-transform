@@ -222,9 +222,10 @@ concurrent read lots of items from API, to ES
 -------------------
 
 #### Update
-v.1.0.1 && 1.0.2 && 1.0.3
+v.1.0.1 && 1.0.2 && 1.0.3 && 1.0.4
 * fix bug (cli)
 * es_client msearch support
+* fix XLSX reader
 
 v.1.0
 * fix ESWriter log bug

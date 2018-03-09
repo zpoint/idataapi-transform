@@ -11,6 +11,7 @@ class XLSXGetter(BaseGetter):
         if not self.wb.worksheets:
             raise ValueError("Empty file: %s" % (self.config.filename, ))
         self.sheet = self.wb.worksheets[self.config.sheet_index]
+        self.row_iter = self.sheet.rows
         self.headers = self.generate_headers()
 
         self.max_row = self.sheet.max_row
@@ -34,10 +35,12 @@ class XLSXGetter(BaseGetter):
         self.miss_count = 0
         self.total_count = 0
 
+        self.row_iter = self.sheet.rows
+
     def __aiter__(self):
         return self
 
-    def __anext__(self):
+    async def __anext__(self):
         if self.need_clear:
             self.responses.clear()
             self.need_clear = False
@@ -55,7 +58,7 @@ class XLSXGetter(BaseGetter):
 
             self.row_num += 1
             self.total_count += 1
-            row = self.get_row(self.row_num)
+            row = self.get_next_row()
             if self.config.filter:
                 row = self.config.filter(row)
                 if not row:
@@ -78,16 +81,20 @@ class XLSXGetter(BaseGetter):
 
     def generate_headers(self):
         keys = list()
-        for index in range(self.sheet.max_column):
-            cell_index = index + 1
-            keys.append(self.sheet._get_cell(1, cell_index).value)
+        try:
+            row = next(self.row_iter)
+            for each in row:
+                keys.append(each.value)
+        except StopIteration:
+            pass
         return keys
 
-    def get_row(self, row_num):
-        item = dict()
-        for index in range(len(self.headers)):
-            item[self.headers[index]] = self.sheet._get_cell(row_num, index+1).value
-        return item
+    def get_next_row(self):
+        ret_item = dict()
+        r = next(self.row_iter)
+        for key, cell in zip(self.headers, r):
+            ret_item[key] = cell.value
+        return ret_item
 
     def __iter__(self):
         for row_num in range(self.max_row):
@@ -96,7 +103,7 @@ class XLSXGetter(BaseGetter):
 
             row_num += 1
             self.total_count += 1
-            row = self.get_row(row_num)
+            row = self.get_next_row()
             if self.config.filter:
                 row = self.config.filter(row)
                 if not row:
