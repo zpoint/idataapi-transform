@@ -89,8 +89,9 @@ class APIGetter(BaseGetter):
                     text = await resp.text()
                     result = json.loads(text)
                     if "data" not in result:
-                        source_obj = SourceObject(result, self.config.tag, self.config.source)
-                        self.bad_responses.append(source_obj)
+                        if self.retry_count == self.config.max_retry:
+                            source_obj = SourceObject(result, self.config.tag, self.config.source)
+                            self.bad_responses.append(source_obj)
 
             except Exception as e:
                 logging.error("%s: %s" % (str(e), self.base_url))
@@ -132,7 +133,10 @@ class APIGetter(BaseGetter):
             if "pageToken" in result:
                 if not result["pageToken"]:
                     self.done = True
-                    if self.responses:
+                    if self.config.return_fail and (self.responses or self.bad_responses):
+                        self.need_clear = True
+                        return self.responses, self.bad_responses
+                    elif self.responses:
                         self.need_clear = True
                         return self.responses
 
