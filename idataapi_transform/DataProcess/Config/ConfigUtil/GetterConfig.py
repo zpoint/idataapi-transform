@@ -8,7 +8,8 @@ from ..ConnectorConfig import session_manger, main_config
 class RAPIConfig(BaseGetterConfig):
     def __init__(self, source, per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit,
                  max_retry=DefaultVal.max_retry, random_min_sleep=DefaultVal.random_min_sleep,
-                 random_max_sleep=DefaultVal.random_max_sleep, session=None, filter_=None, *args, **kwargs):
+                 random_max_sleep=DefaultVal.random_max_sleep, session=None, filter_=None, return_fail=False,
+                 tag=None, *args, **kwargs):
         """
         will request until no more next_page to get, or get "max_limit" items
 
@@ -20,6 +21,14 @@ class RAPIConfig(BaseGetterConfig):
         :param random_max_sleep: if request fail, random sleep at most random_min_sleep seconds before request again
         :param session: aiohttp session to perform request
         :param filter_: run "transform --help" to see command line interface explanation for detail
+        :param return_fail: if set to True, for each iteration, will return a tuple,
+            api_getter = ProcessFactory.create_getter(RAPIConfig("http://..."))
+            async for items, bad_objects in getter:
+                A = bad_objects[0]
+                A.response: -> json object: '{"appCode": "weixinpro", "dataType": "post", "message": "param error", "retcode": "100005"}', if fail in request, response will be None
+                A.tag: -> tag you pass to RAPIConfig
+                A.source: -> source you pass to RAPIConfig
+
         :param args:
         :param kwargs:
 
@@ -38,6 +47,8 @@ class RAPIConfig(BaseGetterConfig):
         self.random_max_sleep = random_max_sleep
         self.session = session_manger.get_session() if not session else session
         self.filter = filter_
+        self.return_fail = return_fail
+        self.tag = tag
 
 
 class RCSVConfig(BaseGetterConfig):
@@ -192,7 +203,7 @@ class RXLSXConfig(BaseGetterConfig):
 
 class RAPIBulkConfig(BaseGetterConfig):
     def __init__(self, sources, interval=DefaultVal.interval, concurrency=main_config["main"].getint("concurrency"),
-                 filter_=None, **kwargs):
+                 filter_=None, return_fail=False, **kwargs):
         """
         :param sources: an iterable object, each item must be "url" or instance of RAPIConfig
         :param interval: integer or float, each time you call async generator, you will wait for "interval" seconds
@@ -200,6 +211,14 @@ class RAPIBulkConfig(BaseGetterConfig):
         :param concurrency: how many concurrency task run, default read from config file, if concurrency set,
                             only string(url) in "sources" will work with this concurrency level, RAPIConfig instance won't
         :param filter_: run "transform --help" to see command line interface explanation for detail
+        :param return_fail: if set to True, for each iteration, will return a tuple,
+            api_getter = ProcessFactory.create_getter(RAPIBulkConfig([...]))
+            async for items, bad_objects in getter:
+                A = bad_objects[0]
+                A.response: -> json object: '{"appCode": "weixinpro", "dataType": "post", "message": "param error", "retcode": "100005"}', if fail in request, response will be None
+                A.tag: -> tag you pass to RAPIConfig
+                A.source: -> source you pass to RAPIConfig
+
         :param kwargs:
 
         Example:
@@ -216,12 +235,13 @@ class RAPIBulkConfig(BaseGetterConfig):
         self.concurrency = concurrency
         self.session = session_manger._generate_session(concurrency_limit=concurrency)
         self.filter = filter_
+        self.return_fail = return_fail
 
     def to_config(self, item):
         if isinstance(item, RAPIConfig):
             return item
         else:
-            return RAPIConfig(item, session=self.session, filter_=self.filter)
+            return RAPIConfig(item, session=self.session, filter_=self.filter, return_fail=self.return_fail)
 
     def __del__(self):
         self.session.close()

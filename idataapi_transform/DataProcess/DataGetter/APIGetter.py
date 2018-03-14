@@ -11,6 +11,13 @@ headers = {
 }
 
 
+class SourceObject(object):
+    def __init__(self, response, tag, source):
+        self.response = response
+        self.tag = tag
+        self.source = source
+
+
 class APIGetter(BaseGetter):
     def __init__(self, config):
         super().__init__()
@@ -19,6 +26,7 @@ class APIGetter(BaseGetter):
         self.retry_count = 0
         self.curr_size = 0
         self.responses = list()
+        self.bad_responses = list()
         self.done = False
         self.need_clear = False
         self.page_token = ""
@@ -30,6 +38,7 @@ class APIGetter(BaseGetter):
         self.retry_count = 0
         self.curr_size = 0
         self.responses = list()
+        self.bad_responses = list()
         self.done = False
         self.need_clear = False
         self.page_token = ""
@@ -61,8 +70,11 @@ class APIGetter(BaseGetter):
         return self
 
     async def __anext__(self):
-        if self.need_clear and self.responses:
-            self.responses.clear()
+        if self.need_clear:
+            if self.responses:
+                self.responses.clear()
+            if self.bad_responses:
+                self.bad_responses.clear()
             self.need_clear = False
 
         if self.done:
@@ -76,6 +88,10 @@ class APIGetter(BaseGetter):
                 async with self.config.session.get(self.base_url, headers=headers) as resp:
                     text = await resp.text()
                     result = json.loads(text)
+                    if "data" not in result:
+                        source_obj = SourceObject(result, self.config.tag, self.config.source)
+                        self.bad_responses.append(source_obj)
+
             except Exception as e:
                 logging.error("%s: %s" % (str(e), self.base_url))
                 await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
@@ -87,7 +103,11 @@ class APIGetter(BaseGetter):
                     logging.error("Give up, Unable to get url: %s, total get %d items, total filtered: %d items" %
                                   (self.base_url, self.total_count, self.miss_count))
                     self.done = True
-                    if self.responses:
+                    if self.config.return_fail:
+                        self.bad_responses.append(SourceObject(None, self.config.tag, self.config.source))
+                        self.need_clear = True
+                        return self.responses, self.bad_responses
+                    elif self.responses:
                         self.need_clear = True
                         return self.responses
                     else:
@@ -121,7 +141,10 @@ class APIGetter(BaseGetter):
 
             elif "retcode" in result and result["retcode"] == "100002":
                 self.done = True
-                if self.responses:
+                if self.config.return_fail and (self.responses or self.bad_responses):
+                    self.need_clear = True
+                    return self.responses, self.bad_responses
+                elif self.responses:
                     self.need_clear = True
                     return self.responses
 
@@ -133,7 +156,10 @@ class APIGetter(BaseGetter):
                     logging.error("Give up, Unable to get url: %s, total get %d items, total filtered: %d items" %
                                   (self.base_url, self.total_count, self.miss_count))
                     self.done = True
-                    if self.responses:
+                    if self.config.return_fail and (self.responses or self.bad_responses):
+                        self.need_clear = True
+                        return self.responses, self.bad_responses
+                    elif self.responses:
                         self.need_clear = True
                         return self.responses
 
@@ -143,10 +169,16 @@ class APIGetter(BaseGetter):
 
             if self.config.max_limit and self.curr_size > self.config.max_limit:
                 self.done = self.need_clear = True
-                return self.responses
+                if self.config.return_fail:
+                    return self.responses, self.bad_responses
+                else:
+                    return self.responses
             elif len(self.responses) >= self.config.per_limit:
                 self.need_clear = True
-                return self.responses
+                if self.config.return_fail:
+                    return self.responses, self.bad_responses
+                else:
+                    return self.responses
             elif self.done:
                 # buffer has empty data, and done fetching
                 return await self.__anext__()
@@ -163,6 +195,7 @@ class APIBulkGetter(BaseGetter):
 
         self.pending_tasks = list()
         self.buffers = list()
+        self.bad_buffers = list()
         self.success_task = 0
         self.curr_size = 0
         self.need_clear = False
@@ -173,8 +206,14 @@ class APIBulkGetter(BaseGetter):
             yield i
 
     async def fetch_items(self, api_config):
-        async for items in APIGetter(api_config):
-            self.buffers.extend(items)
+        if api_config.return_fail:
+            async for items, bad_items in APIGetter(api_config):
+                if self.config.return_fail:
+                    self.bad_buffers.extend(bad_items)
+                self.buffers.extend(items)
+        else:
+            async for items in APIGetter(api_config):
+                self.buffers.extend(items)
 
     def fill_tasks(self):
         if len(self.pending_tasks) >= self.config.concurrency:
@@ -190,14 +229,22 @@ class APIBulkGetter(BaseGetter):
 
     async def __anext__(self):
         if self.need_clear:
-            self.buffers.clear()
+            if self.buffers:
+                self.buffers.clear()
+            if self.bad_buffers:
+                self.bad_buffers.clear()
 
         self.fill_tasks()
         while self.pending_tasks:
             done, pending = await asyncio.wait(self.pending_tasks, timeout=self.config.interval)
             self.pending_tasks = list(pending)
             self.success_task += len(done)
-            if self.buffers:
+            if self.config.return_fail:
+                if self.buffers or self.bad_buffers:
+                    self.need_clear = True
+                    self.curr_size += len(self.buffers)
+                    return self.buffers, self.bad_buffers
+            elif self.buffers:
                 self.need_clear = True
                 self.curr_size += len(self.buffers)
                 return self.buffers
