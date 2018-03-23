@@ -1,5 +1,6 @@
 import aiohttp
 import asyncio
+import inspect
 from .MainConfig import main_config
 
 main_config = main_config()
@@ -31,7 +32,11 @@ class _SessionManger(object):
         return self.session
 
     def __del__(self):
-        self.session.close()
+        if inspect.iscoroutinefunction(self.session.close):
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(self.session.close())
+        else:
+            self.session.close()
 
 
 session_manger = _SessionManger()

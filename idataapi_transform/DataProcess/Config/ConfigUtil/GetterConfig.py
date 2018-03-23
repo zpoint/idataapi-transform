@@ -1,3 +1,5 @@
+import asyncio
+import inspect
 from .BaseConfig import BaseGetterConfig
 
 from ..ESConfig import get_es_client
@@ -244,4 +246,7 @@ class RAPIBulkConfig(BaseGetterConfig):
             return RAPIConfig(item, session=self.session, filter_=self.filter, return_fail=self.return_fail)
 
     def __del__(self):
-        self.session.close()
+        if inspect.iscoroutinefunction(self.session.close):
+            asyncio.ensure_future(self.session.close())
+        else:
+            self.session.close()
