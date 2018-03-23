@@ -222,11 +222,12 @@ concurrent read lots of items from API, to ES
 -------------------
 
 #### Update
-v.1.0.1 && 1.0.2 && 1.0.3 && 1.0.4 && 1.0.5
+v.1.0.1 && 1.0.2 && 1.0.3 && 1.0.4 && 1.0.5 && 1.0.6
 * fix bug (cli)
 * es_client msearch support
 * fix XLSX reader
 * return_fail for APIGetter
+* compatible for aiohttp 3.x
 
 v.1.0
 * fix ESWriter log bug
