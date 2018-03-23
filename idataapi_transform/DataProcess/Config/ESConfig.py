@@ -18,6 +18,12 @@ from elasticsearch_async import AsyncElasticsearch
 
 es_hosts = None
 
+if hasattr(aiohttp, "Timeout"):
+    async_timeout_func = aiohttp.Timeout
+else:
+    import async_timeout
+    async_timeout_func = async_timeout.timeout
+
 
 def init_es(hosts, es_headers, timeout_):
     global es_hosts, AsyncElasticsearch, AsyncTransport
@@ -122,7 +128,7 @@ def init_es(hosts, es_headers, timeout_):
                 local_headers = copy.deepcopy(es_headers) if es_headers else dict()
                 local_headers.update(headers)
             try:
-                with aiohttp.Timeout(timeout or timeout_ or self.timeout):
+                with async_timeout_func(timeout or timeout_ or self.timeout):
                     response = yield from self.session.request(method, url, data=body, headers=local_headers)
                     raw_data = yield from response.text()
                 duration = self.loop.time() - start
