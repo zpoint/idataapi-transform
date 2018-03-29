@@ -45,6 +45,12 @@ with asyncio support and share same API.
 * Read data from **[API, ES, CSV, XLSX, JSON]**
 * Write data to **[CSV, XLSX, JSON, TXT, ES]**
 
+##### read data from Elasticsearch, convert to CSV
+
+will read at most **500** items from given **index**: **knowledge20170517**, **doc_type**: **question**, and write to ./result.csv
+
+	transform ES csv "knowledge20170517:question" --max_limit=500
+
 ##### read data from API, convert to XLSX
 
 will read all items from given api url, until no more next page, and save to dest(/Users/zpoint/Desktop/result.xlsx), **dest is optional, default is ./result.xlsx**
