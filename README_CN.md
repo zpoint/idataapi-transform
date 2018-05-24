@@ -1,7 +1,8 @@
 # idataapi-transform
 
 [IDataAPI](http://www.idataapi.cn/)转换工具
-[English](https://github.com/zpoint/idataapi-transform/blob/master/README.md)
+
+* [English](https://github.com/zpoint/idataapi-transform/blob/master/README.md)
 
 提供
 
@@ -10,7 +11,7 @@
 
 可以从以下任意一种格式
 
- * **API(http链接)**
+ * **API(http)**
  * **ES(ElasticSearch)**
  * **CSV**
  * **XLSX**
