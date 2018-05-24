@@ -1,7 +1,8 @@
 # idataapi-transform
 
 Toolkit for [IDataAPI](http://www.idataapi.cn/) for efficiency work
-[中文文档](https://github.com/zpoint/idataapi-transform/blob/master/README_CN.md)
+
+* [中文文档](https://github.com/zpoint/idataapi-transform/blob/master/README_CN.md)
 
 Provide
 
@@ -10,7 +11,7 @@ Provide
 
 You can read data from one of
 
- * **API(http链接)**
+ * **API(http)**
  * **ES(ElasticSearch)**
  * **CSV**
  * **XLSX**
