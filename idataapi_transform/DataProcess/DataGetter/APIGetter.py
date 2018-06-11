@@ -143,7 +143,7 @@ class APIGetter(BaseGetter):
                 self.page_token = str(result["pageToken"])
                 self.update_base_url()
 
-            elif "retcode" in result and result["retcode"] == "100002":
+            elif "retcode" in result and result["retcode"] in ("100002", "100301", "100103"):
                 self.done = True
                 if self.config.return_fail and (self.responses or self.bad_responses):
                     self.need_clear = True

@@ -226,6 +226,7 @@ concurrent read lots of items from API, to ES
         loop.run_until_complete(example())
 
 
+
 -------------------
 
 #### doc string
@@ -261,7 +262,8 @@ concurrent read lots of items from API, to ES
 -------------------
 
 #### Update
-v.1.0.1 - 1.0.8
+v.1.0.1 - 1.0.9
+* unclose session error for elasticsearch
 * fix ES infinity scroll
 * fix bug (cli)
 * es_client msearch support

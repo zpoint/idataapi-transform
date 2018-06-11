@@ -5,6 +5,7 @@ import json
 import time
 import logging
 import copy
+import inspect
 from elasticsearch_async.connection import AIOHttpConnection as OriginAIOHttpConnection
 from elasticsearch_async.transport import AsyncTransport as OriginAsyncTransport
 from elasticsearch_async.transport import ensure_future
@@ -12,6 +13,8 @@ from elasticsearch import TransportError
 from aiohttp.client_exceptions import ServerFingerprintMismatch
 from elasticsearch.exceptions import ConnectionError, ConnectionTimeout, SSLError
 from elasticsearch.compat import urlencode
+from elasticsearch.connection_pool import ConnectionPool, DummyConnectionPool
+
 
 from elasticsearch_async import AsyncTransport
 from elasticsearch_async import AsyncElasticsearch
@@ -218,3 +221,19 @@ def init_es(hosts, es_headers, timeout_):
 
 def get_es_client():
     return AsyncElasticsearch(hosts=es_hosts)
+
+
+"""
+below add in version 1.0.9, compatible for "close()" ===> future object
+"""
+
+
+def close(self):
+    try:
+        asyncio.ensure_future(self.connection.close())
+    except TypeError:
+        pass
+
+
+ConnectionPool.close = close
+DummyConnectionPool.close = close

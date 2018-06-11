@@ -322,7 +322,7 @@ CSV to xlsx
         loop.run_until_complete(example())
 
 
-其他的文件均提供了相同的Pattern, 相同的参数，直接使用便可
+其他的文件格式均提供了相同的Pattern, 相同的参数，直接使用便可
 
 -------------------
 
@@ -359,7 +359,8 @@ CSV to xlsx
 -------------------
 
 #### 升级
-v.1.0.1 - 1.0.8
+v.1.0.1 - 1.0.9
+* unclose session error for elasticsearch
 * fix ES infinity scroll
 * fix bug (cli)
 * es_client msearch support
