@@ -118,6 +118,25 @@ JSON 为一行一条数据的 JSON 文件
 
 #### Python模块支持
 
+从ES读取数据
+
+    import asyncio
+    from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
+    from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RESConfig
+
+	async def example():
+    	# max_limit 表示最多读取多少条数据，不提供表示读取全部
+        # 若要提供过滤条件，请提供 query_body 参数
+        es_config = RESConfig("post20170630", "news", max_limit=1000)
+        es_getter = ProcessFactory.create_getter(es_config)
+        async for items in es_getter:
+            # do whatever you want with items
+            csv_writer.write(items)
+
+	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
 ES to csv
 
     import asyncio
@@ -246,7 +265,8 @@ CSV to xlsx
 -------------------
 
 #### 升级
-v.1.0.1 && 1.0.2 && 1.0.3 && 1.0.4 && 1.0.5 && 1.0.6
+v.1.0.1 - 1.0.8
+* fix ES infinity scroll
 * fix bug (cli)
 * es_client msearch support
 * fix XLSX reader
