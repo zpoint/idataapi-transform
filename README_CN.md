@@ -247,6 +247,12 @@ CSV to xlsx
         r = await writer.delete_all(body=body)
         print(json.dumps(r))
 
+	async def example_no_body():
+        # 和上面的一样基于 delete_by_query，但是不提供body, 全部删除
+        writer = ProcessFactory.create_writer(WESConfig("post20170630", "news"))
+        r = await writer.delete_all()
+        print(json.dumps(r))
+
 	if __name__ == "__main__":
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
