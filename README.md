@@ -127,8 +127,7 @@ Read data from ES
         es_config = RESConfig("post20170630", "news", max_limit=1000)
         es_getter = ProcessFactory.create_getter(es_config)
         async for items in es_getter:
-            # do whatever you want with items
-            csv_writer.write(items)
+            print(items)
 
 	if __name__ == "__main__":
         loop = asyncio.get_event_loop()

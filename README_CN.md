@@ -118,24 +118,6 @@ JSON 为一行一条数据的 JSON 文件
 
 #### Python模块支持
 
-从ES读取数据
-
-    import asyncio
-    from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
-    from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RESConfig
-
-	async def example():
-    	# max_limit 表示最多读取多少条数据，不提供表示读取全部
-        # 若要提供过滤条件，请提供 query_body 参数
-        es_config = RESConfig("post20170630", "news", max_limit=1000)
-        es_getter = ProcessFactory.create_getter(es_config)
-        async for items in es_getter:
-            # do whatever you want with items
-            csv_writer.write(items)
-
-	if __name__ == "__main__":
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(example())
 
 ES to csv
 
@@ -229,6 +211,112 @@ CSV to xlsx
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
 
+
+#### ES 基本操作
+
+从ES读取数据
+
+    import asyncio
+    from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
+    from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RESConfig
+
+	async def example():
+        # max_limit 表示最多读取多少条数据，不提供表示读取全部
+        # 若要提供过滤条件，请提供 query_body 参数
+        es_config = RESConfig("post20170630", "news", max_limit=1000)
+        es_getter = ProcessFactory.create_getter(es_config)
+        async for items in es_getter:
+            print(items)
+
+	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+
+删除ES中的数据
+
+    import asyncio
+    import json
+    from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
+    from idataapi_transform.DataProcess.Config.ConfigUtil.WriterConfig import WESConfig
+
+	async def example():
+        # 这个是封装了 delete_by_query 的API
+        body = {"size": 100,  "query": {"bool": {"must": [{"term": {"createDate": "1516111225"}}]}}}
+        writer = ProcessFactory.create_writer(WESConfig("post20170630", "news"))
+        r = await writer.delete_all(body=body)
+        print(json.dumps(r))
+
+	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+写数据进入ES
+
+    import time
+    import asyncio
+    from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
+    from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RAPIBulkConfig
+    from idataapi_transform.DataProcess.Config.ConfigUtil.WriterConfig import WESConfig
+
+    """
+    写入ES的数据都要产生一个 ES_ID
+    本工具按照以下两个规则生成 ES_ID
+    1) 当 appCode 和 id 字段同时存在这个 item 里面时，ES_ID 为 md5(appCode_id)
+    2) 以上条件不满足，并且用户创建 WESConfig 时提供了 id_hash_func 参数时，ES_ID 为 id_hash_func(item)
+    3) 以上条件均不满足时, ES_ID 为 md5(str(item))
+    """
+
+    # 全局变量，一会用
+    now_ts = int(time.time())
+
+	def add_app_code(item):
+        # 我是一个过滤器
+        # 每一个 ProcessFactory.create 产生的 getter 或者 writer 都可以配置一个过滤器
+        # 每一条数据在返回之前会经过这个过滤器，过滤器可以修改这条item, 也可以选择放弃返回这条item
+        # 这里的过滤器充当给每条 item 插入 appCode 的作用
+    	item["appCode"] = "ifeng"
+        # 如果 retuen None 或者不 return 任何东西，则表示过滤这一条数据
+        return item
+
+    async def example():
+        # urls 可以是任何可迭代对象, 列表，迭代器等, urls 里面的元素可以是一条 url, 也可以使配置好的 RAPIConfig 对象
+        urls = ["http://xxxx", "http://xxxx", "http://xxxx", RAPIConfig("http://xxxx", max_limit=10)]
+        # 安装过滤器，为每一条数据增加 appCode 从而可以以条件 1) 的方式生成 ES_ID
+        api_bulk_config = RAPIBulkConfig(urls, concurrency=100, filter_=add_app_code)
+        api_bulk_getter = ProcessFactory.create_getter(api_bulk_config)
+        # 也可以在这里安装过滤器
+        # 为所有通过这个 es_writer 写入的数据创建同样的 createDate
+        # 当然，你也可以忽略这个参数，此时 es_writer 会自动为每一条数据创建一个 createDate 并指定为当前系统时间
+        es_config = WESConfig("profile201712", "user", createDate=now_ts)
+        with ProcessFactory.create_writer(es_config) as es_writer:
+            async for items in api_bulk_getter:
+                # do whatever you want with items
+                await es_writer.write(items)
+
+	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+
+获得ES Client
+
+    import asyncio
+    import json
+    from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
+    from idataapi_transform.DataProcess.Config.ConfigUtil.WriterConfig import WESConfig
+
+	async def example():
+        writer = ProcessFactory.create_writer(WESConfig("post20170630", "news"))
+        client = writer.config.es_client
+        # 一个基于 elasticsearch-async 的 client, 你可以看官方文档使用
+
+	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+
+其他的文件均提供了相同的Pattern, 相同的参数，直接使用便可
 
 -------------------
 
