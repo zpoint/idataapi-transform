@@ -279,9 +279,9 @@ CSV to xlsx
 	def add_app_code(item):
         # 我是一个过滤器
         # 每一个 ProcessFactory.create 产生的 getter 或者 writer 都可以配置一个过滤器
-        # 每一条数据在返回之前会经过这个过滤器，过滤器可以修改这条item, 也可以选择放弃返回这条item
+        # 每一条数据在返回之前会经过这个过滤器，过滤器可以修改这条item, 也可以选择过滤这条item
         # 这里的过滤器充当给每条 item 插入 appCode 的作用
-    	item["appCode"] = "ifeng"
+        item["appCode"] = "ifeng"
         # 如果 retuen None 或者不 return 任何东西，则表示过滤这一条数据
         return item
 
