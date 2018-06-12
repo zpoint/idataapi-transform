@@ -83,9 +83,10 @@ class ESScrollGetter(BaseGetter):
                 results = [i for i in results if i]
                 self.miss_count += origin_length - len(results)
             if origin_length > 0:
-                # if scroll empty item, means no more next page
-                logging.info("scroll id: %s, empty result, terminating scroll" % (self.result["_scroll_id"], ))
                 return results
+            else:
+                # if scroll empty item, means no more next page
+                logging.info("empty result, terminating scroll, scroll id: %s" % (self.result["_scroll_id"], ))
 
         logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                      (self.config.indices + "->" + self.config.doc_type, self.total_count, self.miss_count))
