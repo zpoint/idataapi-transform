@@ -359,7 +359,7 @@ CSV to xlsx
 -------------------
 
 #### 升级
-v.1.0.1 - 1.1.0
+v.1.0.1 - 1.1.1
 * fix es getter log error
 * unclose session error for elasticsearch
 * fix ES infinity scroll

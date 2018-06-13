@@ -235,5 +235,13 @@ def close(self):
         pass
 
 
-ConnectionPool.close = close
+def connection_pool_close(self):
+    for conn in self.orig_connections:
+        try:
+            asyncio.ensure_future(conn.close())
+        except TypeError:
+            pass
+
+
+ConnectionPool.close = connection_pool_close
 DummyConnectionPool.close = close
