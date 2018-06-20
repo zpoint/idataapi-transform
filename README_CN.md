@@ -232,6 +232,23 @@ CSV to xlsx
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
 
+写数据进ES
+
+    import asyncio
+    from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
+    from idataapi_transform.DataProcess.Config.ConfigUtil.WriterConfig import WESConfig
+
+	async def example():
+        json_lists = [#一堆json object]
+        # 若要提供过滤条件，请提供 query_body 参数
+        es_config = WESConfig("post20170630", "news")
+        es_writer = ProcessFactory.create_getter(es_config)
+        await es_writer.write(json_lists)
+
+	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
 
 删除ES中的数据
 
@@ -257,7 +274,7 @@ CSV to xlsx
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
 
-写数据进入ES
+从API读取并写数据进入ES
 
     import time
     import asyncio
