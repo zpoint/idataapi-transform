@@ -240,7 +240,6 @@ CSV to xlsx
 
 	async def example():
         json_lists = [#一堆json object]
-        # 若要提供过滤条件，请提供 query_body 参数
         es_config = WESConfig("post20170630", "news")
         es_writer = ProcessFactory.create_getter(es_config)
         await es_writer.write(json_lists)
