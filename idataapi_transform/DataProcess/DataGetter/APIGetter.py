@@ -12,10 +12,18 @@ headers = {
 
 
 class SourceObject(object):
-    def __init__(self, response, tag, source):
+    def __init__(self, response, tag, source, error_url):
+        """
+        When error occur
+        :param response: error response body
+        :param tag: tag user pass in
+        :param source: source url user pass in
+        :param error_url: current url elicit error
+        """
         self.response = response
         self.tag = tag
         self.source = source
+        self.error_url = error_url
 
 
 class APIGetter(BaseGetter):
@@ -90,7 +98,7 @@ class APIGetter(BaseGetter):
                     result = json.loads(text)
                     if "data" not in result:
                         if self.retry_count == self.config.max_retry:
-                            source_obj = SourceObject(result, self.config.tag, self.config.source)
+                            source_obj = SourceObject(result, self.config.tag, self.config.source, self.base_url)
                             self.bad_responses.append(source_obj)
 
             except Exception as e:
@@ -105,7 +113,7 @@ class APIGetter(BaseGetter):
                                   (self.base_url, self.total_count, self.miss_count))
                     self.done = True
                     if self.config.return_fail:
-                        self.bad_responses.append(SourceObject(None, self.config.tag, self.config.source))
+                        self.bad_responses.append(SourceObject(None, self.config.tag, self.config.source, self.base_url))
                         self.need_clear = True
                         return self.responses, self.bad_responses
                     elif self.responses:
