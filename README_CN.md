@@ -1,6 +1,6 @@
 # idataapi-transform
 
-[IDataAPI](http://www.idataapi.cn/)转换工具
+[IDataAPI](http://www.idataapi.cn/) 转换工具
 
 * [English](https://github.com/zpoint/idataapi-transform/blob/master/README.md)
 
@@ -212,7 +212,7 @@ API to xlsx
 	from idataapi_transform import ProcessFactory, GetterConfig
 
 	async def example_simple():
-    	# 如果 return_fail 设置为 true, 当在重试次数过后还是无法获得数据，
+        # 如果 return_fail 设置为 true, 当在重试次数过后还是无法获得数据，
         # 则错误信息会返回在 bad_items 中
     	url = "xxx"
     	config = GetterConfig.RAPIConfig(url, return_fail=True)
