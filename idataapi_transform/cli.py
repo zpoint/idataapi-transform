@@ -67,6 +67,7 @@ class Args(object):
     """
 
     write_mode_desc = """'w' or 'a+'"""
+    key_type_desc = """redis data type to operate, options: [LIST] or [HASH], default: [LIST]"""
 
 
 getter_config_map = {
@@ -109,6 +110,7 @@ def get_arg():
     parser.add_argument("--qsn", default=None, type=bool, help=Args.qsn_desc)
     parser.add_argument("--query_body", default=DefaultVal.query_body, type=str, help=Args.query_body_desc)
     parser.add_argument("--write_mode", default=DefaultVal.default_file_mode_w, type=str, help=Args.write_mode_desc)
+    parser.add_argument("--key_type", default=DefaultVal.default_key_type, type=str.upper, help=Args.key_type_desc)
     return parser.parse_args()
 
 
@@ -145,6 +147,7 @@ def main():
         from_args.extend([args.source])
 
     from_kwargs["encoding"] = args.r_encoding
+    from_kwargs["key_type"] = args.key_type
     if args.query_body:
         try:
             from_kwargs["query_body"] = json.loads(args.query_body)
@@ -157,6 +160,7 @@ def main():
     to_kwargs["filter_"] = get_filter(args.filter)
     to_kwargs["encoding"] = args.w_encoding
     to_kwargs["mode"] = args.write_mode
+    to_kwargs["key_type"] = args.key_type
     for key in ("max_retry", "expand", "qsn"):
         to_kwargs[key] = getattr(args, key)
 
@@ -165,13 +169,17 @@ def main():
     getter_config = getter_config_map[from_](*from_args, **from_kwargs)
     getter = ProcessFactory.create_getter(getter_config)
 
-    if args.to != Args.to_choices[-1]:
-        dest = args.dest + "." + args.to
-        to_args.append(dest)
-    else:
+    if args.to == Args.to_choices[-2]:
+        # es
         indices, doc_type = args.dest.split(":")
         to_args.append(indices)
         to_args.append(doc_type)
+    elif args.to == Args.to_choices[-1]:
+        # redis
+        to_args.append(args.dest)
+    else:
+        dest = args.dest + "." + args.to
+        to_args.append(dest)
 
     writer_config = writer_config_map[args.to](*to_args, **to_kwargs)
     writer = ProcessFactory.create_writer(writer_config)

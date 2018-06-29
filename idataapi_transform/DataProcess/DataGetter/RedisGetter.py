@@ -3,15 +3,13 @@ import random
 import logging
 import traceback
 import json
+import zlib
 from .BaseGetter import BaseGetter
-from ..Config.MainConfig import main_config
 
 
 class RedisGetter(BaseGetter):
     def __init__(self, config):
         super().__init__(self)
-        if not main_config.has_es_configured:
-            raise ValueError("You must config redis before using ESGetter, Please edit configure file: %s" % (main_config.ini_path, ))
         self.config = config
         self.is_range = self.config.is_range
         self.need_del = self.config.need_del
@@ -30,6 +28,12 @@ class RedisGetter(BaseGetter):
         self.miss_count = 0
         self.total_count = 0
         self.redis_object_length = 0
+
+    def decode(self, loaded_object):
+        if self.config.compress:
+            return zlib.decompress(loaded_object).decode(self.config.encoding)
+        else:
+            return json.loads(loaded_object)
 
     def __aiter__(self):
         return self
@@ -62,7 +66,7 @@ class RedisGetter(BaseGetter):
 
             try:
                 self.responses = await self.config.redis_read_method(self.config.key, left, right)
-                self.responses = [json.loads(i) for i in self.responses]
+                self.responses = [self.decode(i) for i in self.responses]
             except Exception as e:
                 if retry < self.config.max_retry:
                     await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
@@ -73,15 +77,15 @@ class RedisGetter(BaseGetter):
                     raise StopAsyncIteration
 
             self.need_clear = True
-            if len(self.responses) < self.config.per_limit or not self.responses:
+            if len(self.responses) < self.config.per_limit or not self.responses or self.total_count + len(self.responses) >= self.total_size:
                 self.done = True
-            if self.need_del:
-                await self.config.redis_del_method(self.config.key, self.total_count + self.config.per_limit, -1)
+                if self.need_del:
+                    await self.config.redis_del_method(self.config.key, 0, -1)
         else:
 
             try:
                 self.responses = await self.config.redis_read_method(self.config.key)
-                self.responses = [json.loads(i) for i in self.responses.values()]
+                self.responses = [self.decode(i) for i in self.responses.values()][:self.total_size]
             except Exception as e:
                 if retry < self.config.max_retry:
                     await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))

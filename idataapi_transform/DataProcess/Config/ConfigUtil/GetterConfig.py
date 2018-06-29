@@ -263,7 +263,8 @@ class RRedisConfig(BaseGetterConfig):
                  port=main_config["redis"].getint("port"), db=main_config["redis"].getint("db"),
                  password=main_config["redis"].get("password"), timeout=main_config["redis"].getint("timeout"),
                  encoding=main_config["redis"].get("encoding"), need_del=main_config["redis"].getboolean("need_del"),
-                 direction=main_config["redis"].get("direction"), **kwargs):
+                 direction=main_config["redis"].get("direction"), compress=main_config["redis"].getboolean("compress"),
+                 **kwargs):
         """
         :param key: redis key to get data
         :param key_type: redis data type to operate, current only support LIST, HASH
@@ -280,6 +281,7 @@ class RRedisConfig(BaseGetterConfig):
         :param timeout: timeout per redis connection -> float
         :param encoding: redis object encoding -> str
         :param direction: "L" or "R", left to right or roght to left
+        :param compress: whether compress data use zlib before write to redis -> boolean
         :param kwargs:
 
         Example:
@@ -322,6 +324,7 @@ class RRedisConfig(BaseGetterConfig):
 
         self.redis_read_method = self.redis_len_method = self.redis_del_method = None
         self.direction = direction
+        self.compress = compress
 
         if key_type == "LIST":
             self.is_range = True
@@ -330,9 +333,17 @@ class RRedisConfig(BaseGetterConfig):
 
     async def get_redis_pool_cli(self):
         if self.redis_pool_cli is None:
-            self.redis_pool_cli = await aioredis.create_redis_pool((self.host, self.port), db=self.db,
-                                                                   password=self.password, encoding=self.encoding,
-                                                                   timeout=self.timeout, minsize=1, maxsize=3)
+            kwargs = {
+                "db": self.db,
+                "password": self.password,
+                "encoding": self.encoding,
+                "timeout": self.timeout,
+                "minsize": 1,
+                "maxsize": 3
+            }
+            if self.compress:
+                del kwargs["encoding"]
+            self.redis_pool_cli = await aioredis.create_redis_pool((self.host, self.port), **kwargs)
             if self.key_type == "LIST":
                 self.redis_read_method = self.redis_pool_cli.lrange
                 self.redis_len_method = self.redis_pool_cli.llen

@@ -28,3 +28,4 @@ class DefaultVal(object):
     dest = os.getcwd() + "/result"
     interval = 5
     concurrency = 50
+    default_key_type = "LIST"

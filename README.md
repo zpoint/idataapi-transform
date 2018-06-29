@@ -16,6 +16,7 @@ You can read data from one of
  * **CSV**
  * **XLSX**
  * **JSON**
+ * **Redis**
 
 and convert to
 
@@ -23,10 +24,14 @@ and convert to
  * **XLSX**
  * **JSON**
  * **TXT**
- * **ES**
+ * **Redis**
 
-with asyncio support and share same API.
-
+* with asyncio support and share same API
+* Baesd on Template Method and Factory Method
+* Every failure network read operation will log to error log before retry 3(default) times
+* Every failure network write operation will log to error log before retry 3(default) times
+* Command line support all format list above for simple usage, python module provide more features
+* Every Getter and Writer support filter, you can alter or drop your data in filter
 -------------------
 
 ### catalog
@@ -34,7 +39,7 @@ with asyncio support and share same API.
 * [Requirment](#requirment)
 * [Installation](#installation)
 * [Command line interface Example](#command-line-interface-example)
-* [Python API to build complex routine](#build-complex-routine-easily)
+* [Python module support](#python-module-support)
 * [doc string](#doc-string)
 * [Update](#ipdate)
 * [License](#license)
@@ -51,14 +56,14 @@ with asyncio support and share same API.
 	python3 -m pip install idataapi-transform
     # shell, run
     transform --help # explanation of each parameter and create configure file
-    # edit ~/idataapi-transform.ini to config elasticsearch hosts and etc...
+    # edit ~/idataapi-transform.ini to config elasticsearch hosts, redis, etc...
 
 -------------------
 
 #### Command line interface Example
 
-* Read data from **[API, ES, CSV, XLSX, JSON]**
-* Write data to **[CSV, XLSX, JSON, TXT, ES]**
+* Read data from **[API, ES, CSV, XLSX, JSON, Redis]**
+* Write data to **[CSV, XLSX, JSON, TXT, ES, Redis]**
 
 ##### read data from Elasticsearch, convert to CSV
 
@@ -111,20 +116,34 @@ will read items from csv file, and save to **./result.xlsx**
 
     	transform ES csv "knowledge20170517:question" --w_encoding gbk --query_body '{"size": 100, "_source": {"includes": ["location", "title", "city", "id"]}}' --filter ./my_filter.py
 
+##### Read data from API, write to Redis
+
+* redis key name: my_key
+* redis store/read support LIST and HASH, default value is LIST, you can change it with  --key_type parameter
+
+will read data from ./a.csv, and save to redis LIST data structure, KEY: my_key
+
+	transform API redis "http://xxx/post/dengta?kw=中国石化&apikey=xxx" my_key
+
+##### Read data from Redis, write to csv
+
+will read data from redis key **my_key**, read at most 100 data， and save to **./result.csv**
+
+	transform Redis csv my_key --max_limit 100
+
 -------------------
 
-#### build complex routine easily
+#### Python module support
 
 Read data from ES
 
     import asyncio
-    from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
-    from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RESConfig
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
 
 	async def example():
     	# max_limit 表示最多读取多少条数据，不提供表示读取全部
         # 若要提供过滤条件，请提供 query_body 参数
-        es_config = RESConfig("post20170630", "news", max_limit=1000)
+        es_config = GetterConfig.RESConfig("post20170630", "news", max_limit=1000)
         es_getter = ProcessFactory.create_getter(es_config)
         async for items in es_getter:
             print(items)
@@ -136,9 +155,7 @@ Read data from ES
 ES to csv
 
     import asyncio
-    from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
-    from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RESConfig
-    from idataapi_transform.DataProcess.Config.ConfigUtil.WriterConfig import WCSVConfig
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
 
 	async def example():
         body = {
@@ -147,9 +164,9 @@ ES to csv
                 "includes": ["likeCount", "id", "title"]
                 }
         }
-        es_config = RESConfig("post20170630", "news", max_limit=1000, query_body=body)
+        es_config = GetterConfig.RESConfig("post20170630", "news", max_limit=1000, query_body=body)
         es_getter = ProcessFactory.create_getter(es_config)
-        csv_config = WCSVConfig("./result.csv")
+        csv_config = WriterConfig.WCSVConfig("./result.csv")
         with ProcessFactory.create_writer(csv_config) as csv_writer:
             async for items in es_getter:
                 # do whatever you want with items
@@ -163,14 +180,12 @@ ES to csv
 API to xlsx
 
     import asyncio
-    from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
-    from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RAPIConfig
-    from idataapi_transform.DataProcess.Config.ConfigUtil.WriterConfig import WXLSXConfig
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
 
 	async def example():
-        api_config = RAPIConfig("http://xxxx")
+        api_config = GetterConfig.RAPIConfig("http://xxxx")
         getter = ProcessFactory.create_getter(api_config)
-        xlsx_config = WXLSXConfig("./result.xlsx")
+        xlsx_config = WriterConfig.WXLSXConfig("./result.xlsx")
         with ProcessFactory.create_writer(xlsx_config) as xlsx_writer:
         	async for items in getter:
                 # do whatever you want with items
@@ -183,15 +198,30 @@ API to xlsx
 CSV to xlsx
 
     import asyncio
-    from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
-    from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RCSVConfig
-    from idataapi_transform.DataProcess.Config.ConfigUtil.WriterConfig import WXLSXConfig
-
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
 
     async def example():
-        csv_config = RCSVConfig("./result.csv")
+        csv_config = GetterConfig.RCSVConfig("./result.csv")
         getter = ProcessFactory.create_getter(csv_config)
-        xlsx_config = WXLSXConfig("./result.xlsx")
+        xlsx_config = WriterConfig.WXLSXConfig("./result.xlsx")
+        with ProcessFactory.create_writer(xlsx_config) as xlsx_writer:
+            for items in getter:
+                # do whatever you want with items
+                xlsx_writer.write(items)
+
+    if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+API to redis
+
+    import asyncio
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
+
+    async def example():
+        csv_config = GetterConfig.RCSVConfig("./result.csv")
+        getter = ProcessFactory.create_getter(csv_config)
+        xlsx_config = WriterConfig.WXLSXConfig("./result.xlsx")
         with ProcessFactory.create_writer(xlsx_config) as xlsx_writer:
             for items in getter:
                 # do whatever you want with items
@@ -202,24 +232,209 @@ CSV to xlsx
         loop.run_until_complete(example())
 
 
+
 concurrent read lots of items from API, to ES
 
     import asyncio
-    from idataapi_transform.DataProcess.ProcessFactory import ProcessFactory
-    from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RAPIBulkConfig
-    from idataapi_transform.DataProcess.Config.ConfigUtil.WriterConfig import WESConfig
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
 
 
     async def example():
         # urls can be any iterable object, each item can be api url or RAPIConfig
-        urls = ["http://xxxx", "http://xxxx", "http://xxxx", ...]
-        api_bulk_config = RAPIBulkConfig(urls, concurrency=100)
+        # RAPIBulkConfig accept a parameter: interval，means interval between each async generator return
+        # if you set interval to 2 seconds，the async for will wait for 2 seconds before return，every data you get between these 2 seconds will be returned
+
+        urls = ["http://xxxx", "http://xxxx", GetterConfig.RAPIConfig("http://xxxx"), ...]
+        api_bulk_config = GetterConfig.RAPIBulkConfig(urls, concurrency=100)
         api_bulk_getter = ProcessFactory.create_getter(api_bulk_config)
-        es_config = WESConfig("profile201712", "user")
+        es_config = WriterConfig.WESConfig("profile201712", "user")
         with ProcessFactory.create_writer(es_config) as es_writer:
             async for items in api_bulk_getter:
                 # do whatever you want with items
                 await es_writer.write(items)
+
+	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+Extract error info when error occur in APIGetter
+
+    import asyncio
+	from idataapi_transform import ProcessFactory, GetterConfig
+
+	async def example_simple():
+    	# if return_fail set to true, after retry 3(default) times,
+        # still unable to get data error info will be returned in "bad_items"
+    	url = "xxx"
+    	config = GetterConfig.RAPIConfig(url, return_fail=True)
+        reader = ProcessFactory.create_getter(config)
+        async for good_items, bad_items in reader:
+        	print(good_items)
+            if len(bad_items) > 0:
+            	err_obj = bad_items[0]
+                print(err_obj.response) # http body, if network down，it will be None
+                print(err_obj.tag) # tag you pass to RAPIConfig, default None
+                print(err_obj.source) #  url you pass to RAPIConfig
+                print(err_obj.error_url) # the url that elicit error
+
+    async def example():
+        unfinished_id_set = {'246834800', '376796200', '339808400', ...}
+        config = GetterConfig.RAPIBulkConfig((RAPIConfig(base_url % (i,), return_fail=True, tag=i) for i in unfinished_id_set), return_fail=True, concurrency=100)
+        reader = ProcessFactory.create_getter(config)
+        async for good_items, bad_items in reader:
+            # A: Whrn you set RAPIBulkConfig's return_fail to True,
+            # 1）normal url will retuen error info
+            # 2) RAPIConfig Object with return_fail set to True will retuen error info
+            # 3) RAPIConfig Object with return_fail set to False will not retuen error info
+            # B: Whrn you set RAPIBulkConfig's return_fail to False(default)
+            # None of the previous situitions will return error info, same as the API to ES example above
+        	print(bad_items)
+
+    if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example_simple())
+
+
+REDIS
+
+    import asyncio
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
+
+    async def example_simple():
+    	# default key_type is LIST in redis
+        # you can pass other encoding to specify how to encode before write to redis, default utf8
+    	json_lists = [...]
+        wredis_config = WriterConfig.WRedisConfig("my_key")
+        writer = ProcessFactory.create_writer(wredis_config)
+        await writer.write(json_lists)
+
+    async def example():
+    	# specify redis's key_type to HASH, default is LIST
+        # compress means string object is compressed by zlib before write to redis,
+        # we need to decompress it before turn to json object
+        getter_config = GetterConfig.RRedisConfig("my_key_hash", key_type="HASH", compress=True)
+        async for items in reader:
+            print(items)
+
+
+    if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+
+#### ES Base Operation
+
+Read data from ES
+
+    import asyncio
+	from idataapi_transform import ProcessFactory, GetterConfig
+
+	async def example():
+        # max_limit: means get at most max_limit items, if you don't provide it, means read all items
+        # you can provide your query_body to es_config
+        es_config = GetterConfig.RESConfig("post20170630", "news", max_limit=1000)
+        es_getter = ProcessFactory.create_getter(es_config)
+        async for items in es_getter:
+            print(items)
+
+	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+Write data to ES
+
+    import asyncio
+	from idataapi_transform import ProcessFactory, WriterConfig
+
+	async def example():
+        json_lists = [#lots of json object]
+        es_config = WriterConfig.WESConfig("post20170630", "news")
+        es_writer = ProcessFactory.create_getter(es_config)
+        await es_writer.write(json_lists)
+
+	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+DELETE data from ES
+
+    import asyncio
+    import json
+    from idataapi_transform import ProcessFactory, WriterConfig
+
+	async def example():
+        # wrapper of delete_by_query API
+        body = {"size": 100,  "query": {"bool": {"must": [{"term": {"createDate": "1516111225"}}]}}}
+        writer = ProcessFactory.create_writer(WriterConfig.WESConfig("post20170630", "news"))
+        r = await writer.delete_all(body=body)
+        print(json.dumps(r))
+
+	async def example_no_body():
+        # same as above, without , delete all
+        writer = ProcessFactory.create_writer(WESConfig("post20170630", "news"))
+        r = await writer.delete_all()
+        print(json.dumps(r))
+
+	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+GET data from API, Write to ES
+
+    import time
+    import asyncio
+    from idataapi_transform import ProcessFactory, WriterConfig, GetterConfig
+    """
+    Every es document need an _id
+    There are two rules to generate _id for ES inside this tool
+    1) when the data(dictionary object) has key "id" and key "appCode"，_id will be md5(appCode_id)
+    2) if rule 1 doesn't fail to match，and you privide "id_hash_func" parameter when create WESConfig Object, _id will be id_hash_func(item)
+    3) if rule 1 and rule 2 both fail to match, _id will be md5(str(item))
+    """
+
+    # global variables
+    now_ts = int(time.time())
+
+	def add_app_code(item):
+        # I am a filter
+        # Every getter or writer created by ProcessFactory.create can set up a filter
+        # every data will be pass to filter before return from getter, or before write to writer
+        # you can alter data here, or drop data here
+        # the filter here add "appCode" key to each data
+        item["appCode"] = "ifeng"
+        # if don't return anything(return None) means drop this data
+        return item
+
+    async def example():
+        # urls can be any iterable object, each item can be api url or RAPIConfig
+        urls = ["http://xxxx", "http://xxxx", "http://xxxx", RAPIConfig("http://xxxx", max_limit=10)]
+        # set up filter，add key "appCode" for every data so that it can generate _id by rule 1
+        api_bulk_config = GetterConfig.RAPIBulkConfig(urls, concurrency=100, filter_=add_app_code)
+        api_bulk_getter = ProcessFactory.create_getter(api_bulk_config)
+        # you can also set up filter here
+        # createDate parameter set same "createDate" for every data written by this es_writer
+        # Of course，you can ignore "createDate", es_writer will set every data's "createDate" to the current system's timestamp when it performs write operation
+        es_config = WriterConfig.WESConfig("profile201712", "user", createDate=now_ts)
+        with ProcessFactory.create_writer(es_config) as es_writer:
+            async for items in api_bulk_getter:
+                # do whatever you want with items
+                await es_writer.write(items)
+
+	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+
+Get ES Client
+
+    import asyncio
+    import json
+	from idataapi_transform import ProcessFactory, WriterConfig
+
+	async def example():
+        writer = ProcessFactory.create_writer(WriterConfig.WESConfig("post20170630", "news"))
+        client = writer.config.es_client
+        # a client based on elasticsearch-async, you can read offical document
 
 	if __name__ == "__main__":
         loop = asyncio.get_event_loop()
@@ -231,11 +446,10 @@ concurrent read lots of items from API, to ES
 
 #### doc string
 
-	from idataapi_transform.DataProcess.Config.ConfigUtil.GetterConfig import RAPIConfig, RCSVConfig, RESConfig, RJsonConfig, RXLSXConfig, RAPUBulkConfig
-    from idataapi_transform.DataProcess.Config.ConfigUtil.WriterConfig import WCSVConfig, WESConfig, WJsonConfig, WTXTConfig, WXLSXConfig
+	from idataapi_transform import GetterConfig, WriterConfig
 
     # run help on config to see detail
-    help(RAPIConfig)
+    help(GetterConfig.RAPIConfig)
     """
     ...
     will request until no more next_page to get, or get "max_limit" items
@@ -262,6 +476,10 @@ concurrent read lots of items from API, to ES
 -------------------
 
 #### Update
+v 1.2.0
+* redis support
+* retry 3 times for every write operation
+
 v.1.0.1 - 1.1.1
 * fix es getter log error
 * unclose session error for elasticsearch

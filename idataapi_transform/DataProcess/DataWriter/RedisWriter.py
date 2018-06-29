@@ -3,6 +3,7 @@ import asyncio
 import random
 import traceback
 import json
+import zlib
 from .BaseWriter import BaseWriter
 
 
@@ -12,6 +13,12 @@ class RedisWriter(BaseWriter):
         self.config = config
         self.total_miss_count = 0
         self.success_count = 0
+
+    def encode(self, dict_object):
+        string = json.dumps(dict_object)
+        if self.config.compress:
+            string = zlib.compress(string.encode(self.config.encoding))
+        return string
 
     async def write(self, responses):
         await self.config.get_redis_pool_cli()  # init redis pool
@@ -31,11 +38,11 @@ class RedisWriter(BaseWriter):
             while try_time < self.config.max_retry:
                 try:
                     if self.config.is_range:
-                        await self.config.redis_write_method(self.config.key, *(json.dumps(i) for i in target_responses))
+                        await self.config.redis_write_method(self.config.key, *(self.encode(i) for i in target_responses))
                     else:
                         pipe_line = self.config.redis_pool_cli.pipeline()
                         for each in responses:
-                            pipe_line.hset(self.config.key, each["id"], json.dumps(each))
+                            pipe_line.hset(self.config.key, each["id"], self.encode(each))
                         await pipe_line.execute()
 
                     logging.info("%s write %d item, filtered %d item" % (self.config.name, len(responses), miss_count))
