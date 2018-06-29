@@ -1,4 +1,6 @@
 import logging
+import asyncio
+import random
 from .BaseWriter import BaseWriter
 from ..Config.MainConfig import main_config
 
@@ -15,6 +17,7 @@ class ESWriter(BaseWriter):
         self.fail_count = 0
 
     async def write(self, responses):
+        response = None  # something to return
         origin_length = len(responses)
         if self.config.filter:
             responses = [self.config.filter(i) for i in responses]
@@ -24,24 +27,31 @@ class ESWriter(BaseWriter):
         if responses:
             if self.config.expand:
                 responses = [self.expand_dict(i) for i in responses]
-
-            success, fail, response = await self.config.es_client.add_dict_to_es(
-                self.config.indices, self.config.doc_type, responses,
-                self.config.id_hash_func, self.config.app_code,
-                self.config.actions, self.config.create_date,
-                self.config.error_if_fail, self.config.timeout)
-            if response is not None:
-                self.success_count += success
-                self.fail_count += fail
-                logging.info("Write %d items to index: %s, doc_type: %s, fail: %d, filtered: %d" % (
-                    len(responses), self.config.indices, self.config.doc_type, fail, miss_count))
-            else:
-                # exception happened
-                logging.info("Write 0 items to index: %s, doc_type: %s" % (self.config.indices, self.config.doc_type))
-            return response
+            try_time = 0
+            while try_time < self.config.max_retry:
+                success, fail, response = await self.config.es_client.add_dict_to_es(
+                    self.config.indices, self.config.doc_type, responses,
+                    self.config.id_hash_func, self.config.app_code,
+                    self.config.actions, self.config.create_date,
+                    self.config.error_if_fail, self.config.timeout)
+                if response is not None:
+                    self.success_count += success
+                    self.fail_count += fail
+                    logging.info("Write %d items to index: %s, doc_type: %s, fail: %d, filtered: %d" % (
+                        len(responses), self.config.indices, self.config.doc_type, fail, miss_count))
+                    break
+                else:
+                    # exception happened
+                    try_time += 1
+                    if try_time >= self.config.max_retry:
+                        logging.error("Fail to write after try: %d times, Write 0 items to index: %s, doc_type: %s" %
+                                      (self.config.max_retry, self.config.indices, self.config.doc_type))
+                    else:
+                        await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
         else:
             # all filtered, or pass empty result
-            logging.info("Write 0 items to index: %s, doc_type: %s" % (self.config.indices, self.config.doc_type))
+            logging.info("Write 0 items to index: %s, doc_type: %s (all filtered, or pass empty result)" % (self.config.indices, self.config.doc_type))
+        return response
 
     async def delete_all(self, body=None):
         """

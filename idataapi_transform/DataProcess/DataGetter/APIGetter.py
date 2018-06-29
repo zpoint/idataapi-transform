@@ -3,6 +3,7 @@ import json
 import random
 import logging
 import asyncio
+import traceback
 from .BaseGetter import BaseGetter
 
 headers = {
@@ -97,9 +98,11 @@ class APIGetter(BaseGetter):
                     text = await resp.text()
                     result = json.loads(text)
                     if "data" not in result:
-                        if self.retry_count == self.config.max_retry:
-                            source_obj = SourceObject(result, self.config.tag, self.config.source, self.base_url)
-                            self.bad_responses.append(source_obj)
+                        if "retcode" not in result or result["retcode"] not in ("100002", "100301", "100103"):
+                            logging.error("%s: %s" % (self.base_url, str(result)))
+                            if self.retry_count == self.config.max_retry:
+                                source_obj = SourceObject(result, self.config.tag, self.config.source, self.base_url)
+                                self.bad_responses.append(source_obj)
 
             except Exception as e:
                 logging.error("%s: %s" % (str(e), self.base_url))
@@ -109,8 +112,8 @@ class APIGetter(BaseGetter):
                     continue
                 else:
                     # fail
-                    logging.error("Give up, Unable to get url: %s, total get %d items, total filtered: %d items" %
-                                  (self.base_url, self.total_count, self.miss_count))
+                    logging.error("Give up, Unable to get url: %s, total get %d items, total filtered: %d items, error: %s" %
+                                  (self.base_url, self.total_count, self.miss_count, str(traceback.format_exc())))
                     self.done = True
                     if self.config.return_fail:
                         self.bad_responses.append(SourceObject(None, self.config.tag, self.config.source, self.base_url))

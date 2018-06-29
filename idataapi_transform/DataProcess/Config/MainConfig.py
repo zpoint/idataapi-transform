@@ -42,6 +42,20 @@ random_max_sleep = 3
 # log_byte = 5242880
 """
 
+redis_config_content = """
+[redis]
+host = localhost
+port = 0
+db = 0
+password = 
+timeout = 3
+encoding = utf8
+# whether need to del the key after get object from redis, 0 means false, 1 means true
+need_del = 0
+# default direction when read/write , "L" means lpop/lpush, "R" means rpop/rpush
+direction = L
+"""
+
 
 class MainConfig(object):
     def __init__(self, ini_path=None):
@@ -60,8 +74,9 @@ class MainConfig(object):
             self.__instance.read(self.ini_path)
             MainConfig.__instance = self.__instance
 
-            self.has_log_file = self.config_log()
-            self.has_es_configured = self.config_es()
+            self.has_log_file = self.__instance.has_log_file = self.config_log()
+            self.has_es_configured = self.__instance.has_es_configured = self.config_es()
+            self.has_redis_configured = self.__instance.has_redis_configured = self.config_redis()
 
     def __call__(self):
         return self.__instance
@@ -90,6 +105,17 @@ class MainConfig(object):
         else:
             headers = None
         return init_es(hosts, headers, timeout)
+
+    def config_redis(self):
+        try:
+            self.__instance["redis"].get("port")
+        except KeyError as e:
+            with open(self.ini_path, "a+") as f:
+                f.write(redis_config_content)
+            self.__instance.read(self.ini_path)
+
+        port = self.__instance["redis"].getint("port")
+        return port > 0
 
 
 main_config = MainConfig()

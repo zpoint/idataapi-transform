@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+import aioredis
 from .BaseConfig import BaseGetterConfig
 
 from ..ESConfig import get_es_client
@@ -118,6 +119,9 @@ class RESConfig(BaseGetterConfig):
                 print(item)
         """
         super().__init__()
+        if not main_config.has_es_configured:
+            raise ValueError("You must config es_hosts before using Elasticsearch, Please edit configure file: %s" % (main_config.ini_path, ))
+
         if not query_body:
             query_body = {
                 "size": per_limit,
@@ -250,3 +254,92 @@ class RAPIBulkConfig(BaseGetterConfig):
             asyncio.ensure_future(self.session.close())
         else:
             self.session.close()
+
+
+class RRedisConfig(BaseGetterConfig):
+    def __init__(self, key, key_type="LIST", per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit,
+                 filter_=None, max_retry=DefaultVal.max_retry, random_min_sleep=DefaultVal.random_min_sleep,
+                 random_max_sleep=DefaultVal.random_max_sleep, host=main_config["redis"].get("host"),
+                 port=main_config["redis"].getint("port"), db=main_config["redis"].getint("db"),
+                 password=main_config["redis"].get("password"), timeout=main_config["redis"].getint("timeout"),
+                 encoding=main_config["redis"].get("encoding"), need_del=main_config["redis"].getboolean("need_del"),
+                 direction=main_config["redis"].get("direction"), **kwargs):
+        """
+        :param key: redis key to get data
+        :param key_type: redis data type to operate, current only support LIST, HASH
+        :param per_limit: how many items to get per time
+        :param max_limit: get at most max_limit items, if not set, get all
+        :param max_retry: if request fail, retry max_retry times
+        :param random_min_sleep: if request fail, random sleep at least random_min_sleep seconds before request again
+        :param random_max_sleep: if request fail, random sleep at most random_min_sleep seconds before request again
+        :param filter_: run "transform --help" to see command line interface explanation for detail
+        :param host: redis host -> str
+        :param port: redis port -> int
+        :param db: redis database number -> int
+        :param password: redis password -> int
+        :param timeout: timeout per redis connection -> float
+        :param encoding: redis object encoding -> str
+        :param direction: "L" or "R", left to right or roght to left
+        :param kwargs:
+
+        Example:
+            redis_config = RRedisConfig("my_key")
+            redis_getter = ProcessFactory.create_getter(redis_config)
+            async for items in redis_config:
+                print(items)
+        """
+        super().__init__()
+        if not main_config.has_redis_configured and port <= 0:
+            raise ValueError("You must config redis before using Redis, Please edit configure file: %s" % (main_config.ini_path, ))
+
+        if key_type not in ("LIST", "HASH"):
+            raise ValueError("key_type must be one of (%s)" % (str(("LIST", "HASH")), ))
+        if not encoding:
+            raise ValueError("You must specific encoding, since I am going to load each object in json format, "
+                             "and treat it as dictionary in python")
+        if not password:
+            password = None
+
+        self.redis_pool_cli = None
+        self.key = key
+        self.host = host
+        self.port = port
+        self.db = db
+        self.password = password
+        self.encoding = encoding
+        self.timeout = timeout
+
+        self.key_type = key_type
+        self.per_limit = per_limit
+        self.max_limit = max_limit
+        self.filter = filter_
+        self.max_retry = max_retry
+        self.random_min_sleep = random_min_sleep
+        self.random_max_sleep = random_max_sleep
+        self.need_del = need_del
+
+        self.name = "%s_%s->%s" % (str(host), str(port), str(key))
+
+        self.redis_read_method = self.redis_len_method = self.redis_del_method = None
+        self.direction = direction
+
+        if key_type == "LIST":
+            self.is_range = True
+        else:
+            self.is_range = False
+
+    async def get_redis_pool_cli(self):
+        if self.redis_pool_cli is None:
+            self.redis_pool_cli = await aioredis.create_redis_pool((self.host, self.port), db=self.db,
+                                                                   password=self.password, encoding=self.encoding,
+                                                                   timeout=self.timeout, minsize=1, maxsize=3)
+            if self.key_type == "LIST":
+                self.redis_read_method = self.redis_pool_cli.lrange
+                self.redis_len_method = self.redis_pool_cli.llen
+                self.redis_del_method = self.redis_pool_cli.ltrim
+            else:
+                self.redis_read_method = self.redis_pool_cli.hgetall
+                self.redis_len_method = self.redis_pool_cli.hlen
+                self.redis_del_method = self.redis_pool_cli.delete
+
+        return self.redis_pool_cli

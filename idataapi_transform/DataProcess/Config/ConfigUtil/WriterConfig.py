@@ -1,6 +1,8 @@
+import aioredis
 from .BaseConfig import BaseWriterConfig
 from ..ESConfig import get_es_client
 from ..DefaultValue import DefaultVal
+from ..ConnectorConfig import main_config
 
 
 class WCSVConfig(BaseWriterConfig):
@@ -36,7 +38,8 @@ class WCSVConfig(BaseWriterConfig):
 
 class WESConfig(BaseWriterConfig):
     def __init__(self, indices, doc_type, filter_=None, expand=None, id_hash_func=None, appCode=None,
-                 actions=None, createDate=None, error_if_fail=True, timeout=None, **kwargs):
+                 actions=None, createDate=None, error_if_fail=True, timeout=None, max_retry=DefaultVal.max_retry,
+                 random_min_sleep=DefaultVal.random_min_sleep, random_max_sleep=DefaultVal.random_max_sleep, **kwargs):
         """
         :param indices: elasticsearch indices
         :param doc_type: elasticsearch doc_type
@@ -48,6 +51,9 @@ class WESConfig(BaseWriterConfig):
         :param appCode: if not None, add createDate to each item before write to es
         :param error_if_fail: if True, log to error if fail to insert to es, else log nothing
         :param timeout: http connection timeout when connect to es, seconds
+        :param max_retry: if request fail, retry max_retry times
+        :param random_min_sleep: if request fail, random sleep at least random_min_sleep seconds before request again
+        :param random_max_sleep: if request fail, random sleep at most random_min_sleep seconds before request again
         :param kwargs:
 
         Example:
@@ -58,6 +64,9 @@ class WESConfig(BaseWriterConfig):
                     await csv_writer.write(items)
         """
         super().__init__()
+        if not main_config.has_es_configured:
+            raise ValueError("You must config es_hosts before using Elasticsearch, Please edit configure file: %s" % (main_config.ini_path, ))
+
         self.indices = indices
         self.doc_type = doc_type
         self.filter = filter_
@@ -69,6 +78,9 @@ class WESConfig(BaseWriterConfig):
         self.create_date = createDate
         self.error_if_fail = error_if_fail
         self.timeout = timeout
+        self.max_retry = max_retry
+        self.random_min_sleep = random_min_sleep
+        self.random_max_sleep = random_max_sleep
 
     def __del__(self):
         self.es_client.transport.close()
@@ -153,3 +165,81 @@ class WXLSXConfig(BaseWriterConfig):
         self.title = title
         self.expand = expand
         self.filter = filter_
+
+
+class WRedisConfig(BaseWriterConfig):
+    def __init__(self, key, key_type="LIST", filter_=None, host=main_config["redis"].get("host"),
+                 port=main_config["redis"].getint("port"), db=main_config["redis"].getint("db"),
+                 password=main_config["redis"].get("password"), timeout=main_config["redis"].getint("timeout"),
+                 encoding=main_config["redis"].get("encoding"), direction=main_config["redis"].get("direction"),
+                 max_retry=DefaultVal.max_retry, random_min_sleep=DefaultVal.random_min_sleep,
+                 random_max_sleep=DefaultVal.random_max_sleep, **kwargs):
+        """
+        :param key: redis key to write data
+        :param key_type: redis data type to operate, current only support LIST, HASH
+        :param filter_: run "transform --help" to see command line interface explanation for detail
+        :param host: redis host -> str
+        :param port: redis port -> int
+        :param db: redis database number -> int
+        :param password: redis password -> int
+        :param timeout: timeout per redis connection -> float
+        :param encoding: redis object encoding -> str
+        :param direction: "L" or "R", lpush or rpush
+        :param kwargs:
+
+        Example:
+            redis_config = WRedisConfig("my_key")
+            with ProcessFactory.create_writer(redis_config) as redis_writer:
+                async for items in es_getter:
+                    await redis_writer.write(items)
+        """
+        super().__init__()
+        if not main_config.has_redis_configured and port <= 0:
+            raise ValueError("You must config redis before using Redis, Please edit configure file: %s" % (main_config.ini_path, ))
+        if key_type not in ("LIST", "HASH"):
+            raise ValueError("key_type must be one of (%s)" % (str(("LIST", )), ))
+        if not encoding:
+            raise ValueError("You must specific encoding, since I am going to load each object in json format, "
+                             "and treat it as dictionary in python")
+        if not password:
+            password = None
+
+        self.redis_pool_cli = None
+        self.key = key
+        self.host = host
+        self.port = port
+        self.db = db
+        self.password = password
+        self.encoding = encoding
+        self.timeout = timeout
+
+        self.key_type = key_type
+        self.filter = filter_
+
+        self.name = "%s_%s->%s" % (str(host), str(port), str(key))
+
+        self.redis_write_method = None
+        self.direction = direction
+        self.max_retry = max_retry
+        self.random_min_sleep = random_min_sleep
+        self.random_max_sleep = random_max_sleep
+
+        if key_type == "LIST":
+            self.is_range = True
+        else:
+            self.is_range = False
+
+    async def get_redis_pool_cli(self):
+        if self.redis_pool_cli is None:
+            self.redis_pool_cli = await aioredis.create_redis_pool((self.host, self.port), db=self.db,
+                                                                   password=self.password, encoding=self.encoding,
+                                                                   timeout=self.timeout, minsize=1, maxsize=3)
+            if self.key_type == "LIST":
+                if self.direction == "L":
+                    self.redis_write_method = self.redis_pool_cli.lpush
+                else:
+                    self.redis_write_method = self.redis_pool_cli.rpush
+            else:
+                self.redis_write_method = self.redis_pool_cli.hset
+
+        return self.redis_pool_cli

@@ -8,18 +8,19 @@ from .DataProcess.ProcessFactory import ProcessFactory
 
 
 class Args(object):
-    from_choices = ["API", "ES", "CSV", "XLSX", "JSON"]
+    from_choices = ["API", "ES", "CSV", "XLSX", "JSON", "REDIS"]
     from_desc = "argument 'from' can only set to one of 'API', 'ES', 'CSV', 'XLSX', " \
-                "or 'JSON'(means json line by line file)"
+                "'JSON'(means json line by line file) or 'REDIS'"
 
-    to_choices = ["csv", "xlsx", "json", "txt", "es"]
-    to_desc = "argument 'to' can only set to one of \"csv\", \"xlsx\", \"json\", \"txt\" \"es\", \"json\", will write "\
-              "'json.dumps(item)' line by line. \"txt\" will write each item line by line, each element in each line " \
-              "is separated by 'space' bu default"
+    to_choices = ["csv", "xlsx", "json", "txt", "es", "redis"]
+    to_desc = "argument 'to' can only set to one of \"csv\", \"xlsx\", \"json\", \"txt\" \"es\", \"json\", \"redis\" " \
+              "will write 'json.dumps(item)' line by line. \"txt\" will write each item line by line, " \
+              "each element in each line is separated by 'space' bu default"
 
     source_desc = """
     argument 'source', When argument '-from' set to 'ES', source should be 'index:doc_type' When 
     argument 'from' set tp 'API', source should be 'http://...
+    argument 'from' set tp 'REDIS', source should be key name
     argument 'from' set to others, source should be file path
     """
     dest_desc = "argument 'dest', filename to save result, no need for suffix, " \
@@ -73,7 +74,8 @@ getter_config_map = {
     Args.from_choices[1]: GetterConfig.RESConfig,
     Args.from_choices[2]: GetterConfig.RCSVConfig,
     Args.from_choices[3]: GetterConfig.RXLSXConfig,
-    Args.from_choices[4]: GetterConfig.RJsonConfig
+    Args.from_choices[4]: GetterConfig.RJsonConfig,
+    Args.from_choices[5]: GetterConfig.RRedisConfig
 }
 
 writer_config_map = {
@@ -81,7 +83,8 @@ writer_config_map = {
     Args.to_choices[1]: WriterConfig.WXLSXConfig,
     Args.to_choices[2]: WriterConfig.WJsonConfig,
     Args.to_choices[3]: WriterConfig.WJsonConfig,
-    Args.to_choices[4]: WriterConfig.WESConfig
+    Args.to_choices[4]: WriterConfig.WESConfig,
+    Args.to_choices[5]: WriterConfig.WRedisConfig
 
 }
 

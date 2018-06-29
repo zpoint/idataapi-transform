@@ -9,12 +9,14 @@ from .DataGetter.CSVGetter import CSVGetter
 from .DataGetter.APIGetter import APIGetter, APIBulkGetter
 from .DataGetter.JsonGetter import JsonGetter
 from .DataGetter.XLSXGetter import XLSXGetter
+from .DataGetter.RedisGetter import RedisGetter
 
 from .DataWriter.CSVWriter import CSVWriter
 from .DataWriter.ESWriter import ESWriter
 from .DataWriter.JsonWriter import JsonWriter
 from .DataWriter.TXTWriter import TXTWriter
 from .DataWriter.XLSXWriter import XLSXWriter
+from .DataWriter.RedisWriter import RedisWriter
 
 
 class ProcessFactory(object):
@@ -36,9 +38,11 @@ class ProcessFactory(object):
             return XLSXGetter(config)
         elif isinstance(config, GetterConfig.RAPIBulkConfig):
             return APIBulkGetter(config)
+        elif isinstance(config, GetterConfig.RRedisConfig):
+            return RedisGetter(config)
         else:
             raise ValueError("create_getter must pass one of the instance of [RAPIConfig, RCSVConfig, "
-                             "RESConfig, RJsonConfig, RXLSXConfig, RAPIBulkConfig]")
+                             "RESConfig, RJsonConfig, RXLSXConfig, RAPIBulkConfig, RRedisConfig]")
 
     @staticmethod
     def create_writer(config):
@@ -56,6 +60,8 @@ class ProcessFactory(object):
             return TXTWriter(config)
         elif isinstance(config, WriterConfig.WXLSXConfig):
             return XLSXWriter(config)
+        elif isinstance(config, WriterConfig.WRedisConfig):
+            return RedisWriter(config)
         else:
             raise ValueError("create_writer must pass one of the instance of [WCSVConfig, WESConfig, WJsonConfig, "
-                             "WTXTConfig, WXLSXConfig]")
+                             "WTXTConfig, WXLSXConfig, WRedisConfig]")
