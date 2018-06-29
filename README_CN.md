@@ -58,7 +58,7 @@
 	python3 -m pip install idataapi-transform
     # 安装完成后在终端跑如下命令
     transform --help # 解释各个参数的作用以及创建默认的配置文件
-    # 编辑配置文件 ~/idataapi-transform.ini 配置 ElasticSearch 主机, 端口, 默认并发数等参数
+    # 编辑配置文件 ~/idataapi-transform.ini 配置 ElasticSearch, redis 主机, 端口, 默认并发数等参数
 
 -------------------
 
@@ -249,15 +249,15 @@ REDIS
 	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
 
     async def example_simple():
-    	# 默认 key_type 是 Redis 的 LIST 结构
+        # 默认 key_type 是 Redis 的 LIST 结构
         # 你也可以指定 encoding 参数表示在写入 redis 之前进行什么编码，默认utf8
-    	json_lists = [...]
+        json_lists = [...]
         wredis_config = WriterConfig.WRedisConfig("my_key")
         writer = ProcessFactory.create_writer(wredis_config)
         await writer.write(json_lists)
 
     async def example():
-    	# 指定 redis 的 key_type 为 HASH, 默认为 LIST
+        # 指定 redis 的 key_type 为 HASH, 默认为 LIST
         # compress 参数表示数据在redis中被 zlib 压缩过，取出来要进行解压才能做json处理
         getter_config = GetterConfig.RRedisConfig("my_key_hash", key_type="HASH", compress=True)
         async for items in reader:
