@@ -33,7 +33,7 @@ class ESWriter(BaseWriter):
                     self.config.indices, self.config.doc_type, responses,
                     self.config.id_hash_func, self.config.app_code,
                     self.config.actions, self.config.create_date,
-                    self.config.error_if_fail, self.config.timeout)
+                    self.config.error_if_fail, self.config.timeout, self.config.auto_insert_createDate)
                 if response is not None:
                     self.success_count += success
                     self.fail_count += fail

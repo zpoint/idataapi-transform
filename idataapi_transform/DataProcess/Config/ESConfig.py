@@ -160,17 +160,15 @@ def init_es(hosts, es_headers, timeout_):
 
     class MyAsyncElasticsearch(AsyncElasticsearch):
         @staticmethod
-        def default_id_hash_func(item):
+        def default_id_hash_func(item, ):
             if "appCode" in item and item["appCode"] and "id" in item and item["id"]:
                 value = (item["appCode"] + "_" + item["id"]).encode("utf8")
             else:
                 value = str(item).encode("utf8")
-            if "createDate" not in item:
-                item["createDate"] = int(time.time())
             return hashlib.md5(value).hexdigest()
 
         async def add_dict_to_es(self, indices, doc_type, items, id_hash_func=None, app_code=None, actions=None,
-                                 create_date=None, error_if_fail=True, timeout=None):
+                                 create_date=None, error_if_fail=True, timeout=None, auto_insert_createDate=True):
             if not actions:
                 actions = "index"
             if not id_hash_func:
@@ -179,8 +177,12 @@ def init_es(hosts, es_headers, timeout_):
             for item in items:
                 if app_code:
                     item["appCode"] = app_code
-                if create_date:
-                    item["createDate"] = create_date
+                if auto_insert_createDate and "createDate" not in item:
+                    if create_date:
+                        item["createDate"] = create_date
+                    else:
+                        item["createDate"] = int(time.time())
+
                 action = {
                     actions: {
                         "_index": indices,
@@ -188,6 +190,8 @@ def init_es(hosts, es_headers, timeout_):
                         "_id": id_hash_func(item)
                     }
                 }
+                if actions == "update":
+                    item = {"doc": item}
                 body += json.dumps(action) + "\n" + json.dumps(item) + "\n"
             try:
                 success = fail = 0

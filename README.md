@@ -1,6 +1,6 @@
 # idataapi-transform
 
-Toolkit for [IDataAPI](http://www.idataapi.cn/) for efficiency work
+Full async support **Toolkit** for [IDataAPI](http://www.idataapi.cn/) for efficiency work
 
 * [中文文档](https://github.com/zpoint/idataapi-transform/blob/master/README_CN.md)
 
@@ -26,11 +26,13 @@ and convert to
  * **TXT**
  * **Redis**
 
+Features:
+
 * with asyncio support and share same API
 * Baesd on Template Method and Factory Method
 * Every failure network read operation will log to error log before retry 3(default) times
 * Every failure network write operation will log to error log before retry 3(default) times
-* Command line support all format list above for simple usage, python module provide more features
+* Command line support for simple usage, python module provide more features
 * Every Getter and Writer support filter, you can alter or drop your data in filter
 -------------------
 
@@ -40,6 +42,19 @@ and convert to
 * [Installation](#installation)
 * [Command line interface Example](#command-line-interface-example)
 * [Python module support](#python-module-support)
+	* [ES to csv](#es-to-csv)
+	* [API to xlsx](#api-to-xlsx)
+	* [CSV to xlsx](#csv-to-xlsx)
+	* [API to redis](#api-to-redis)
+	* [Bulk API to ES](#bulk-api-to-es)
+	* [Extract error info in API](#extract-error-info-in-api)
+	* [REDIS Usage](#redis-usage)
+* [ES Base Operation](#es-base-operation)
+	* [Read data from ES](#read-data-from-es)
+	* [Write data to ES](#write-data-to-es)
+	* [DELETE data from ES](#delete-data-from-es)
+	* [API to ES in detail](#api-to-es-in-detail)
+	* [Get ES Client](#get-es-client)
 * [doc string](#doc-string)
 * [Update](#ipdate)
 * [License](#license)
@@ -135,24 +150,7 @@ will read data from redis key **my_key**, read at most 100 data， and save to *
 
 #### Python module support
 
-Read data from ES
-
-    import asyncio
-	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
-
-	async def example():
-    	# max_limit 表示最多读取多少条数据，不提供表示读取全部
-        # 若要提供过滤条件，请提供 query_body 参数
-        es_config = GetterConfig.RESConfig("post20170630", "news", max_limit=1000)
-        es_getter = ProcessFactory.create_getter(es_config)
-        async for items in es_getter:
-            print(items)
-
-	if __name__ == "__main__":
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(example())
-
-ES to csv
+##### ES to csv
 
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
@@ -177,7 +175,7 @@ ES to csv
         loop.run_until_complete(example())
 
 
-API to xlsx
+##### API to xlsx
 
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
@@ -195,7 +193,7 @@ API to xlsx
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
 
-CSV to xlsx
+##### CSV to xlsx
 
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
@@ -213,7 +211,7 @@ CSV to xlsx
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
 
-API to redis
+##### API to redis
 
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
@@ -233,7 +231,7 @@ API to redis
 
 
 
-concurrent read lots of items from API, to ES
+##### Bulk API to ES
 
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
@@ -257,7 +255,7 @@ concurrent read lots of items from API, to ES
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
 
-Extract error info when error occur in APIGetter
+##### Extract error info in API
 
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig
@@ -295,23 +293,28 @@ Extract error info when error occur in APIGetter
         loop.run_until_complete(example_simple())
 
 
-REDIS
+##### REDIS Usage
 
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
 
     async def example_simple():
     	# default key_type is LIST in redis
-        # you can pass other encoding to specify how to encode before write to redis, default utf8
+        # you can pass parameter "encoding" to specify how to encode before write to redis, default utf8
     	json_lists = [...]
         wredis_config = WriterConfig.WRedisConfig("my_key")
         writer = ProcessFactory.create_writer(wredis_config)
         await writer.write(json_lists)
 
+        # get async redis client
+        client = await self.get_redis_pool_cli()
+
     async def example():
     	# specify redis's key_type to HASH, default is LIST
         # compress means string object is compressed by zlib before write to redis,
         # we need to decompress it before turn to json object
+        # you can pass parameter "need_del" to specify whether need to del the key after get object from redis, default false
+        # you can pass parameter "direction" to specify whether read data from left to right or right to left, default left to right(only work for LIST key type)
         getter_config = GetterConfig.RRedisConfig("my_key_hash", key_type="HASH", compress=True)
         async for items in reader:
             print(items)
@@ -324,7 +327,7 @@ REDIS
 
 #### ES Base Operation
 
-Read data from ES
+##### Read data from ES
 
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig
@@ -341,14 +344,15 @@ Read data from ES
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
 
-Write data to ES
+##### Write data to ES
 
     import asyncio
 	from idataapi_transform import ProcessFactory, WriterConfig
 
 	async def example():
         json_lists = [#lots of json object]
-        es_config = WriterConfig.WESConfig("post20170630", "news")
+        # actions support create, index, update default index
+        es_config = WriterConfig.WESConfig("post20170630", "news", actions="create")
         es_writer = ProcessFactory.create_getter(es_config)
         await es_writer.write(json_lists)
 
@@ -356,7 +360,7 @@ Write data to ES
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
 
-DELETE data from ES
+##### DELETE data from ES
 
     import asyncio
     import json
@@ -379,7 +383,7 @@ DELETE data from ES
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
 
-GET data from API, Write to ES
+##### API to ES in detail
 
     import time
     import asyncio
@@ -395,25 +399,25 @@ GET data from API, Write to ES
     # global variables
     now_ts = int(time.time())
 
-	def add_app_code(item):
+	def my_filter(item):
         # I am a filter
         # Every getter or writer created by ProcessFactory.create can set up a filter
         # every data will be pass to filter before return from getter, or before write to writer
         # you can alter data here, or drop data here
-        # the filter here add "appCode" key to each data
-        item["appCode"] = "ifeng"
+        if "posterId" in item:
+        	return item
         # if don't return anything(return None) means drop this data
-        return item
 
     async def example():
         # urls can be any iterable object, each item can be api url or RAPIConfig
         urls = ["http://xxxx", "http://xxxx", "http://xxxx", RAPIConfig("http://xxxx", max_limit=10)]
-        # set up filter，add key "appCode" for every data so that it can generate _id by rule 1
-        api_bulk_config = GetterConfig.RAPIBulkConfig(urls, concurrency=100, filter_=add_app_code)
+        # set up filter，drop every item without "posterId"
+        api_bulk_config = GetterConfig.RAPIBulkConfig(urls, concurrency=100, filter_=my_filter)
         api_bulk_getter = ProcessFactory.create_getter(api_bulk_config)
         # you can also set up filter here
         # createDate parameter set same "createDate" for every data written by this es_writer
-        # Of course，you can ignore "createDate", es_writer will set every data's "createDate" to the current system's timestamp when it performs write operation
+        # Of course，you can ignore "createDate", es_writer will set every data's "createDate" to the current system's timestamp when it performs write operation, you can disable it by parameter auto_insert_createDate=False
+        # add parameter "appCode" for every data so that it can generate _id by rule 1
         es_config = WriterConfig.WESConfig("profile201712", "user", createDate=now_ts)
         with ProcessFactory.create_writer(es_config) as es_writer:
             async for items in api_bulk_getter:
@@ -425,7 +429,7 @@ GET data from API, Write to ES
         loop.run_until_complete(example())
 
 
-Get ES Client
+##### Get ES Client
 
     import asyncio
     import json
@@ -479,6 +483,7 @@ Get ES Client
 v 1.2.0
 * redis support
 * retry 3 times for every write operation
+* ES create operation
 
 v.1.0.1 - 1.1.1
 * fix es getter log error

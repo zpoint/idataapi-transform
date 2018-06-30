@@ -39,7 +39,8 @@ class WCSVConfig(BaseWriterConfig):
 class WESConfig(BaseWriterConfig):
     def __init__(self, indices, doc_type, filter_=None, expand=None, id_hash_func=None, appCode=None,
                  actions=None, createDate=None, error_if_fail=True, timeout=None, max_retry=DefaultVal.max_retry,
-                 random_min_sleep=DefaultVal.random_min_sleep, random_max_sleep=DefaultVal.random_max_sleep, **kwargs):
+                 random_min_sleep=DefaultVal.random_min_sleep, random_max_sleep=DefaultVal.random_max_sleep,
+                 auto_insert_createDate=True, **kwargs):
         """
         :param indices: elasticsearch indices
         :param doc_type: elasticsearch doc_type
@@ -54,6 +55,7 @@ class WESConfig(BaseWriterConfig):
         :param max_retry: if request fail, retry max_retry times
         :param random_min_sleep: if request fail, random sleep at least random_min_sleep seconds before request again
         :param random_max_sleep: if request fail, random sleep at most random_min_sleep seconds before request again
+        :param auto_insert_createDate: whether insert createDate for each item automatic -> boolean
         :param kwargs:
 
         Example:
@@ -81,6 +83,7 @@ class WESConfig(BaseWriterConfig):
         self.max_retry = max_retry
         self.random_min_sleep = random_min_sleep
         self.random_max_sleep = random_max_sleep
+        self.auto_insert_createDate = auto_insert_createDate
 
     def __del__(self):
         self.es_client.transport.close()
@@ -233,6 +236,9 @@ class WRedisConfig(BaseWriterConfig):
             self.is_range = False
 
     async def get_redis_pool_cli(self):
+        """
+        :return: an async redis client
+        """
         if self.redis_pool_cli is None:
             kwargs = {
                 "db": self.db,

@@ -27,6 +27,8 @@
  * **ES**
  * **Redis**
 
+Features:
+
 * 所有的网络通讯均通过 asyncio原生/或第三方lib 提供异步支持
 * 各模块间通过相同的方法调用
 * 基于 Template Method 以及 Factory Method 完成
@@ -42,6 +44,19 @@
 * [安装指南](#安装指南)
 * [命令行支持及示例](#命令行支持及示例)
 * [Python模块支持](#Python模块支持)
+    * [ES to csv](#es-to-csv)
+    * [API to xlsx](#api-to-xlsx)
+    * [CSV to xlsx](#csv-to-xlsx)
+    * [API to redis](#api-to-redis)
+    * [并发从不同的 API 读取数据 并写入到 ES](#并发从不同的-API-读取数据-并写入到-es)
+    * [访问API出错时 提取错误信息](#访问API出错时-提取错误信息)
+    * [REDIS 基本示例](#REDIS-基本示例)
+* [ES 基本操作](#ES-基本操作)
+	* [从ES读取数据](#从es读取数据)
+	* [写数据进ES](#写数据进es)
+	* [删除ES中的数据](#删除es中的数据)
+	* [从API读取并写数据进入ES](#从api读取并写数据进入ds)
+	* [获得ES Client](#获得es-client)
 * [说明](#说明)
 * [升级](#升级)
 * [证书](#证书)
@@ -140,7 +155,7 @@ JSON 为一行一条数据的 JSON 文件
 #### Python模块支持
 
 
-ES to csv
+##### ES to csv
 
     import asyncio
     from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
@@ -165,7 +180,7 @@ ES to csv
         loop.run_until_complete(example())
 
 
-API to xlsx
+##### API to xlsx
 
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
@@ -184,7 +199,7 @@ API to xlsx
         loop.run_until_complete(example())
 
 
-并发从不同的 API 读取数据, 并写入到 ES
+##### 并发从不同的 API 读取数据 并写入到 ES
 
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
@@ -206,7 +221,7 @@ API to xlsx
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
 
-访问API出错时，提取错误信息
+##### 访问API出错时 提取错误信息
 
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig
@@ -243,7 +258,7 @@ API to xlsx
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example_simple())
 
-REDIS
+##### REDIS 基本示例
 
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
@@ -256,9 +271,14 @@ REDIS
         writer = ProcessFactory.create_writer(wredis_config)
         await writer.write(json_lists)
 
+        # 获取异步redis客户端
+        client = await self.get_redis_pool_cli()
+
     async def example():
         # 指定 redis 的 key_type 为 HASH, 默认为 LIST
         # compress 参数表示数据在redis中被 zlib 压缩过，取出来要进行解压才能做json处理
+        # 你可以指定 need_del 参数表示是否要在读取完数据后删除redis的key值, 默认 false
+        # 你可以指定 "direction" 参数表示数据是从左往右读取还是从右往左读取(仅对 LIST 类型有效)
         getter_config = GetterConfig.RRedisConfig("my_key_hash", key_type="HASH", compress=True)
         async for items in reader:
             print(items)
@@ -271,7 +291,7 @@ REDIS
 
 #### ES 基本操作
 
-从ES读取数据
+##### 从ES读取数据
 
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig
@@ -288,13 +308,14 @@ REDIS
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
 
-写数据进ES
+##### 写数据进ES
 
     import asyncio
 	from idataapi_transform import ProcessFactory, WriterConfig
 
 	async def example():
         json_lists = [#一堆json object]
+        # actions 支持 create, index, update 默认 index
         es_config = WriterConfig.WESConfig("post20170630", "news")
         es_writer = ProcessFactory.create_getter(es_config)
         await es_writer.write(json_lists)
@@ -304,7 +325,7 @@ REDIS
         loop.run_until_complete(example())
 
 
-删除ES中的数据
+##### 删除ES中的数据
 
     import asyncio
     import json
@@ -344,25 +365,27 @@ REDIS
     # 全局变量，一会用
     now_ts = int(time.time())
 
-	def add_app_code(item):
+	def my_filter(item):
         # 我是一个过滤器
         # 每一个 ProcessFactory.create 产生的 getter 或者 writer 都可以配置一个过滤器
         # 每一条数据在返回之前会经过这个过滤器，过滤器可以修改这条item, 也可以选择过滤这条item
-        # 这里的过滤器充当给每条 item 插入 appCode 的作用
-        item["appCode"] = "ifeng"
+        if "posterId" in item:
+        	return item
         # 如果 retuen None 或者不 return 任何东西，则表示过滤这一条数据
-        return item
 
     async def example():
         # urls 可以是任何可迭代对象, 列表，迭代器等, urls 里面的元素可以是一条 url, 也可以使配置好的 RAPIConfig 对象
         urls = ["http://xxxx", "http://xxxx", "http://xxxx", RAPIConfig("http://xxxx", max_limit=10)]
-        # 安装过滤器，为每一条数据增加 appCode 从而可以以条件 1) 的方式生成 ES_ID
-        api_bulk_config = GetterConfig.RAPIBulkConfig(urls, concurrency=100, filter_=add_app_code)
+        # 安装过滤器，过滤掉所有没有 posterId 的对象
+        api_bulk_config = GetterConfig.RAPIBulkConfig(urls, concurrency=100, filter_=my_filter)
         api_bulk_getter = ProcessFactory.create_getter(api_bulk_config)
         # 也可以在这里安装过滤器
         # createDate 参数 为所有通过这个 es_writer 写入的数据创建同样的 createDate
-        # 当然，你也可以忽略这个参数，此时 es_writer 会自动为每一条数据创建一个 createDate 并指定为当前系统时间
-        es_config = WriterConfig.WESConfig("profile201712", "user", createDate=now_ts)
+        # 当然，你也可以忽略这个参数，此时 es_writer 会自动为没有createDate的每一条数据创建一个 createDate 并指定为当前系统时间， 可以设置 auto_insert_createDate=False 禁用自动创建
+        # 设置 appCode 参数, 为每一条数据增加 appCode 从而可以以条件 1) 的方式生成 ES_ID
+        # 你也可以不指定 appCode 参数, 并在过滤器中设置 appCode 从而满足条件 1)
+        # 如果你不设置 appCode 并且数据中不含该关键字，则依次按条件 2) 3) 生成 ES_ID
+        es_config = WriterConfig.WESConfig("profile201712", "user", createDate=now_ts, appCode="ifeng")
         with ProcessFactory.create_writer(es_config) as es_writer:
             async for items in api_bulk_getter:
                 # do whatever you want with items
@@ -428,6 +451,7 @@ REDIS
 v.1.2.0
 * redis support
 * retry 3 times for every write operation
+* ES create operation
 
 v.1.0.1 - 1.1.1
 * fix es getter log error

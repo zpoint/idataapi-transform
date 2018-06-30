@@ -280,6 +280,7 @@ class RRedisConfig(BaseGetterConfig):
         :param password: redis password -> int
         :param timeout: timeout per redis connection -> float
         :param encoding: redis object encoding -> str
+        :param need_del:  whether need to del the key after get object from redis -> boolean
         :param direction: "L" or "R", left to right or roght to left
         :param compress: whether compress data use zlib before write to redis -> boolean
         :param kwargs:
@@ -332,6 +333,9 @@ class RRedisConfig(BaseGetterConfig):
             self.is_range = False
 
     async def get_redis_pool_cli(self):
+        """
+        :return: an async redis client
+        """
         if self.redis_pool_cli is None:
             kwargs = {
                 "db": self.db,
