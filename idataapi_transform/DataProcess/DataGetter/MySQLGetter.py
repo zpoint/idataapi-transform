@@ -8,107 +8,46 @@ class MySQLGetter(BaseGetter):
         super().__init__(self)
         self.config = config
         self.responses = list()
-        self.line_num = 0
-        self.curr_size = 0
         self.need_clear = False
         self.done = False
-        self.f_in = open(self.config.filename, self.config.mode, encoding=self.config.encoding)
         self.miss_count = 0
         self.total_count = 0
+        self.total_size = None
 
     def init_val(self):
         self.responses = list()
-        self.line_num = 0
-        self.curr_size = 0
         self.need_clear = False
         self.done = False
-        self.f_in.seek(0, 0)
         self.miss_count = 0
         self.total_count = 0
+        self.total_size = None
 
     def __aiter__(self):
         return self
 
     async def __anext__(self):
+        if self.total_size is None:
+            self.total_size = await self.get_total_size()
+
         if self.need_clear:
             self.responses.clear()
             self.need_clear = False
 
         if self.done:
-            logging.info("get source done: %s, total get %d items, total filtered: %d items" %
-                         (self.config.filename, self.total_count, self.miss_count))
-            self.init_val()
-            raise StopAsyncIteration
+            self.finish()
 
-        for line in self.f_in:
-            self.line_num += 1
-            try:
-                json_obj = json.loads(line)
-            except json.decoder.JSONDecodeError:
-                logging.error("JSONDecodeError. give up. line: %d" % (self.line_num, ))
-                continue
+        if self.total_count < self.total_size:
+            self.need_clear = True
+            return await self.fetch_per_limit()
 
-            self.total_count += 1
-            if self.config.filter:
-                json_obj = self.config.filter(json_obj)
-                if not json_obj:
-                    self.miss_count += 1
-                    continue
-
-            self.responses.append(json_obj)
-            self.curr_size += 1
-
-            if len(self.responses) > self.config.per_limit:
-                self.need_clear = True
-                return self.responses
-
-            if self.config.max_limit and self.curr_size > self.config.max_limit:
-                self.need_clear = self.done = True
-                return self.responses
-
-        self.need_clear = self.done = True
-        if self.responses:
-            return self.responses
-
-        logging.info("get source done: %s, total get %d items, total filtered: %d items" %
-                     (self.config.filename, self.total_count, self.miss_count))
-        self.init_val()
-        raise StopAsyncIteration
+        # reach here, means done
+        self.finish()
 
     def __iter__(self):
-        for line in self.f_in:
-            self.line_num += 1
-            try:
-                json_obj = json.loads(line)
-            except json.decoder.JSONDecodeError:
-                logging.error("JSONDecodeError. give up. line: %d" % (self.line_num, ))
-                continue
+        raise ValueError("MySQLGetter must be used with async generator, not normal generator")
 
-            self.total_count += 1
-            if self.config.filter:
-                json_obj = self.config.filter(json_obj)
-                if not json_obj:
-                    self.miss_count += 1
-                    continue
-
-            self.responses.append(json_obj)
-            self.curr_size += 1
-
-            if len(self.responses) > self.config.per_limit:
-                yield self.responses
-                self.responses.clear()
-
-            if self.config.max_limit and self.curr_size > self.config.max_limit:
-                yield self.responses
-                self.responses.clear()
-                break
-
-        if self.responses:
-            yield self.responses
-
+    def finish(self):
         logging.info("get source done: %s, total get %d items, total filtered: %d items" %
-                     (self.config.filename, self.total_count, self.miss_count))
+                     (self.config.name, self.total_count, self.miss_count))
         self.init_val()
-
-    def __del__(self):
-        self.f_in.close()
+        raise StopAsyncIteration

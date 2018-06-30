@@ -41,6 +41,13 @@ Features:
 * [Requirment](#requirment)
 * [Installation](#installation)
 * [Command line interface Example](#command-line-interface-example)
+	* [Elasticsearch to CSV](#read-data-from-elasticsearch-convert-to-csv)
+	* [API to XLSX](#read-data-from-api-convert-to-xlsx)
+	* [JSON to csv](#read-data-from-json-convert-to-csv)
+	* [CSV to xlsx](#read-data-from-csv-convert-to-xlsx)
+	* [Elasticsearch to CSV with parameters](#read-data-from-elasticsearch-convert-to-csv-with-parameters)
+	* [API to Redis](#read-data-from-api-write-to-redis)
+	* [Redis to csv](#read-data-from-redis-write-to-csv)
 * [Python module support](#python-module-support)
 	* [ES to csv](#es-to-csv)
 	* [API to xlsx](#api-to-xlsx)
@@ -80,32 +87,32 @@ Features:
 * Read data from **[API, ES, CSV, XLSX, JSON, Redis]**
 * Write data to **[CSV, XLSX, JSON, TXT, ES, Redis]**
 
-##### read data from Elasticsearch, convert to CSV
+##### read data from Elasticsearch convert to CSV
 
 will read at most **500** items from given **index**: **knowledge20170517**, **doc_type**: **question**, and write to ./result.csv
 
 	transform ES csv "knowledge20170517:question" --max_limit=500
 
-##### read data from API, convert to XLSX
+##### read data from API convert to XLSX
 
 will read all items from given api url, until no more next page, and save to dest(/Users/zpoint/Desktop/result.xlsx), **dest is optional, default is ./result.xlsx**
 
 	transform API xlsx "http://xxx/post/dengta?kw=中国石化&apikey=xxx" "/Users/zpoint/Desktop/result"
 
-##### read data from JSON, convert to csv
+##### read data from JSON convert to csv
 
 will read items from json file, and save to **./result.csv**
 
 	transform JSON csv "/Users/zpoint/Desktop/a.json"
 
-##### read data from CSV, convert to xlsx
+##### read data from CSV convert to xlsx
 
 will read items from csv file, and save to **./result.xlsx**
 
 	transform CSV xlsx "./a.csv"
 
 
-##### read data from Elasticsearch, convert to CSV
+##### read data from Elasticsearch convert to CSV with parameters
 * save csv with file encoding "gbk" **(--w_encoding)**
 * specific index: knowledge20170517, doc_type: question **(knowledge20170517:question)**
 * when read from Elasticsearch, specific request body **(--query_body)**
@@ -131,7 +138,7 @@ will read items from csv file, and save to **./result.xlsx**
 
     	transform ES csv "knowledge20170517:question" --w_encoding gbk --query_body '{"size": 100, "_source": {"includes": ["location", "title", "city", "id"]}}' --filter ./my_filter.py
 
-##### Read data from API, write to Redis
+##### Read data from API write to Redis
 
 * redis key name: my_key
 * redis store/read support LIST and HASH, default value is LIST, you can change it with  --key_type parameter
@@ -140,7 +147,7 @@ will read data from ./a.csv, and save to redis LIST data structure, KEY: my_key
 
 	transform API redis "http://xxx/post/dengta?kw=中国石化&apikey=xxx" my_key
 
-##### Read data from Redis, write to csv
+##### Read data from Redis write to csv
 
 will read data from redis key **my_key**, read at most 100 data， and save to **./result.csv**
 

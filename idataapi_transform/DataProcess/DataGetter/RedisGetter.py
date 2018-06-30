@@ -28,6 +28,7 @@ class RedisGetter(BaseGetter):
         self.miss_count = 0
         self.total_count = 0
         self.redis_object_length = 0
+        self.total_size = None
 
     def decode(self, loaded_object):
         if self.config.compress:

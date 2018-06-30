@@ -43,11 +43,18 @@ Features:
 * [环境要求](#环境要求)
 * [安装指南](#安装指南)
 * [命令行支持及示例](#命令行支持及示例)
+	* [Elasticsearch to CSV](#从-elasticsearch-读取数据-转换为-csv-格式)
+	* [API to XLSX](#从-qpi-读取数据 转换为 XLSX 格式)
+	* [JSON to CSV](#从-json-文件读取数据-转换为-csv-格式)
+	* [CSV to XLSX](#从-csv-读取数据-转换至-xlsx)
+	* [Elasticsearch to CSV with parameters](#从-elasticsearch-读取数据-转换至-csv-(复杂示例))
+	* [API to Redis](#从-api-读取数据-存储至-redis)
+	* [Redis to CSV](#从-reidis-读取数据-存储至-csv)
 * [Python模块支持](#Python模块支持)
-    * [ES to csv](#es-to-csv)
-    * [API to xlsx](#api-to-xlsx)
-    * [CSV to xlsx](#csv-to-xlsx)
-    * [API to redis](#api-to-redis)
+    * [ES to CSV](#es-to-csv)
+    * [API to XLSX](#api-to-xlsx)
+    * [CSV to XLSX](#csv-to-xlsx)
+    * [API to Redis](#api-to-redis)
     * [并发从不同的 API 读取数据 并写入到 ES](#并发从不同的-api-读取数据-并写入到-es)
     * [访问API出错时 提取错误信息](#访问api出错时-提取错误信息)
     * [REDIS 基本示例](#redis-基本示例)
@@ -59,7 +66,7 @@ Features:
 	* [获得ES Client](#获得es-client)
 * [说明](#说明)
 * [升级](#升级)
-* [证书](#证书)
+* [许可](#许可)
 
 -------------------
 
@@ -82,33 +89,33 @@ Features:
 * 从以下任意一格式读数据 **[API, ES, CSV, XLSX, JSON, Redis]**
 * 写数据至以下任意一格式 **[CSV, XLSX, JSON, TXT, ES, Redis]**
 
-##### 从 Elasticsearch 读取数据, 转换为 CSV 格式
+##### 从 Elasticsearch 读取数据 转换为 CSV 格式
 
 从ES中 **index**: **knowledge20170517**, **doc_type**: **question**, 中最多读取 **500** 条数据, 写入到 ./result.csv
 
 	transform ES csv "knowledge20170517:question" --max_limit=500
 
-##### 从 API 读取数据, 转换为 XLSX 格式
+##### 从 API 读取数据 转换为 XLSX 格式
 
 会从提供的http请求读取所有数据(翻到最后一页为止), 并写入到 /Users/zpoint/Desktop/result.xlsx 中, **写入文件为可选参数, 可以不填, 默认参数是 ./result.xlsx**
 
 	transform API xlsx "http://xxx/post/dengta?kw=中国石化&apikey=xxx" "/Users/zpoint/Desktop/result"
 
-##### 从 JSON 文件读取数据, 转换为 CSV 格式
+##### 从 JSON 文件读取数据 转换为 CSV 格式
 
 JSON 为一行一条数据的 JSON 文件
 会从 /Users/zpoint/Desktop/a.json 读取数据, 并写入 **./result.csv** (默认参数)
 
 	transform JSON csv "/Users/zpoint/Desktop/a.json"
 
-##### 从 CSV 读取数据, 转换至 xlsx
+##### 从 CSV 读取数据 转换至 xlsx
 
 会从 ./a.csv 读取数据, 并保存至 **./result.xlsx**
 
 	transform CSV xlsx "./a.csv"
 
 
-##### 从 Elasticsearch 读取数据, 转换至 CSV (复杂示例)
+##### 从 Elasticsearch 读取数据 转换至 CSV (复杂示例)
 * 以 "gbk" **(--w_encoding)** 编码保存 CSV 文件
 * 指定 ES 的 index: knowledge20170517, doc_type: question **(knowledge20170517:question)**
 * 指定如下过滤条件 **(--query_body)**
@@ -135,7 +142,7 @@ JSON 为一行一条数据的 JSON 文件
 
     	transform ES csv "knowledge20170517:question" --w_encoding gbk --query_body '{"size": 100, "_source": {"includes": ["location", "title", "city", "id"]}}' --filter ./my_filter.py
 
-##### 从 API 读取数据, 存储至 Redis
+##### 从 API 读取数据 存储至 Redis
 
 * 键名称为 my_key
 * redis 存储/读取 支持 LIST, 以及 HASH 两种数据结构, 默认为 LIST, 可用参数 --key_type 指明
@@ -144,7 +151,7 @@ JSON 为一行一条数据的 JSON 文件
 
 	transform API redis "http://xxx/post/dengta?kw=中国石化&apikey=xxx" "/Users/zpoint/Desktop/result"
 
-##### 从 Reids 读取数据, 存储至 csv
+##### 从 Redis 读取数据 存储至 csv
 
 会从 my_key 中读取至多100条数据， 并保存至 **./result.csv**
 
