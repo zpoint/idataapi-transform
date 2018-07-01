@@ -53,12 +53,14 @@ class ESScrollGetter(BaseGetter):
                                                           scroll=self.config.scroll)
             except Exception as e:
                 if retry < self.config.max_retry:
+                    logging.error("retry: %d, %s" % (retry, str(e)))
                     await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
                     return await self.__anext__(retry+1)
                 else:
                     logging.error("Give up es getter, After retry: %d times, still fail to get result: %s, "
                                   "total get %d items, total filtered: %d items, reason: %s" %
-                                  (self.config.max_retry, self.config.indices + "->" + self.config.doc_type, self.total_count, self.miss_count, traceback.format_exc()))
+                                  (self.config.max_retry, self.config.indices + "->" + self.config.doc_type,
+                                   self.total_count, self.miss_count, traceback.format_exc()))
                     raise StopAsyncIteration
 
             self.total_count += len(self.result['hits']['hits'])

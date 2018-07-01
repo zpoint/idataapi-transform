@@ -2,3 +2,5 @@ aiohttp
 openpyxl
 elasticsearch-async
 aioredis>=1.0
+PyMySQL>=0.7.5,<0.9
+aiomysql

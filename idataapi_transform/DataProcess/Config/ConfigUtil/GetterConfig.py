@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import aioredis
+import aiomysql
 from .BaseConfig import BaseGetterConfig
 
 from ..ESConfig import get_es_client
@@ -288,7 +289,7 @@ class RRedisConfig(BaseGetterConfig):
         Example:
             redis_config = RRedisConfig("my_key")
             redis_getter = ProcessFactory.create_getter(redis_config)
-            async for items in redis_config:
+            async for items in redis_getter:
                 print(items)
         """
         super().__init__()
@@ -358,3 +359,80 @@ class RRedisConfig(BaseGetterConfig):
                 self.redis_del_method = self.redis_pool_cli.delete
 
         return self.redis_pool_cli
+
+
+class RMySQLConfig(BaseGetterConfig):
+    def __init__(self, table, per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit,
+                 filter_=None, max_retry=DefaultVal.max_retry, random_min_sleep=DefaultVal.random_min_sleep,
+                 random_max_sleep=DefaultVal.random_max_sleep, host=main_config["mysql"].get("host"),
+                 port=main_config["mysql"].getint("port"), user=main_config["mysql"].get("user"),
+                 password=main_config["mysql"].get("password"), database=main_config["mysql"].get("database"),
+                 loop=None, **kwargs):
+        """
+        :param table: mysql table
+        :param per_limit: how many items to get per time
+        :param max_limit: get at most max_limit items, if not set, get all
+        :param filter_: run "transform --help" to see command line interface explanation for detail
+        :param max_retry: if request fail, retry max_retry times
+        :param random_min_sleep: if request fail, random sleep at least random_min_sleep seconds before request again
+        :param random_max_sleep: if request fail, random sleep at most random_min_sleep seconds before request again
+        :param host: mysql host -> str
+        :param port: mysql port -> int
+        :param user: mysql user -> str
+        :param password: mysql password -> str
+        :param database: mysql database -> str
+        :param kwargs:
+
+        Example:
+            mysql_config = RRedisConfig("my_table")
+            redis_getter = ProcessFactory.create_getter(mysql_config)
+            async for items in redis_getter:
+                print(items)
+        """
+        super().__init__()
+        if not main_config.has_mysql_configured and port <= 0:
+            raise ValueError("You must config mysql before using MySQL, Please edit configure file: %s" % (main_config.ini_path, ))
+
+        self.table = table
+        self.database = database
+
+        self.max_limit = max_limit
+        self.per_limit = per_limit
+        self.max_retry = max_retry
+        self.random_min_sleep = random_min_sleep
+        self.random_max_sleep = random_max_sleep
+        self.filter = filter_
+
+        self.name = "%s->%s" % (self.table, self.database)
+
+        self.host = host
+        self.port = port
+        self.user = user
+        if not password:
+            password = ''
+        self.password = password
+        self.database = database
+
+        if not loop:
+            loop = asyncio.get_event_loop()
+        self.loop = loop
+        self.mysql_pool_cli = self.connection = self.cursor = None
+
+    async def get_mysql_pool_cli(self):
+        """
+        :return: an async mysql client
+        """
+        if self.mysql_pool_cli is None:
+            self.mysql_pool_cli = await aiomysql.create_pool(host=self.host, port=self.port, user=self.user,
+                                                             password=self.password, db=self.database, loop=self.loop,
+                                                             minsize=1, maxsize=3)
+            self.connection = await self.mysql_pool_cli.acquire()
+            self.cursor = await self.connection.cursor()
+        return self.mysql_pool_cli
+
+    def free_resource(self):
+        if self.mysql_pool_cli is not None:
+            self.mysql_pool_cli.release(self.connection)
+            self.mysql_pool_cli.close()
+            self.loop.create_task(self.mysql_pool_cli.wait_closed())
+            self.mysql_pool_cli = self.connection = self.cursor = None

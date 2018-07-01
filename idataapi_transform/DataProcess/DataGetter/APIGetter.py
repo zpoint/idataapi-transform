@@ -99,21 +99,23 @@ class APIGetter(BaseGetter):
                     result = json.loads(text)
                     if "data" not in result:
                         if "retcode" not in result or result["retcode"] not in ("100002", "100301", "100103"):
-                            logging.error("%s: %s" % (self.base_url, str(result)))
+                            logging.error("retry: %d, %s: %s" % (self.retry_count, self.base_url, str(result)))
                             if self.retry_count == self.config.max_retry:
                                 source_obj = SourceObject(result, self.config.tag, self.config.source, self.base_url)
                                 self.bad_responses.append(source_obj)
 
             except Exception as e:
-                logging.error("%s: %s" % (str(e), self.base_url))
+                logging.error("retry: %d, %s: %s" % (self.retry_count, str(e), self.base_url))
                 await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
                 self.retry_count += 1
                 if self.retry_count <= self.config.max_retry:
                     continue
                 else:
                     # fail
-                    logging.error("Give up, Unable to get url: %s, total get %d items, total filtered: %d items, error: %s" %
-                                  (self.base_url, self.total_count, self.miss_count, str(traceback.format_exc())))
+                    logging.error("Give up, After retry: %d times, Unable to get url: %s, total get %d items, "
+                                  "total filtered: %d items, error: %s" % (self.base_url, self.config.max_retry,
+                                                                           self.total_count, self.miss_count,
+                                                                           str(traceback.format_exc())))
                     self.done = True
                     if self.config.return_fail:
                         self.bad_responses.append(SourceObject(None, self.config.tag, self.config.source, self.base_url))
@@ -168,8 +170,9 @@ class APIGetter(BaseGetter):
                 return await self.__anext__()
             else:
                 if self.retry_count >= self.config.max_retry:
-                    logging.error("Give up, Unable to get url: %s, total get %d items, total filtered: %d items" %
-                                  (self.base_url, self.total_count, self.miss_count))
+                    logging.error("Give up, After retry: %d times, Unable to get url: %s, total get %d items, "
+                                  "total filtered: %d items" % (self.base_url, self.config.max_retry,
+                                                                self.total_count, self.miss_count))
                     self.done = True
                     if self.config.return_fail and (self.responses or self.bad_responses):
                         self.need_clear = True

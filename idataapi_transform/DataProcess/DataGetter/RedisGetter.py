@@ -70,6 +70,7 @@ class RedisGetter(BaseGetter):
                 self.responses = [self.decode(i) for i in self.responses]
             except Exception as e:
                 if retry < self.config.max_retry:
+                    logging.error("retry: %d, %s" % (retry, str(e)))
                     await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
                     return await self.__anext__(retry+1)
                 else:
@@ -89,8 +90,9 @@ class RedisGetter(BaseGetter):
                 self.responses = [self.decode(i) for i in self.responses.values()][:self.total_size]
             except Exception as e:
                 if retry < self.config.max_retry:
+                    logging.error("retry: %d, %s" % (retry, str(e)))
                     await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
-                    return await self.__anext__(retry + 1)
+                    return await self.__anext__(retry+1)
                 else:
                     logging.error("Give up redis getter, After retry: %d times, still fail to get key: %s, "
                                   "total get %d items, total filtered: %d items, reason: %s" %
@@ -104,6 +106,7 @@ class RedisGetter(BaseGetter):
                 await self.config.redis_del_method(self.config.key)
 
         current_response_length = len(self.responses)
+        curr_miss_count = 0
         self.total_count += current_response_length
         if self.config.filter:
             target_responses = list()
@@ -113,12 +116,13 @@ class RedisGetter(BaseGetter):
                 if i:
                     target_responses.append(i)
                 else:
-                    self.miss_count += 1
+                    curr_miss_count += 1
             self.responses = target_responses
 
+        self.miss_count += curr_miss_count
         if self.is_range:
             logging.info("Get %d items from %s, filtered: %d items, percentage: %.2f%%" %
-                         (current_response_length, self.config.name, self.miss_count,
+                         (current_response_length, self.config.name, curr_miss_count,
                           (self.total_count / self.total_size * 100) if self.total_size else 0))
         return self.responses
 

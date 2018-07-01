@@ -1,4 +1,7 @@
 import json
+import asyncio
+import traceback
+import random
 import logging
 from .BaseGetter import BaseGetter
 
@@ -26,6 +29,8 @@ class MySQLGetter(BaseGetter):
         return self
 
     async def __anext__(self):
+        await self.config.mysql_pool_cli()  # init mysql pool
+
         if self.total_size is None:
             self.total_size = await self.get_total_size()
 
@@ -34,20 +39,68 @@ class MySQLGetter(BaseGetter):
             self.need_clear = False
 
         if self.done:
-            self.finish()
+            await self.finish()
 
         if self.total_count < self.total_size:
             self.need_clear = True
-            return await self.fetch_per_limit()
+            await self.fetch_per_limit()
+            return self.responses
 
         # reach here, means done
-        self.finish()
+        await self.finish()
 
     def __iter__(self):
         raise ValueError("MySQLGetter must be used with async generator, not normal generator")
 
-    def finish(self):
+    async def finish(self):
         logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                      (self.config.name, self.total_count, self.miss_count))
         self.init_val()
+        self.config.free_resource()
         raise StopAsyncIteration
+
+    async def get_total_size(self):
+        await self.config.cursor.execute("DESC %s" % (self.config.table, ))
+        result = await self.config.cursor.fetchall()
+        field = result[0]["Field"]
+        await self.config.cursor.execute("select count(%s) from %s" % (field, self.config.table))
+        result = await self.config.cursor.fetchone()
+        self.total_size = result["%s" % ('count(' + field + ')', )]
+
+    async def fetch_per_limit(self):
+        results = list()
+        try_time = 0
+        while try_time < self.config.max_limit:
+            try:
+                await self.config.cursor.execute("SELECT * FROM %s LIMIT %d,%d", self.config.table, self.total_count,
+                                                 self.total_count + self.config.per_limit)
+                results = await self.config.cursor.fetchall()
+            except Exception as e:
+                try_time += 1
+                if try_time < self.config.max_limit:
+                    logging.error("retry: %d, %s" % (try_time, str(e)))
+                    await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
+                else:
+                    logging.error("Give up MySQL getter: %s, After retry: %d times, still fail, "
+                                  "total get %d items, total filtered: %d items, reason: %s" %
+                                  (self.config.name, self.config.max_retry, self.total_count, self.miss_count,
+                                   str(traceback.format_exc())))
+                    await self.finish()
+
+        self.responses = results
+        curr_miss_count = 0
+        if self.config.filter:
+            target_results = list()
+            for each in results:
+                each = self.config.filter(each)
+                if each:
+                    target_results.append(each)
+                else:
+                    curr_miss_count += 1
+            self.responses = target_results
+            self.miss_count += curr_miss_count
+
+        self.total_count += len(results)
+        logging.info("Get %d items from %s, filtered: %d items, percentage: %.2f%%" %
+                     (len(results), self.config.name, curr_miss_count,
+                      (self.total_count / self.total_size * 100) if self.total_size else 0))

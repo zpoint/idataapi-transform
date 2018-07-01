@@ -56,6 +56,15 @@ need_del = 0
 direction = L
 """
 
+mysql_config_content = """
+[mysql]
+host = localhost
+port = 0
+user = root
+password = 
+database = 
+"""
+
 
 class MainConfig(object):
     def __init__(self, ini_path=None):
@@ -77,6 +86,7 @@ class MainConfig(object):
             self.has_log_file = self.__instance.has_log_file = self.config_log()
             self.has_es_configured = self.__instance.has_es_configured = self.config_es()
             self.has_redis_configured = self.__instance.has_redis_configured = self.config_redis()
+            self.has_mysql_configured = self.__instance.has_mysql_configured = self.config_mysql()
 
     def __call__(self):
         return self.__instance
@@ -115,6 +125,17 @@ class MainConfig(object):
             self.__instance.read(self.ini_path)
 
         port = self.__instance["redis"].getint("port")
+        return port > 0
+
+    def config_mysql(self):
+        try:
+            self.__instance["mysql"].get("port")
+        except KeyError as e:
+            with open(self.ini_path, "a+") as f:
+                f.write(mysql_config_content)
+            self.__instance.read(self.ini_path)
+
+        port = self.__instance["mysql"].getint("port")
         return port > 0
 
 
