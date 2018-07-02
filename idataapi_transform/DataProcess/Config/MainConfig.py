@@ -79,7 +79,7 @@ class MainConfig(object):
 
             if not os.path.exists(self.ini_path):
                 with open(self.ini_path, "w") as f:
-                    f.write(default_configure_content)
+                    f.write(default_configure_content + redis_config_content + mysql_config_content)
 
             self.__instance = configparser.ConfigParser()
             self.__instance.read(self.ini_path)

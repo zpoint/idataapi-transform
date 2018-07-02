@@ -8,7 +8,7 @@ author="zpoint"
 author-email="zp@zp0int.com"
 home-page="https://github.com/zpoint/idataapi-transform"
 classifiers=["License :: OSI Approved :: MIT License"]
-requires=["aiohttp", "openpyxl", "elasticsearch-async"]
+requires=["aiohttp", "openpyxl", "elasticsearch-async", "aioredis"]
 requires-python=">=3.5.2"
 keywords="idataapi transform"
 dist-name="idataapi-transform"
