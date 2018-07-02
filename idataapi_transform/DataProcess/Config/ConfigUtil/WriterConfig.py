@@ -1,6 +1,9 @@
 import asyncio
 import aioredis
-import aiomysql
+try:
+    import aiomysql
+except ModuleNotFoundError:
+    pass
 from .BaseConfig import BaseWriterConfig
 from ..ESConfig import get_es_client
 from ..DefaultValue import DefaultVal
@@ -269,7 +272,8 @@ class WMySQLConfig(BaseWriterConfig):
                  random_min_sleep=DefaultVal.random_min_sleep, random_max_sleep=DefaultVal.random_max_sleep,
                  host=main_config["mysql"].get("host"), port=main_config["mysql"].getint("port"),
                  user=main_config["mysql"].get("user"), password=main_config["mysql"].get("password"),
-                 database=main_config["mysql"].get("database"), loop=None, **kwargs):
+                 database=main_config["mysql"].get("database"), encoding=main_config["mysql"].get("encoding"),
+                 loop=None, **kwargs):
         """
         :param table: mysql table
         :param filter_: run "transform --help" to see command line interface explanation for detail
@@ -281,6 +285,8 @@ class WMySQLConfig(BaseWriterConfig):
         :param user: mysql user -> str
         :param password: mysql password -> str
         :param database: mysql database -> str
+        :param charset: default utf8 -> str
+        :param loop: async loop instance
         :param kwargs:
 
         Example:
@@ -292,6 +298,9 @@ class WMySQLConfig(BaseWriterConfig):
         super().__init__()
         if not main_config.has_mysql_configured and port <= 0:
             raise ValueError("You must config mysql before using MySQL, Please edit configure file: %s" % (main_config.ini_path, ))
+        if "aiomysql" not in globals():
+            raise ValueError("module mysql disabled, please reinstall "
+                             "requirements with python version higher than 3.5.3 to enable it")
 
         self.table = table
         self.database = database
@@ -310,6 +319,7 @@ class WMySQLConfig(BaseWriterConfig):
             password = ''
         self.password = password
         self.database = database
+        self.encoding = encoding
 
         if not loop:
             loop = asyncio.get_event_loop()
@@ -323,7 +333,7 @@ class WMySQLConfig(BaseWriterConfig):
         if self.mysql_pool_cli is None:
             self.mysql_pool_cli = await aiomysql.create_pool(host=self.host, port=self.port, user=self.user,
                                                              password=self.password, db=self.database, loop=self.loop,
-                                                             minsize=1, maxsize=3)
+                                                             minsize=1, maxsize=3, charset=self.encoding)
             self.connection = await self.mysql_pool_cli.acquire()
             self.cursor = await self.connection.cursor()
         return self.mysql_pool_cli

@@ -63,6 +63,8 @@ port = 0
 user = root
 password = 
 database = 
+# default charset
+encoding = utf8
 """
 
 
@@ -87,6 +89,8 @@ class MainConfig(object):
             self.has_es_configured = self.__instance.has_es_configured = self.config_es()
             self.has_redis_configured = self.__instance.has_redis_configured = self.config_redis()
             self.has_mysql_configured = self.__instance.has_mysql_configured = self.config_mysql()
+
+            self.__instance.ini_path = self.ini_path
 
     def __call__(self):
         return self.__instance

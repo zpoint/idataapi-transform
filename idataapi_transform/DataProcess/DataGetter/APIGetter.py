@@ -105,9 +105,9 @@ class APIGetter(BaseGetter):
                                 self.bad_responses.append(source_obj)
 
             except Exception as e:
+                self.retry_count += 1
                 logging.error("retry: %d, %s: %s" % (self.retry_count, str(e), self.base_url))
                 await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
-                self.retry_count += 1
                 if self.retry_count <= self.config.max_retry:
                     continue
                 else:
@@ -169,7 +169,8 @@ class APIGetter(BaseGetter):
                              (self.config.source, self.total_count, self.miss_count))
                 return await self.__anext__()
             else:
-                if self.retry_count >= self.config.max_retry:
+                self.retry_count += 1
+                if self.retry_count > self.config.max_retry:
                     logging.error("Give up, After retry: %d times, Unable to get url: %s, total get %d items, "
                                   "total filtered: %d items" % (self.base_url, self.config.max_retry,
                                                                 self.total_count, self.miss_count))
@@ -181,7 +182,6 @@ class APIGetter(BaseGetter):
                         self.need_clear = True
                         return self.responses
 
-                self.retry_count += 1
                 await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
                 return await self.__anext__()
 

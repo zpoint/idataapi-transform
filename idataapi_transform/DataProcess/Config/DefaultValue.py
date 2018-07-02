@@ -25,7 +25,8 @@ class DefaultVal(object):
     qsn = None
 
     query_body = None
-    dest = os.getcwd() + "/result"
+    dest_without_path = "result"
+    dest = os.getcwd() + "/" + dest_without_path
     interval = 5
     concurrency = 50
     default_key_type = "LIST"

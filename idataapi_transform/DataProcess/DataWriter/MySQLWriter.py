@@ -16,7 +16,7 @@ class MySQLWriter(BaseWriter):
         self.key_fields = list()
 
     async def write(self, responses):
-        await self.config.mysql_pool_cli()  # init mysql pool
+        await self.config.get_mysql_pool_cli()  # init mysql pool
 
         miss_count = 0
         original_length = len(responses)
@@ -38,8 +38,8 @@ class MySQLWriter(BaseWriter):
         if not self.table_checked:
             await self.table_check(responses)
 
-        await self.perform_write(responses)
-        self.finish_once(miss_count, original_length)
+        if await self.perform_write(responses):
+            self.finish_once(miss_count, original_length)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.config.free_resource()
@@ -55,29 +55,50 @@ class MySQLWriter(BaseWriter):
         logging.info("%s write %d item, filtered %d item" % (self.config.name, original_length - miss_count, miss_count))
 
     async def table_check(self, responses):
-        await self.config.cursor.execute("SHOW TABLES LIKE '%s'" % (self.config.name, ))
+        await self.config.cursor.execute("SHOW TABLES LIKE '%s'" % (self.config.table, ))
         result = await self.config.cursor.fetchone()
         if result is None:
             await self.create_table(responses)
-        else:
-            # check field
-            await self.config.cursor.execute("DESC %s" % (self.config.name, ))
-            results = await self.config.cursor.fetchall()
-            fields = set(i["Field"] for i in results)
-            self.key_fields = list(i["Field"] for i in results)
-            real_keys = set(responses[0].keys())
-            difference_set = real_keys.difference(fields)
-            if difference_set:
-                # real keys not subset of fields
-                raise ValueError("Field %s not in MySQL Table: %s" % (str(difference_set), self.config.name))
+        # check field
+        await self.config.cursor.execute("DESC %s" % (self.config.table, ))
+        results = await self.config.cursor.fetchall()
+        fields = set(i[0] for i in results)
+        self.key_fields = list(i[0] for i in results)
+        real_keys = set(responses[0].keys())
+        difference_set = real_keys.difference(fields)
+        if difference_set:
+            # real keys not subset of fields
+            raise ValueError("Field %s not in MySQL Table: %s" % (str(difference_set), self.config.table))
+
+        self.table_checked = True
 
     async def create_table(self, responses):
+        test_response = dict()
+        for response in responses[:50]:
+            for k, v in response.items():
+                if k not in test_response:
+                    test_response[k] = v
+                elif test_response[k] is None:
+                    test_response[k] = v
+                elif isinstance(v, dict) or isinstance(v, list):
+                    if len(json.dumps(test_response[k])) < len(json.dumps(v)):
+                        test_response[k] = v
+                elif v is not None and test_response[k] < v:
+                    test_response[k] = v
+
         sql = """
-        CREATE TABLE '%s' (
-        """
+        CREATE TABLE `%s` (
+        """ % (self.config.table, )
+        first_field = True
         for key, value in responses[0].items():
-            if key in ("content", ) or isinstance(value, dict) or isinstance(value, list):
+            if "Count" in key:
+                field_type = "BIGINT"
+            elif value is None:
                 field_type = "TEXT"
+            elif key in ("content", ) or isinstance(value, dict) or isinstance(value, list):
+                field_type = "TEXT"
+            elif isinstance(value, bool):
+                field_type = "BOOLEAN"
             elif isinstance(value, int):
                 field_type = "BIGINT"
             elif isinstance(value, float):
@@ -88,45 +109,57 @@ class MySQLWriter(BaseWriter):
             elif len(value) > 2048:
                 field_type = "TEXT"
             else:
-                field_type = "VARCHAR(%d)" % (len(value) * 4, )
-            sql += "'%s' %s" % (key, field_type)
+                length = len(value) * 4
+                if length < 256:
+                    length = 256
+                field_type = "VARCHAR(%d)" % (length, )
+            sql += ("\t" if first_field else "\t\t") + "`%s` %s" % (key, field_type)
             if key == "id":
                 sql += " NOT NULL,\n"
             else:
                 sql += ",\n"
+            if first_field:
+                first_field = False
 
         tail_sql = """
-        PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8
-        """
+        \tPRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=%s
+        """ % (self.config.encoding, )
         sql += tail_sql
+        logging.info("Creating table: %s\n%s", self.config.table, sql)
         await self.config.cursor.execute(sql)
         await self.config.connection.commit()
+        logging.info("table created")
 
     async def perform_write(self, responses):
-        sql = "INSERT INTO %s VALUES " % (self.config.name, )
+        sql = "REPLACE INTO %s VALUES " % (self.config.table, )
         for each in responses:
             curr_sql = '('
             for field in self.key_fields:
                 val = each[field]
                 if isinstance(val, dict) or isinstance(val, list):
                     val = json.dumps(val)
-                curr_sql += repr(val) + ","
+                if val is None:
+                    curr_sql += 'NULL,'
+                else:
+                    curr_sql += repr(val) + ","
             curr_sql = curr_sql[:-1] + '),\n'
             sql += curr_sql
-
+        sql = sql[:-2]
         try_time = 0
-        while try_time < self.config.max_limit:
+        while try_time < self.config.max_retry:
             try:
-                await self.config.cursor.execute(sql)
+                await self.config.cursor.execute(sql.encode(self.config.encoding))
                 await self.config.cursor.connection.commit()
+                return True
             except Exception as e:
                 try_time += 1
-                if try_time < self.config.max_limit:
+                if try_time < self.config.max_retry:
                     logging.error("retry: %d, %s" % (try_time, str(e)))
                     await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
                 else:
                     logging.error("Give up MySQL writer: %s, After retry: %d times, still fail to write, "
-                                  "total get %d items, total filtered: %d items, reason: %s" %
+                                  "total write %d items, total filtered: %d items, reason: %s" %
                                   (self.config.name, self.config.max_retry, self.success_count, self.total_miss_count,
                                    str(traceback.format_exc())))
+        return False

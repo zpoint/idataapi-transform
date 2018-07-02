@@ -17,6 +17,7 @@ You can read data from one of
  * **XLSX**
  * **JSON**
  * **Redis**
+ * **MySQL**
 
 and convert to
 
@@ -25,6 +26,7 @@ and convert to
  * **JSON**
  * **TXT**
  * **Redis**
+ * **MySQL**
 
 Features:
 
@@ -42,19 +44,22 @@ Features:
 * [Installation](#installation)
 * [Command line interface Example](#command-line-interface-example)
 	* [Elasticsearch to CSV](#read-data-from-elasticsearch-convert-to-csv)
-	* [API to XLSX](#read-data-from-api-convert-to-xlsx)
-	* [JSON to csv](#read-data-from-json-convert-to-csv)
-	* [CSV to xlsx](#read-data-from-csv-convert-to-xlsx)
-	* [Elasticsearch to CSV with parameters](#read-data-from-elasticsearch-convert-to-csv-with-parameters)
-	* [API to Redis](#read-data-from-api-write-to-redis)
-	* [Redis to csv](#read-data-from-redis-write-to-csv)
+	* [API to xlsx](#read-data-from-api-convert-to-xlsx)
+	* [json to csv](#read-data-from-json-convert-to-csv)
+	* [csv to xlsx](#read-data-from-csv-convert-to-xlsx)
+	* [Elasticsearch to csv with parameters](#read-data-from-elasticsearch-convert-to-csv-with-parameters)
+	* [API to redis](#read-data-from-api-write-to-redis)
+	* [redis to csv](#read-data-from-redis-write-to-csv)
+	* [API to MySQL](#read-data-from-api-write-to-mysql)
+	* [MySQL to redis](read-data-from-mysql-write-to-redis)
 * [Python module support](#python-module-support)
 	* [ES to csv](#es-to-csv)
 	* [API to xlsx](#api-to-xlsx)
 	* [CSV to xlsx](#csv-to-xlsx)
 	* [API to redis](#api-to-redis)
+    * [redis to MySQL](#redis-to-mysql)
 	* [Bulk API to ES](#bulk-api-to-es)
-	* [Extract error info in API](#extract-error-info-in-api)
+	* [Extract error info from API](#extract-error-info-from-api)
 	* [REDIS Usage](#redis-usage)
 * [ES Base Operation](#es-base-operation)
 	* [Read data from ES](#read-data-from-es)
@@ -70,7 +75,7 @@ Features:
 
 #### Requirment
 * python version >= 3.5.2
-
+* If you need MySQL enable, your python version should be >= 3.5.3
 -------------------
 
 #### Installation
@@ -78,7 +83,7 @@ Features:
 	python3 -m pip install idataapi-transform
     # shell, run
     transform --help # explanation of each parameter and create configure file
-    # edit ~/idataapi-transform.ini to config elasticsearch hosts, redis, etc...
+    # edit ~/idataapi-transform.ini to config elasticsearch hosts, redis, mysql etc...
 
 -------------------
 
@@ -153,6 +158,21 @@ will read data from redis key **my_key**, read at most 100 data， and save to *
 
 	transform Redis csv my_key --max_limit 100
 
+##### Read data from API write to MySQL
+
+* auto create table if not exist
+
+will read data from **API**, read at most 50 data， and save to MySQL table: **my_table**
+
+	transform API MYSQL 'http://xxx' my_table --max_limit=50
+
+##### Read data from MySQL write to redis
+
+will read data from MySQL table **my_table**, each read operation fetch 60 items， and save to a redis LIST name **result**, **result** is the default key name if you don't provide one
+
+	transform MYSQL redis my_table --per_limit=60
+
+
 -------------------
 
 #### Python module support
@@ -224,15 +244,47 @@ will read data from redis key **my_key**, read at most 100 data， and save to *
 	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
 
     async def example():
-        csv_config = GetterConfig.RCSVConfig("./result.csv")
-        getter = ProcessFactory.create_getter(csv_config)
-        xlsx_config = WriterConfig.WXLSXConfig("./result.xlsx")
-        with ProcessFactory.create_writer(xlsx_config) as xlsx_writer:
-            for items in getter:
+        api_config = GetterConfig.RAPIConfig("http://xxx")
+        getter = ProcessFactory.create_getter(api_config)
+        redis_config = WriterConfig.WRedisConfig("key_a")
+        with ProcessFactory.create_writer(redis_config) as redis_writer:
+            async for items in getter:
                 # do whatever you want with items
-                xlsx_writer.write(items)
+                await redis_writer.write(items)
 
     if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+##### redis to MySQL
+
+    import asyncio
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
+
+    def my_filter(item):
+        # I am a filter
+        # Every getter or writer created by ProcessFactory.create can set up a filter
+        # every data will be pass to filter before return from getter, or before write to writer
+        # you can alter data here, or drop data here
+    if item["viewCount"] > 10:
+        return item
+        # if don't return anything(return None) means drop this data
+
+	async def example():
+        api_config = GetterConfig.RAPIConfig("http://xxxx", filter_=my_filter)
+        getter = ProcessFactory.create_getter(api_config)
+        mysql_config = WriterConfig.WMySQLConfig("my_table")
+        with ProcessFactory.create_writer(mysql_config) as mysql_writer:
+        	async for items in getter:
+                # do whatever you want with items
+                await mysql_writer.write(items)
+
+		# await mysql_config.get_mysql_pool_cli() # aiomysql connection pool
+        # mysql_config.connection # one of the connection in previous connection pool
+        # mysql_config.cursor # cursor of previous connection
+        # you should alaways call 'await mysql_config.get_mysql_pool_cli()' before use connection and cursor
+
+	if __name__ == "__main__":
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
 
@@ -262,7 +314,7 @@ will read data from redis key **my_key**, read at most 100 data， and save to *
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
 
-##### Extract error info in API
+##### Extract error info from API
 
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig

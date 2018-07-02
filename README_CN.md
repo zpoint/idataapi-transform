@@ -17,6 +17,7 @@
  * **XLSX**
  * **JSON**
  * **Redis**
+ * **MySQL**
 
 转换为以下任意一种格式
 
@@ -26,6 +27,7 @@
  * **TXT**
  * **ES**
  * **Redis**
+ * **MySQL**
 
 Features:
 
@@ -44,17 +46,20 @@ Features:
 * [安装指南](#安装指南)
 * [命令行支持及示例](#命令行支持及示例)
 	* [Elasticsearch to CSV](#从-elasticsearch-读取数据-转换为-csv-格式)
-	* [API to XLSX](#从-qpi-读取数据 转换为 XLSX 格式)
+	* [API to XLSX](#从-qpi-读取数据-转换为-xlsx-格式)
 	* [JSON to CSV](#从-json-文件读取数据-转换为-csv-格式)
 	* [CSV to XLSX](#从-csv-读取数据-转换至-xlsx)
 	* [Elasticsearch to CSV with parameters](#从-elasticsearch-读取数据-转换至-csv-(复杂示例))
 	* [API to Redis](#从-api-读取数据-存储至-redis)
 	* [Redis to CSV](#从-reidis-读取数据-存储至-csv)
+	* [API to MySQL](#从-api-读取数据-写入-mysql)
+	* [MySQL to redis](#从-mysql-读取数据-写入-redis)
 * [Python模块支持](#Python模块支持)
     * [ES to CSV](#es-to-csv)
     * [API to XLSX](#api-to-xlsx)
     * [CSV to XLSX](#csv-to-xlsx)
     * [API to Redis](#api-to-redis)
+    * [redis to MySQL](#redis-to-mysql)
     * [并发从不同的 API 读取数据 并写入到 ES](#并发从不同的-api-读取数据-并写入到-es)
     * [访问API出错时 提取错误信息](#访问api出错时-提取错误信息)
     * [REDIS 基本示例](#redis-基本示例)
@@ -72,6 +77,7 @@ Features:
 
 #### 环境要求
 * python 版本号 >= 3.5.2
+* 如果你需要使用 MySQL 模块, 你的 python 版本号要 >= 3.5.3
 
 -------------------
 
@@ -80,7 +86,7 @@ Features:
 	python3 -m pip install idataapi-transform
     # 安装完成后在终端跑如下命令
     transform --help # 解释各个参数的作用以及创建默认的配置文件
-    # 编辑配置文件 ~/idataapi-transform.ini 配置 ElasticSearch, redis 主机, 端口, 默认并发数等参数
+    # 编辑配置文件 ~/idataapi-transform.ini 配置 ElasticSearch, redis, mysql 主机, 端口, 默认并发数等参数
 
 -------------------
 
@@ -157,6 +163,21 @@ JSON 为一行一条数据的 JSON 文件
 
 	transform Redis csv my_key --max_limit 100
 
+#### 从 API 读取数据 写入 MySQL
+
+* 当表格不存在是自动创建
+
+会至多从API获取50条数据， 写入 MySQL 表格: **my_table**
+
+	transform API MYSQL 'http://xxx' my_table --max_limit=50
+
+##### 从 MySQL 读取数据 写入 redis
+
+会从 MySQL 表格 **table** 获取数据，每次网络请求60条数据，写入 redis LIST 结构，默认键名称为 result
+
+	transform MYSQL redis my_table --per_limit=60
+
+
 -------------------
 
 #### Python模块支持
@@ -204,6 +225,56 @@ JSON 为一行一条数据的 JSON 文件
 	if __name__ == "__main__":
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
+
+##### API to redis
+
+    import asyncio
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
+
+    async def example():
+        api_config = GetterConfig.RAPIConfig("http://xxx")
+        getter = ProcessFactory.create_getter(api_config)
+        redis_config = WriterConfig.WRedisConfig("key_a")
+        with ProcessFactory.create_writer(redis_config) as redis_writer:
+            async for items in getter:
+                # do whatever you want with items
+                await redis_writer.write(items)
+
+    if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+##### redis to MySQL
+
+    import asyncio
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
+
+    def my_filter(item):
+    # 我是一个过滤器
+    # 每一个 ProcessFactory.create 产生的 getter 或者 writer 都可以配置一个过滤器
+    # 每一条数据在返回之前会经过这个过滤器，过滤器可以修改这条item, 也可以选择过滤这条item
+    if item["viewCount"] > 10:
+        return item
+    # 如果 retuen None 或者不 return 任何东西，则表示过滤这一条数据
+
+	async def example():
+        api_config = GetterConfig.RAPIConfig("http://xxxx", filter_=my_filter)
+        getter = ProcessFactory.create_getter(api_config)
+        mysql_config = WriterConfig.WMySQLConfig("my_table")
+        with ProcessFactory.create_writer(mysql_config) as mysql_writer:
+        	async for items in getter:
+                # do whatever you want with items
+                await mysql_writer.write(items)
+
+		# await mysql_config.get_mysql_pool_cli() # aiomysql 连接池
+        # mysql_config.connection # 连接池中的其中一个连接
+        # mysql_config.cursor # 这个连接当前的光标
+        # 在使用 cursor 和 connection 之前，需要 'await mysql_config.get_mysql_pool_cli()' 初始化
+
+	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
 
 
 ##### 并发从不同的 API 读取数据 并写入到 ES

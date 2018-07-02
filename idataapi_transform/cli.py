@@ -8,19 +8,20 @@ from .DataProcess.ProcessFactory import ProcessFactory
 
 
 class Args(object):
-    from_choices = ["API", "ES", "CSV", "XLSX", "JSON", "REDIS"]
+    from_choices = ["API", "ES", "CSV", "XLSX", "JSON", "REDIS", "MYSQL"]
     from_desc = "argument 'from' can only set to one of 'API', 'ES', 'CSV', 'XLSX', " \
-                "'JSON'(means json line by line file) or 'REDIS'"
+                "'JSON'(means json line by line file), 'REDIS' or 'MYSQL'"
 
-    to_choices = ["csv", "xlsx", "json", "txt", "es", "redis"]
-    to_desc = "argument 'to' can only set to one of \"csv\", \"xlsx\", \"json\", \"txt\" \"es\", \"json\", \"redis\" " \
-              "will write 'json.dumps(item)' line by line. \"txt\" will write each item line by line, " \
+    to_choices = ["csv", "xlsx", "json", "txt", "es", "redis", 'mysql']
+    to_desc = "argument 'to' can only set to one of \"csv\", \"xlsx\", \"json\", \"txt\" \"es\", \"json\", \"redis\", " \
+              "\"mysql\" will write 'json.dumps(item)' line by line. \"txt\" will write each item line by line, " \
               "each element in each line is separated by 'space' bu default"
 
     source_desc = """
     argument 'source', When argument '-from' set to 'ES', source should be 'index:doc_type' When 
     argument 'from' set tp 'API', source should be 'http://...
     argument 'from' set tp 'REDIS', source should be key name
+    argument 'from' set tp 'MYSQL', source should be table name
     argument 'from' set to others, source should be file path
     """
     dest_desc = "argument 'dest', filename to save result, no need for suffix, " \
@@ -76,7 +77,8 @@ getter_config_map = {
     Args.from_choices[2]: GetterConfig.RCSVConfig,
     Args.from_choices[3]: GetterConfig.RXLSXConfig,
     Args.from_choices[4]: GetterConfig.RJsonConfig,
-    Args.from_choices[5]: GetterConfig.RRedisConfig
+    Args.from_choices[5]: GetterConfig.RRedisConfig,
+    Args.from_choices[6]: GetterConfig.RMySQLConfig
 }
 
 writer_config_map = {
@@ -85,7 +87,8 @@ writer_config_map = {
     Args.to_choices[2]: WriterConfig.WJsonConfig,
     Args.to_choices[3]: WriterConfig.WJsonConfig,
     Args.to_choices[4]: WriterConfig.WESConfig,
-    Args.to_choices[5]: WriterConfig.WRedisConfig
+    Args.to_choices[5]: WriterConfig.WRedisConfig,
+    Args.to_choices[6]: WriterConfig.WMySQLConfig
 
 }
 
@@ -169,14 +172,17 @@ def main():
     getter_config = getter_config_map[from_](*from_args, **from_kwargs)
     getter = ProcessFactory.create_getter(getter_config)
 
-    if args.to == Args.to_choices[-2]:
+    if args.to == Args.to_choices[4]:
         # es
         indices, doc_type = args.dest.split(":")
         to_args.append(indices)
         to_args.append(doc_type)
-    elif args.to == Args.to_choices[-1]:
-        # redis
-        to_args.append(args.dest)
+    elif args.to in Args.to_choices[5:]:
+        # redis, mysql
+        if args.dest == DefaultVal.dest:
+            to_args.append(DefaultVal.dest_without_path)
+        else:
+            to_args.append(args.dest)
     else:
         dest = args.dest + "." + args.to
         to_args.append(dest)

@@ -10,6 +10,7 @@ from .DataGetter.APIGetter import APIGetter, APIBulkGetter
 from .DataGetter.JsonGetter import JsonGetter
 from .DataGetter.XLSXGetter import XLSXGetter
 from .DataGetter.RedisGetter import RedisGetter
+from .DataGetter.MySQLGetter import MySQLGetter
 
 from .DataWriter.CSVWriter import CSVWriter
 from .DataWriter.ESWriter import ESWriter
@@ -17,32 +18,42 @@ from .DataWriter.JsonWriter import JsonWriter
 from .DataWriter.TXTWriter import TXTWriter
 from .DataWriter.XLSXWriter import XLSXWriter
 from .DataWriter.RedisWriter import RedisWriter
+from .DataWriter.MySQLWriter import MySQLWriter
 
 
 class ProcessFactory(object):
+    config_getter_map = {
+        GetterConfig.RAPIConfig: APIGetter,
+        GetterConfig.RCSVConfig: CSVGetter,
+        GetterConfig.RESConfig: ESScrollGetter,
+        GetterConfig.RJsonConfig: JsonGetter,
+        GetterConfig.RXLSXConfig: XLSXGetter,
+        GetterConfig.RAPIBulkConfig: APIBulkGetter,
+        GetterConfig.RRedisConfig: RedisGetter,
+        GetterConfig.RMySQLConfig: MySQLGetter
+    }
+
+    config_writer_map = {
+        WriterConfig.WCSVConfig: CSVWriter,
+        WriterConfig.WESConfig: ESWriter,
+        WriterConfig.WJsonConfig: JsonWriter,
+        WriterConfig.WTXTConfig: TXTWriter,
+        WriterConfig.WXLSXConfig: XLSXWriter,
+        WriterConfig.WRedisConfig: RedisWriter,
+        WriterConfig.WMySQLConfig: MySQLWriter
+    }
+
     @staticmethod
     def create_getter(config):
         """
         create a getter based on config
         :return: getter
         """
-        if isinstance(config, GetterConfig.RAPIConfig):
-            return APIGetter(config)
-        elif isinstance(config, GetterConfig.RCSVConfig):
-            return CSVGetter(config)
-        elif isinstance(config, GetterConfig.RESConfig):
-            return ESScrollGetter(config)
-        elif isinstance(config, GetterConfig.RJsonConfig):
-            return JsonGetter(config)
-        elif isinstance(config, GetterConfig.RXLSXConfig):
-            return XLSXGetter(config)
-        elif isinstance(config, GetterConfig.RAPIBulkConfig):
-            return APIBulkGetter(config)
-        elif isinstance(config, GetterConfig.RRedisConfig):
-            return RedisGetter(config)
-        else:
-            raise ValueError("create_getter must pass one of the instance of [RAPIConfig, RCSVConfig, "
-                             "RESConfig, RJsonConfig, RXLSXConfig, RAPIBulkConfig, RRedisConfig]")
+        for config_class, getter_class in ProcessFactory.config_getter_map.items():
+            if isinstance(config, config_class):
+                return getter_class(config)
+        raise ValueError("create_getter must pass one of the instance of [RAPIConfig, RCSVConfig, RESConfig, "
+                         "RJsonConfig, RXLSXConfig, RAPIBulkConfig, RRedisConfig, RMySQLConfig]")
 
     @staticmethod
     def create_writer(config):
@@ -50,18 +61,9 @@ class ProcessFactory(object):
         create a writer based on config
         :return: a writer
         """
-        if isinstance(config, WriterConfig.WCSVConfig):
-            return CSVWriter(config)
-        elif isinstance(config, WriterConfig.WESConfig):
-            return ESWriter(config)
-        elif isinstance(config, WriterConfig.WJsonConfig):
-            return JsonWriter(config)
-        elif isinstance(config, WriterConfig.WTXTConfig):
-            return TXTWriter(config)
-        elif isinstance(config, WriterConfig.WXLSXConfig):
-            return XLSXWriter(config)
-        elif isinstance(config, WriterConfig.WRedisConfig):
-            return RedisWriter(config)
+        for config_class, writer_class in ProcessFactory.config_writer_map.items():
+            if isinstance(config, config_class):
+                return writer_class(config)
         else:
             raise ValueError("create_writer must pass one of the instance of [WCSVConfig, WESConfig, WJsonConfig, "
-                             "WTXTConfig, WXLSXConfig, WRedisConfig]")
+                             "WTXTConfig, WXLSXConfig, WRedisConfig， WMySQLConfig]")
