@@ -88,6 +88,10 @@ Features:
     transform --help # 解释各个参数的作用以及创建默认的配置文件
     # 编辑配置文件 ~/idataapi-transform.ini 配置 ElasticSearch, redis, mysql 主机, 端口, 默认并发数等参数
 
+    # 如果你的 python 版本 >= 3.5.3, 并且需要安装 MySQL 模块
+    python3 -m pip install 'PyMySQL>=0.7.5,<0.9'
+    python3 -m pip install aiomysql
+
 -------------------
 
 #### 命令行支持及示例
