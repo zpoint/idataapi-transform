@@ -540,9 +540,11 @@ will read data from MySQL table **my_table**, each read operation fetch 60 items
 
 #### Update
 v 1.2.0
+* mysql support
 * redis support
 * retry 3 times for every write operation
 * ES create operation
+* shorter import directory
 
 v.1.0.1 - 1.1.1
 * fix es getter log error

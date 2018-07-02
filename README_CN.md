@@ -527,9 +527,11 @@ JSON 为一行一条数据的 JSON 文件
 
 #### 升级
 v.1.2.0
+* mysql support
 * redis support
 * retry 3 times for every write operation
 * ES create operation
+* shorter import directory
 
 v.1.0.1 - 1.1.1
 * fix es getter log error
