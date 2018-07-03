@@ -191,10 +191,9 @@ JSON 为一行一条数据的 JSON 文件
 
 ##### 从 MongoDB 读取数据 写入 csv
 
-会从 my_coll 中读取至多50条数据， 并保存至 **./result.csv**
-
 * 你也可以提供 --query_body 参数进行过滤查询
 
+会从 my_coll 中读取至多50条数据， 并保存至 **./result.csv**
 
 	transform MONGO csv my_coll --max_limit=50
 

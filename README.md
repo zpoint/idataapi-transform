@@ -186,10 +186,9 @@ will read data from MySQL table **my_table**, each read operation fetch 60 items
 
 ##### Read data from MongoDB write to csv
 
-will read at most 50 data from "my_coll", and save to **./result.csv**
-
 * you can provide --query_body
 
+will read at most 50 data from "my_coll", and save to **./result.csv**
 
 	transform mongo csv my_coll --max_limit=50
 
