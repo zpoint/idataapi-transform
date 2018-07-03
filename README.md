@@ -101,8 +101,8 @@ Features:
 
 #### Command line interface Example
 
-* Read data from **[API, ES, CSV, XLSX, JSON, Redis]**
-* Write data to **[CSV, XLSX, JSON, TXT, ES, Redis]**
+* Read data from **[API, ES, CSV, XLSX, JSON, Redis, MySQL, MongoDB]**
+* Write data to **[CSV, XLSX, JSON, TXT, ES, Redis, MySQL, MongoDB]**
 
 ##### read data from Elasticsearch convert to CSV
 
