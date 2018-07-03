@@ -1,4 +1,5 @@
 import os
+import hashlib
 from .MainConfig import main_config
 
 base_config = main_config()
@@ -30,3 +31,11 @@ class DefaultVal(object):
     interval = 5
     concurrency = 50
     default_key_type = "LIST"
+
+    @staticmethod
+    def default_id_hash_func(item):
+        if "appCode" in item and item["appCode"] and "id" in item and item["id"]:
+            value = (item["appCode"] + "_" + item["id"]).encode("utf8")
+        else:
+            value = str(item).encode("utf8")
+        return hashlib.md5(value).hexdigest()

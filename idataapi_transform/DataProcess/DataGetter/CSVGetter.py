@@ -15,16 +15,12 @@ class CSVGetter(BaseGetter):
         self.reader = csv.DictReader(self.f_in)
 
         self.done = False
-        self.need_clear = False
-        self.curr_size = 0
         self.responses = list()
         self.miss_count = 0
         self.total_count = 0
 
     def init_val(self):
         self.done = False
-        self.need_clear = False
-        self.curr_size = 0
         self.responses = list()
         self.f_in.seek(0, 0)
         self.miss_count = 0
@@ -34,10 +30,6 @@ class CSVGetter(BaseGetter):
         return self
 
     async def __anext__(self):
-        if self.need_clear:
-            self.responses.clear()
-            self.need_clear = False
-
         if self.done:
             logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                          (self.config.filename, self.total_count, self.miss_count))
@@ -54,17 +46,15 @@ class CSVGetter(BaseGetter):
 
             self.responses.append(row)
             if len(self.responses) > self.config.per_limit:
-                self.curr_size += len(self.responses)
-                self.need_clear = True
-                return self.responses
+                return self.clear_and_return()
 
-            if self.config.max_limit and self.curr_size > self.config.max_limit:
-                self.done = self.need_clear = True
-                return self.responses
+            if self.config.max_limit and len(self.responses) > self.config.max_limit:
+                self.done = True
+                return self.clear_and_return()
 
         if self.responses:
-            self.done = self.need_clear = True
-            return self.responses
+            self.done = True
+            return self.clear_and_return()
 
         logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                      (self.config.filename, self.total_count, self.miss_count))
@@ -82,13 +72,10 @@ class CSVGetter(BaseGetter):
 
             self.responses.append(row)
             if len(self.responses) > self.config.per_limit:
-                self.curr_size += len(self.responses)
-                yield self.responses
-                self.responses.clear()
+                yield self.clear_and_return()
 
-            if self.config.max_limit and self.curr_size > self.config.max_limit:
-                yield self.responses
-                self.responses.clear()
+            if self.config.max_limit and len(self.responses) > self.config.max_limit:
+                yield self.clear_and_return()
                 break
 
         if self.responses:
@@ -97,3 +84,8 @@ class CSVGetter(BaseGetter):
         logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                      (self.config.filename, self.total_count, self.miss_count))
         self.init_val()
+
+    def clear_and_return(self):
+        resp = self.responses
+        self.responses = list()
+        return resp

@@ -21,7 +21,6 @@ class XLSXGetter(BaseGetter):
         self.row_num = 0
         self.responses = list()
         self.curr_size = 0
-        self.need_clear = False
         self.done = False
         self.miss_count = 0
         self.total_count = 0
@@ -30,7 +29,6 @@ class XLSXGetter(BaseGetter):
         self.row_num = 0
         self.responses = list()
         self.curr_size = 0
-        self.need_clear = False
         self.done = False
         self.miss_count = 0
         self.total_count = 0
@@ -41,10 +39,6 @@ class XLSXGetter(BaseGetter):
         return self
 
     async def __anext__(self):
-        if self.need_clear:
-            self.responses.clear()
-            self.need_clear = False
-
         if self.done:
             logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                          (self.config.filename, self.total_count, self.miss_count))
@@ -67,12 +61,11 @@ class XLSXGetter(BaseGetter):
             self.responses.append(row)
             if len(self.responses) > self.config.per_limit:
                 self.curr_size += len(self.responses)
-                self.need_clear = True
-                return self.responses
+                return self.clear_and_return()
 
         if self.responses:
-            self.need_clear = self.done = True
-            return self.responses
+            self.done = True
+            return self.clear_and_return()
 
         logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                      (self.config.filename, self.total_count, self.miss_count))
@@ -112,8 +105,7 @@ class XLSXGetter(BaseGetter):
             self.responses.append(row)
             if len(self.responses) > self.config.per_limit:
                 self.curr_size += len(self.responses)
-                yield self.responses
-                self.responses.clear()
+                yield self.clear_and_return()
 
         if self.responses:
             yield self.responses
@@ -124,3 +116,8 @@ class XLSXGetter(BaseGetter):
 
     def __del__(self):
         self.wb.close()
+
+    def clear_and_return(self):
+        resp = self.responses
+        self.responses = list()
+        return resp

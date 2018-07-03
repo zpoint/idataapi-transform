@@ -37,7 +37,6 @@ class APIGetter(BaseGetter):
         self.responses = list()
         self.bad_responses = list()
         self.done = False
-        self.need_clear = False
         self.page_token = ""
         self.miss_count = 0
         self.total_count = 0
@@ -49,7 +48,6 @@ class APIGetter(BaseGetter):
         self.responses = list()
         self.bad_responses = list()
         self.done = False
-        self.need_clear = False
         self.page_token = ""
         self.miss_count = 0
         self.total_count = 0
@@ -79,13 +77,6 @@ class APIGetter(BaseGetter):
         return self
 
     async def __anext__(self):
-        if self.need_clear:
-            if self.responses:
-                self.responses.clear()
-            if self.bad_responses:
-                self.bad_responses.clear()
-            self.need_clear = False
-
         if self.done:
             logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                          (self.config.source, self.total_count, self.miss_count))
@@ -119,11 +110,9 @@ class APIGetter(BaseGetter):
                     self.done = True
                     if self.config.return_fail:
                         self.bad_responses.append(SourceObject(None, self.config.tag, self.config.source, self.base_url))
-                        self.need_clear = True
-                        return self.responses, self.bad_responses
+                        return self.clear_and_return()
                     elif self.responses:
-                        self.need_clear = True
-                        return self.responses
+                        return self.clear_and_return()
                     else:
                         return await self.__anext__()
 
@@ -146,25 +135,16 @@ class APIGetter(BaseGetter):
             if "pageToken" in result:
                 if not result["pageToken"]:
                     self.done = True
-                    if self.config.return_fail and (self.responses or self.bad_responses):
-                        self.need_clear = True
-                        return self.responses, self.bad_responses
-                    elif self.responses:
-                        self.need_clear = True
-                        return self.responses
+                    if self.need_return():
+                        return self.clear_and_return()
 
                 self.page_token = str(result["pageToken"])
                 self.update_base_url()
 
             elif "retcode" in result and result["retcode"] in ("100002", "100301", "100103"):
                 self.done = True
-                if self.config.return_fail and (self.responses or self.bad_responses):
-                    self.need_clear = True
-                    return self.responses, self.bad_responses
-                elif self.responses:
-                    self.need_clear = True
-                    return self.responses
-
+                if self.need_return():
+                    return self.clear_and_return()
                 logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                              (self.config.source, self.total_count, self.miss_count))
                 return await self.__anext__()
@@ -175,34 +155,36 @@ class APIGetter(BaseGetter):
                                   "total filtered: %d items" % (self.base_url, self.config.max_retry,
                                                                 self.total_count, self.miss_count))
                     self.done = True
-                    if self.config.return_fail and (self.responses or self.bad_responses):
-                        self.need_clear = True
-                        return self.responses, self.bad_responses
-                    elif self.responses:
-                        self.need_clear = True
-                        return self.responses
+                    if self.need_return():
+                        return self.clear_and_return()
 
                 await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
                 return await self.__anext__()
 
             if self.config.max_limit and self.curr_size > self.config.max_limit:
-                self.done = self.need_clear = True
-                if self.config.return_fail:
-                    return self.responses, self.bad_responses
-                else:
-                    return self.responses
+                self.done = True
+                return self.clear_and_return()
             elif len(self.responses) >= self.config.per_limit:
-                self.need_clear = True
-                if self.config.return_fail:
-                    return self.responses, self.bad_responses
-                else:
-                    return self.responses
+                return self.clear_and_return()
             elif self.done:
                 # buffer has empty data, and done fetching
                 return await self.__anext__()
 
     def __iter__(self):
         raise ValueError("APIGetter must be used with async generator, not normal generator")
+
+    def clear_and_return(self):
+        if self.config.return_fail:
+            resp, bad_resp = self.responses, self.bad_responses
+            self.responses, self.bad_responses = list(), list()
+            return resp, bad_resp
+        else:
+            resp = self.responses
+            self.responses = list()
+            return resp
+
+    def need_return(self):
+        return self.responses or (self.config.return_fail and (self.responses or self.bad_responses))
 
 
 class APIBulkGetter(BaseGetter):
@@ -216,7 +198,7 @@ class APIBulkGetter(BaseGetter):
         self.bad_buffers = list()
         self.success_task = 0
         self.curr_size = 0
-        self.need_clear = False
+        self.curr_bad_size = 0
 
     @staticmethod
     def to_generator(items):
@@ -246,26 +228,13 @@ class APIBulkGetter(BaseGetter):
         return self
 
     async def __anext__(self):
-        if self.need_clear:
-            if self.buffers:
-                self.buffers.clear()
-            if self.bad_buffers:
-                self.bad_buffers.clear()
-
         self.fill_tasks()
         while self.pending_tasks:
             done, pending = await asyncio.wait(self.pending_tasks, timeout=self.config.interval)
             self.pending_tasks = list(pending)
             self.success_task += len(done)
-            if self.config.return_fail:
-                if self.buffers or self.bad_buffers:
-                    self.need_clear = True
-                    self.curr_size += len(self.buffers)
-                    return self.buffers, self.bad_buffers
-            elif self.buffers:
-                self.need_clear = True
-                self.curr_size += len(self.buffers)
-                return self.buffers
+            if self.buffers or (self.config.return_fail and (self.buffers or self.bad_buffers)):
+                return self.clear_and_return()
             else:
                 # after interval seconds, no item fetched
                 self.fill_tasks()
@@ -273,8 +242,24 @@ class APIBulkGetter(BaseGetter):
                              (float(self.config.interval), self.success_task, len(self.pending_tasks)))
                 continue
 
-        logging.info("APIBulkGetter Done, total perform: %d tasks. fetch: %d items" % (self.success_task, self.curr_size))
+        ret_log = "APIBulkGetter Done, total perform: %d tasks, fetch: %d items" % (self.success_task, self.curr_size)
+        if self.config.return_fail:
+            ret_log += " fail: %d items" % (self.curr_bad_size, )
+        logging.info(ret_log)
         raise StopAsyncIteration
 
     def __iter__(self):
         raise ValueError("APIBulkGetter must be used with async generator, not normal generator")
+
+    def clear_and_return(self):
+        if self.config.return_fail:
+            buffers, bad_buffers = self.buffers, self.bad_buffers
+            self.curr_size += len(self.buffers)
+            self.curr_bad_size += len(self.bad_buffers)
+            self.buffers, self.bad_buffers = list(), list()
+            return buffers, bad_buffers
+        else:
+            buffers = self.buffers
+            self.curr_size += len(self.buffers)
+            self.buffers = list()
+            return buffers

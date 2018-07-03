@@ -18,6 +18,7 @@
  * **JSON**
  * **Redis**
  * **MySQL**
+ * **MongoDB**
 
 转换为以下任意一种格式
 
@@ -28,6 +29,7 @@
  * **ES**
  * **Redis**
  * **MySQL**
+ * **MongoDB**
 
 Features:
 
@@ -54,12 +56,14 @@ Features:
 	* [Redis to CSV](#从-reidis-读取数据-存储至-csv)
 	* [API to MySQL](#从-api-读取数据-写入-mysql)
 	* [MySQL to redis](#从-mysql-读取数据-写入-redis)
+	* [MongoDB to csv](#从-mongodb-读取数据-写入-csv)
 * [Python模块支持](#Python模块支持)
     * [ES to CSV](#es-to-csv)
     * [API to XLSX](#api-to-xlsx)
     * [CSV to XLSX](#csv-to-xlsx)
     * [API to Redis](#api-to-redis)
     * [redis to MySQL](#redis-to-mysql)
+    * [MongoDB to redis](#mongodb-to-redis)
     * [并发从不同的 API 读取数据 并写入到 ES](#并发从不同的-api-读取数据-并写入到-es)
     * [访问API出错时 提取错误信息](#访问api出错时-提取错误信息)
     * [REDIS 基本示例](#redis-基本示例)
@@ -78,6 +82,7 @@ Features:
 #### 环境要求
 * python 版本号 >= 3.5.2
 * 如果你需要使用 MySQL 模块, 你的 python 版本号要 >= 3.5.3
+* 如果你需要使用 MongoDB 模块，你需要在非 Windows 下
 
 -------------------
 
@@ -91,6 +96,9 @@ Features:
     # 如果你的 python 版本 >= 3.5.3, 并且需要安装 MySQL 模块
     python3 -m pip install 'PyMySQL>=0.7.5,<0.9'
     python3 -m pip install aiomysql
+
+    # 如果你不在 Windows 下, 并且需要安装 MongoDB 模块
+    python3 -m pip install motor
 
 -------------------
 
@@ -181,6 +189,14 @@ JSON 为一行一条数据的 JSON 文件
 
 	transform MYSQL redis my_table --per_limit=60
 
+##### 从 MongoDB 读取数据 存储至 csv
+
+会从 my_coll 中读取至多50条数据， 并保存至 **./result.csv**
+
+* 你也可以提供 --query_body 参数进行过滤查询
+
+
+	transform MONGO csv my_coll --max_limit=50
 
 -------------------
 
@@ -274,11 +290,33 @@ JSON 为一行一条数据的 JSON 文件
         # mysql_config.connection # 连接池中的其中一个连接
         # mysql_config.cursor # 这个连接当前的光标
         # 在使用 cursor 和 connection 之前，需要 'await mysql_config.get_mysql_pool_cli()' 初始化
+        # GetterConfig.RMySQLConfig 和 WriterConfig.WMySQLConfig 均提供
 
 	if __name__ == "__main__":
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
 
+
+##### MongoDB to redis
+
+    import asyncio
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
+
+	async def example():
+        mongo_config = GetterConfig.RMongoConfig("coll_name")
+        mongo_getter = ProcessFactory.create_getter(mongo_config)
+        redis_config = WriterConfig.WRedisConfig("my_key")
+        with ProcessFactory.create_writer(redis_config) as redis_writer:
+        	async for items in mongo_getter:
+                # do whatever you want with items
+                await mysql_writer.write(items)
+
+		# print(mongo_config.get_mysql_pget_mongo_cli()) # motor 的 AsyncIOMotorClient 实例
+        # GetterConfig.RMongoConfig 和 WriterConfig.WMongoConfig 均提供
+
+	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
 
 
 ##### 并发从不同的 API 读取数据 并写入到 ES
@@ -530,6 +568,10 @@ JSON 为一行一条数据的 JSON 文件
 -------------------
 
 #### 升级
+v 1.3.0
+* mongodb support
+* fix APIBulkGetter incompleted data
+
 v.1.2.0
 * mysql support
 * redis support

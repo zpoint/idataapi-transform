@@ -1,9 +1,16 @@
 import asyncio
 import aioredis
+
 try:
     import aiomysql
 except ModuleNotFoundError:
     pass
+
+try:
+    import motor.motor_asyncio
+except ModuleNotFoundError:
+    pass
+
 from .BaseConfig import BaseWriterConfig
 from ..ESConfig import get_es_client
 from ..DefaultValue import DefaultVal
@@ -42,9 +49,10 @@ class WCSVConfig(BaseWriterConfig):
 
 
 class WESConfig(BaseWriterConfig):
-    def __init__(self, indices, doc_type, filter_=None, expand=None, id_hash_func=None, appCode=None,
-                 actions=None, createDate=None, error_if_fail=True, timeout=None, max_retry=DefaultVal.max_retry,
-                 random_min_sleep=DefaultVal.random_min_sleep, random_max_sleep=DefaultVal.random_max_sleep,
+    def __init__(self, indices, doc_type, filter_=None, expand=None, id_hash_func=DefaultVal.default_id_hash_func,
+                 appCode=None, actions=None, createDate=None, error_if_fail=True, timeout=None,
+                 max_retry=DefaultVal.max_retry, random_min_sleep=DefaultVal.random_min_sleep,
+                 random_max_sleep=DefaultVal.random_max_sleep,
                  auto_insert_createDate=True, **kwargs):
         """
         :param indices: elasticsearch indices
@@ -344,3 +352,76 @@ class WMySQLConfig(BaseWriterConfig):
             self.mysql_pool_cli.close()
             self.loop.create_task(self.mysql_pool_cli.wait_closed())
             self.mysql_pool_cli = self.connection = self.cursor = None
+
+
+class WMongoConfig(BaseWriterConfig):
+    def __init__(self, collection, id_hash_func=DefaultVal.default_id_hash_func,
+                 per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit, query_body=None,
+                 max_retry=DefaultVal.max_retry, random_min_sleep=DefaultVal.random_min_sleep,
+                 random_max_sleep=DefaultVal.random_max_sleep, filter_=None, host=main_config["mongo"].get("host"),
+                 port=main_config["mongo"].getint("port"), username=main_config["mongo"].get("username"),
+                 password=main_config["mongo"].get("password"), database=main_config["mongo"].get("database"),
+                 **kwargs):
+        """
+        :param collection: collection name
+        :param id_hash_func: function to generate id_ for each item
+        :param per_limit: how many items to get per request
+        :param max_limit: get at most max_limit items, if not set, get all
+        :param query_body: search query, default None, i.e: {'i': {'$lt': 5}}
+        :param return_source: if set to True, will return [item , ..., itemN], item is the "_source" object
+                              if set to False, will return whatever elasticsearch return, i.e {"hits": {"total": ...}}
+        :param max_retry: if request fail, retry max_retry times
+        :param random_min_sleep: if request fail, random sleep at least random_min_sleep seconds before request again
+        :param random_max_sleep: if request fail, random sleep at most random_min_sleep seconds before request again
+        :param filter_: run "transform --help" to see command line interface explanation for detail
+        :param host: mongodb host -> str
+        :param port: mongodb port -> int
+        :param user: mongodb user -> str
+        :param password: mongodb password -> str
+        :param database: mongodb database -> str
+        :param kwargs:
+
+        Example:
+            data = [json_obj, json_obj, json_obj]
+            mongo_config = WMongoConfig("my_coll")
+            async with ProcessFactory.create_writer(mongo_config) as mongo_writer:
+                await mongo_writer.write(data)
+        """
+        super().__init__()
+        if not main_config.has_mongo_configured:
+            raise ValueError("You must config MongoDB before using MongoDB, Please edit configure file: %s" % (main_config.ini_path, ))
+        if "motor" not in globals():
+            raise ValueError("module motor disabled, please reinstall "
+                             "requirements in linux")
+
+        self.collection = collection
+        self.query_body = query_body
+        self.per_limit = per_limit
+        self.max_limit = max_limit
+        self.max_retry = max_retry
+        self.random_min_sleep = random_min_sleep
+        self.random_max_sleep = random_max_sleep
+        self.filter = filter_
+        self.host = host
+        self.port = port
+        self.username = username
+        self.password = password
+        self.database = database
+        self.name = "%s->%s" % (self.database, self.collection)
+        self.id_hash_func = id_hash_func
+
+        self.client = self.collection_cli = None
+
+    def get_mongo_cli(self):
+        if self.client is None:
+            kwargs = {
+                "host": self.host,
+                "port": self.port
+            }
+            if self.username:
+                kwargs["username"] = self.username
+            if self.password:
+                kwargs["password"] = self.password
+            self.client = motor.motor_asyncio.AsyncIOMotorClient(**kwargs)
+            self.collection_cli = self.client[self.database][self.collection]
+        return self.client

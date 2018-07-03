@@ -11,8 +11,6 @@ class MySQLGetter(BaseGetter):
         super().__init__(self)
         self.config = config
         self.responses = list()
-        self.need_clear = False
-        self.done = False
         self.miss_count = 0
         self.total_count = 0
         self.total_size = None
@@ -21,8 +19,6 @@ class MySQLGetter(BaseGetter):
 
     def init_val(self):
         self.responses = list()
-        self.need_clear = False
-        self.done = False
         self.miss_count = 0
         self.total_count = 0
         self.total_size = None
@@ -38,17 +34,9 @@ class MySQLGetter(BaseGetter):
         if self.total_size is None:
             self.total_size, self.key_fields = await self.get_total_size_and_key_field()
 
-        if self.need_clear:
-            self.responses.clear()
-            self.need_clear = False
-
-        if self.done:
-            await self.finish()
-
         if self.total_count < self.total_size:
-            self.need_clear = True
             await self.fetch_per_limit()
-            return self.responses
+            return self.clear_and_return()
 
         # reach here, means done
         await self.finish()
@@ -148,3 +136,8 @@ class MySQLGetter(BaseGetter):
                 ret_dict[key] = item[index]
             index += 1
         return ret_dict
+
+    def clear_and_return(self):
+        resp = self.responses
+        self.responses = list()
+        return resp

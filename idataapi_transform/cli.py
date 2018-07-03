@@ -8,14 +8,14 @@ from .DataProcess.ProcessFactory import ProcessFactory
 
 
 class Args(object):
-    from_choices = ["API", "ES", "CSV", "XLSX", "JSON", "REDIS", "MYSQL"]
+    from_choices = ["API", "ES", "CSV", "XLSX", "JSON", "REDIS", "MYSQL", "MONGO"]
     from_desc = "argument 'from' can only set to one of 'API', 'ES', 'CSV', 'XLSX', " \
-                "'JSON'(means json line by line file), 'REDIS' or 'MYSQL'"
+                "'JSON'(means json line by line file), 'REDIS', 'MYSQL' or 'MONGO'"
 
-    to_choices = ["csv", "xlsx", "json", "txt", "es", "redis", 'mysql']
+    to_choices = ["csv", "xlsx", "json", "txt", "es", "redis", 'mysql', 'mongo']
     to_desc = "argument 'to' can only set to one of \"csv\", \"xlsx\", \"json\", \"txt\" \"es\", \"json\", \"redis\", " \
-              "\"mysql\" will write 'json.dumps(item)' line by line. \"txt\" will write each item line by line, " \
-              "each element in each line is separated by 'space' bu default"
+              "\"mysql\", \"mongo\", \"json\" will write 'json.dumps(item)' line by line. " \
+              "\"txt\" will write each item line by line, each element in each line is separated by 'space' bu default"
 
     source_desc = """
     argument 'source', When argument '-from' set to 'ES', source should be 'index:doc_type' When 
@@ -78,7 +78,8 @@ getter_config_map = {
     Args.from_choices[3]: GetterConfig.RXLSXConfig,
     Args.from_choices[4]: GetterConfig.RJsonConfig,
     Args.from_choices[5]: GetterConfig.RRedisConfig,
-    Args.from_choices[6]: GetterConfig.RMySQLConfig
+    Args.from_choices[6]: GetterConfig.RMySQLConfig,
+    Args.from_choices[7]: GetterConfig.RMongoConfig
 }
 
 writer_config_map = {
@@ -88,8 +89,8 @@ writer_config_map = {
     Args.to_choices[3]: WriterConfig.WJsonConfig,
     Args.to_choices[4]: WriterConfig.WESConfig,
     Args.to_choices[5]: WriterConfig.WRedisConfig,
-    Args.to_choices[6]: WriterConfig.WMySQLConfig
-
+    Args.to_choices[6]: WriterConfig.WMySQLConfig,
+    Args.to_choices[7]: WriterConfig.WMongoConfig
 }
 
 
@@ -178,7 +179,7 @@ def main():
         to_args.append(indices)
         to_args.append(doc_type)
     elif args.to in Args.to_choices[5:]:
-        # redis, mysql
+        # redis, mysql, mongo
         if args.dest == DefaultVal.dest:
             to_args.append(DefaultVal.dest_without_path)
         else:

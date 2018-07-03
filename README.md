@@ -18,6 +18,7 @@ You can read data from one of
  * **JSON**
  * **Redis**
  * **MySQL**
+ * **MongoDB**
 
 and convert to
 
@@ -27,6 +28,7 @@ and convert to
  * **TXT**
  * **Redis**
  * **MySQL**
+ * **MongoDB**
 
 Features:
 
@@ -51,13 +53,15 @@ Features:
 	* [API to redis](#read-data-from-api-write-to-redis)
 	* [redis to csv](#read-data-from-redis-write-to-csv)
 	* [API to MySQL](#read-data-from-api-write-to-mysql)
-	* [MySQL to redis](read-data-from-mysql-write-to-redis)
+	* [MySQL to redis](#read-data-from-mysql-write-to-redis)
+	* [MongoDB to csv](#read-data-from-mongodb-write-to-csv)
 * [Python module support](#python-module-support)
 	* [ES to csv](#es-to-csv)
 	* [API to xlsx](#api-to-xlsx)
 	* [CSV to xlsx](#csv-to-xlsx)
 	* [API to redis](#api-to-redis)
     * [redis to MySQL](#redis-to-mysql)
+    * [MongoDB to redis](#mongodb-to-redis)
 	* [Bulk API to ES](#bulk-api-to-es)
 	* [Extract error info from API](#extract-error-info-from-api)
 	* [REDIS Usage](#redis-usage)
@@ -76,6 +80,7 @@ Features:
 #### Requirment
 * python version >= 3.5.2
 * If you need MySQL enable, your python version should be >= 3.5.3
+* If you need MongoDB enable, your platform should not be **windows**
 -------------------
 
 #### Installation
@@ -88,6 +93,9 @@ Features:
     # Install MySQL module, if your python version >= 3.5.3
     python3 -m pip install 'PyMySQL>=0.7.5,<0.9'
     python3 -m pip install aiomysql
+
+    # Install MongoDB module, if your platform is not Windows
+    python3 -m pip install motor
 
 -------------------
 
@@ -176,6 +184,13 @@ will read data from MySQL table **my_table**, each read operation fetch 60 items
 
 	transform MYSQL redis my_table --per_limit=60
 
+##### Read data from MongoDB write to csv
+
+will read at most 50 data from "my_coll", and save to **./result.csv**
+
+* you can provide --query_body
+
+	transform mongo csv my_coll --max_limit=50
 
 -------------------
 
@@ -287,6 +302,29 @@ will read data from MySQL table **my_table**, each read operation fetch 60 items
         # mysql_config.connection # one of the connection in previous connection pool
         # mysql_config.cursor # cursor of previous connection
         # you should alaways call 'await mysql_config.get_mysql_pool_cli()' before use connection and cursor
+        # provided by GetterConfig.RMySQLConfig and WriterConfig.WMySQLConfig
+
+	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+
+##### MongoDB to redis
+
+    import asyncio
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
+
+	async def example():
+        mongo_config = GetterConfig.RMongoConfig("coll_name")
+        mongo_getter = ProcessFactory.create_getter(mongo_config)
+        redis_config = WriterConfig.WRedisConfig("my_key")
+        with ProcessFactory.create_writer(redis_config) as redis_writer:
+        	async for items in mongo_getter:
+                # do whatever you want with items
+                await mysql_writer.write(items)
+
+		# print(mongo_config.get_mysql_pget_mongo_cli()) # motor's AsyncIOMotorClient instance
+        # provided by GetterConfig.RMongoConfig and WriterConfig.WMongoConfig
 
 	if __name__ == "__main__":
         loop = asyncio.get_event_loop()
@@ -543,6 +581,10 @@ will read data from MySQL table **my_table**, each read operation fetch 60 items
 -------------------
 
 #### Update
+v 1.3.0
+* mongodb support
+* fix APIBulkGetter incompleted data bug
+
 v 1.2.0
 * mysql support
 * redis support

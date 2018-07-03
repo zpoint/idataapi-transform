@@ -1,11 +1,9 @@
 import asyncio
 import aiohttp
-import hashlib
 import json
 import time
 import logging
 import copy
-import inspect
 from elasticsearch_async.connection import AIOHttpConnection as OriginAIOHttpConnection
 from elasticsearch_async.transport import AsyncTransport as OriginAsyncTransport
 from elasticsearch_async.transport import ensure_future
@@ -159,20 +157,10 @@ def init_es(hosts, es_headers, timeout_):
             return response.status, response.headers, raw_data
 
     class MyAsyncElasticsearch(AsyncElasticsearch):
-        @staticmethod
-        def default_id_hash_func(item, ):
-            if "appCode" in item and item["appCode"] and "id" in item and item["id"]:
-                value = (item["appCode"] + "_" + item["id"]).encode("utf8")
-            else:
-                value = str(item).encode("utf8")
-            return hashlib.md5(value).hexdigest()
-
-        async def add_dict_to_es(self, indices, doc_type, items, id_hash_func=None, app_code=None, actions=None,
+        async def add_dict_to_es(self, indices, doc_type, items, id_hash_func, app_code=None, actions=None,
                                  create_date=None, error_if_fail=True, timeout=None, auto_insert_createDate=True):
             if not actions:
                 actions = "index"
-            if not id_hash_func:
-                id_hash_func = self.default_id_hash_func
             body = ""
             for item in items:
                 if app_code:

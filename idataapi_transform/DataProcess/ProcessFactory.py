@@ -11,6 +11,7 @@ from .DataGetter.JsonGetter import JsonGetter
 from .DataGetter.XLSXGetter import XLSXGetter
 from .DataGetter.RedisGetter import RedisGetter
 from .DataGetter.MySQLGetter import MySQLGetter
+from .DataGetter.MongoGetter import MongoGetter
 
 from .DataWriter.CSVWriter import CSVWriter
 from .DataWriter.ESWriter import ESWriter
@@ -19,6 +20,7 @@ from .DataWriter.TXTWriter import TXTWriter
 from .DataWriter.XLSXWriter import XLSXWriter
 from .DataWriter.RedisWriter import RedisWriter
 from .DataWriter.MySQLWriter import MySQLWriter
+from .DataWriter.MongoWriter import MongoWriter
 
 
 class ProcessFactory(object):
@@ -30,7 +32,8 @@ class ProcessFactory(object):
         GetterConfig.RXLSXConfig: XLSXGetter,
         GetterConfig.RAPIBulkConfig: APIBulkGetter,
         GetterConfig.RRedisConfig: RedisGetter,
-        GetterConfig.RMySQLConfig: MySQLGetter
+        GetterConfig.RMySQLConfig: MySQLGetter,
+        GetterConfig.RMongoConfig: MongoGetter
     }
 
     config_writer_map = {
@@ -40,7 +43,8 @@ class ProcessFactory(object):
         WriterConfig.WTXTConfig: TXTWriter,
         WriterConfig.WXLSXConfig: XLSXWriter,
         WriterConfig.WRedisConfig: RedisWriter,
-        WriterConfig.WMySQLConfig: MySQLWriter
+        WriterConfig.WMySQLConfig: MySQLWriter,
+        WriterConfig.WMongoConfig: MongoWriter
     }
 
     @staticmethod
@@ -53,7 +57,7 @@ class ProcessFactory(object):
             if isinstance(config, config_class):
                 return getter_class(config)
         raise ValueError("create_getter must pass one of the instance of [RAPIConfig, RCSVConfig, RESConfig, "
-                         "RJsonConfig, RXLSXConfig, RAPIBulkConfig, RRedisConfig, RMySQLConfig]")
+                         "RJsonConfig, RXLSXConfig, RAPIBulkConfig, RRedisConfig, RMySQLConfig, RMongoConfig]")
 
     @staticmethod
     def create_writer(config):
@@ -66,4 +70,4 @@ class ProcessFactory(object):
                 return writer_class(config)
         else:
             raise ValueError("create_writer must pass one of the instance of [WCSVConfig, WESConfig, WJsonConfig, "
-                             "WTXTConfig, WXLSXConfig, WRedisConfig， WMySQLConfig]")
+                             "WTXTConfig, WXLSXConfig, WRedisConfig, WMySQLConfig, WMongoConfig]")

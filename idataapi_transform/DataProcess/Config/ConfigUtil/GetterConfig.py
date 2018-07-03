@@ -1,10 +1,17 @@
 import asyncio
 import inspect
 import aioredis
+
 try:
     import aiomysql
 except ModuleNotFoundError:
     pass
+
+try:
+    import motor.motor_asyncio
+except ModuleNotFoundError:
+    pass
+
 from .BaseConfig import BaseGetterConfig
 
 from ..ESConfig import get_es_client
@@ -16,7 +23,7 @@ class RAPIConfig(BaseGetterConfig):
     def __init__(self, source, per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit,
                  max_retry=DefaultVal.max_retry, random_min_sleep=DefaultVal.random_min_sleep,
                  random_max_sleep=DefaultVal.random_max_sleep, session=None, filter_=None, return_fail=False,
-                 tag=None, *args, **kwargs):
+                 tag=None, **kwargs):
         """
         will request until no more next_page to get, or get "max_limit" items
 
@@ -445,3 +452,71 @@ class RMySQLConfig(BaseGetterConfig):
             self.mysql_pool_cli.close()
             self.loop.create_task(self.mysql_pool_cli.wait_closed())
             self.mysql_pool_cli = self.connection = self.cursor = None
+
+
+class RMongoConfig(BaseGetterConfig):
+    def __init__(self, collection, per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit,
+                 query_body=None, max_retry=DefaultVal.max_retry,
+                 random_min_sleep=DefaultVal.random_min_sleep, random_max_sleep=DefaultVal.random_max_sleep,
+                 filter_=None, host=main_config["mongo"].get("host"), port=main_config["mongo"].getint("port"),
+                 username=main_config["mongo"].get("username"), password=main_config["mongo"].get("password"),
+                 database=main_config["mongo"].get("database"), **kwargs):
+        """
+        :param collection: collection name
+        :param per_limit: how many items to get per request
+        :param max_limit: get at most max_limit items, if not set, get all
+        :param query_body: search query, default None, i.e: {'i': {'$lt': 5}}
+        :param return_source: if set to True, will return [item , ..., itemN], item is the "_source" object
+                              if set to False, will return whatever elasticsearch return, i.e {"hits": {"total": ...}}
+        :param max_retry: if request fail, retry max_retry times
+        :param random_min_sleep: if request fail, random sleep at least random_min_sleep seconds before request again
+        :param random_max_sleep: if request fail, random sleep at most random_min_sleep seconds before request again
+        :param filter_: run "transform --help" to see command line interface explanation for detail
+        :param kwargs:
+
+        Example:
+            mongo_config = RMongoConfig("my_coll")
+            mongo_getter = ProcessFactory.create_getter(mongo_config)
+            async for items in mongo_getter:
+                print(item)
+        """
+        super().__init__()
+        if not main_config.has_mongo_configured:
+            raise ValueError("You must config MongoDB before using MongoDB, Please edit configure file: %s" % (main_config.ini_path, ))
+        if "motor" not in globals():
+            raise ValueError("module motor disabled, please reinstall "
+                             "requirements in linux")
+
+        self.collection = collection
+        self.query_body = query_body
+        self.per_limit = per_limit
+        self.max_limit = max_limit
+        self.max_retry = max_retry
+        self.random_min_sleep = random_min_sleep
+        self.random_max_sleep = random_max_sleep
+        self.filter = filter_
+        self.host = host
+        self.port = port
+        self.username = username
+        self.password = password
+        self.database = database
+        self.name = "%s->%s" % (self.database, self.collection)
+
+        self.client = self.cursor = None
+
+    def get_mongo_cli(self):
+        if self.client is None:
+            kwargs = {
+                "host": self.host,
+                "port": self.port
+            }
+            if self.username:
+                kwargs["username"] = self.username
+            if self.password:
+                kwargs["password"] = self.password
+            self.client = motor.motor_asyncio.AsyncIOMotorClient(**kwargs)
+            if self.query_body:
+                self.cursor = self.client[self.database][self.collection].find(self.query_body)
+            else:
+                self.cursor = self.client[self.database][self.collection].find(self.query_body)
+        return self.client
