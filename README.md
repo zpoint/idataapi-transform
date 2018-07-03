@@ -190,7 +190,9 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
 
 * you can provide --query_body
 
+
 	transform mongo csv my_coll --max_limit=50
+
 
 -------------------
 

@@ -175,7 +175,7 @@ JSON 为一行一条数据的 JSON 文件
 
 	transform Redis csv my_key --max_limit 100
 
-#### 从 API 读取数据 写入 MySQL
+##### 从 API 读取数据 写入 MySQL
 
 * 当表格不存在是自动创建
 
@@ -189,7 +189,7 @@ JSON 为一行一条数据的 JSON 文件
 
 	transform MYSQL redis my_table --per_limit=60
 
-##### 从 MongoDB 读取数据 存储至 csv
+##### 从 MongoDB 读取数据 写入 csv
 
 会从 my_coll 中读取至多50条数据， 并保存至 **./result.csv**
 
