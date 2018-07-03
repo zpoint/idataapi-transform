@@ -4,12 +4,12 @@ import aioredis
 
 try:
     import aiomysql
-except ModuleNotFoundError:
+except Exception as e:
     pass
 
 try:
     import motor.motor_asyncio
-except ModuleNotFoundError:
+except Exception as e:
     pass
 
 from .BaseConfig import BaseGetterConfig
