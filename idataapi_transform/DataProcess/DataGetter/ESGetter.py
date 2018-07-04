@@ -13,6 +13,7 @@ class ESScrollGetter(BaseGetter):
 
         self.total_size = None
         self.result = None
+        self.scroll_id = None
         self.miss_count = 0
         self.total_count = 0
 
@@ -22,6 +23,7 @@ class ESScrollGetter(BaseGetter):
     def init_val(self):
         self.total_size = None
         self.result = None
+        self.scroll_id = None
         self.miss_count = 0
         self.total_count = 0
 
@@ -45,11 +47,12 @@ class ESScrollGetter(BaseGetter):
                 results = [self.config.filter(i) for i in results]
                 results = [i for i in results if i]
                 self.miss_count += origin_length - len(results)
+            self.get_score_id_and_clear_result()
             return results
 
-        if "_scroll_id" in self.result and self.result["_scroll_id"] and self.total_count < self.total_size:
+        if self.scroll_id and self.total_count < self.total_size:
             try:
-                self.result = await self.es_client.scroll(scroll_id=self.result["_scroll_id"],
+                self.result = await self.es_client.scroll(scroll_id=self.scroll_id,
                                                           scroll=self.config.scroll)
             except Exception as e:
                 if retry < self.config.max_retry:
@@ -63,7 +66,6 @@ class ESScrollGetter(BaseGetter):
                                    self.total_count, self.miss_count, traceback.format_exc()))
                     raise StopAsyncIteration
 
-            self.total_count += len(self.result['hits']['hits'])
             logging.info("Get %d items from %s, filtered: %d items, percentage: %.2f%%" %
                          (len(self.result['hits']['hits']), self.config.indices + "->" + self.config.doc_type,
                           self.miss_count, (self.total_count / self.total_size * 100) if self.total_size else 0))
@@ -78,11 +80,13 @@ class ESScrollGetter(BaseGetter):
                 results = [self.config.filter(i) for i in results]
                 results = [i for i in results if i]
                 self.miss_count += origin_length - len(results)
+
+            self.get_score_id_and_clear_result()
             if origin_length > 0:
                 return results
             else:
                 # if scroll empty item, means no more next page
-                logging.info("empty result, terminating scroll, scroll id: %s" % (self.result["_scroll_id"], ))
+                logging.info("empty result, terminating scroll, scroll id: %s" % (str(self.scroll_id), ))
 
         logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                      (self.config.indices + "->" + self.config.doc_type, self.total_count, self.miss_count))
@@ -104,3 +108,10 @@ class ESScrollGetter(BaseGetter):
 
     def __iter__(self):
         raise ValueError("ESGetter must be used with async generator, not normal generator")
+
+    def get_score_id_and_clear_result(self):
+        if "_scroll_id" in self.result and self.result["_scroll_id"]:
+            self.scroll_id = self.result["_scroll_id"]
+        else:
+            self.scroll_id = None
+        self.result = dict()

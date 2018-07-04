@@ -582,9 +582,11 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
 -------------------
 
 #### Update
-v 1.3.0
+v 1.3.2
 * mongodb support
 * fix APIBulkGetter incompleted data bug
+* 3.5 compatiable
+* ESGetter get all data instead of half
 
 v 1.2.0
 * mysql support
