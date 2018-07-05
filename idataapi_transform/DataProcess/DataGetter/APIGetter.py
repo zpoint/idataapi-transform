@@ -152,7 +152,7 @@ class APIGetter(BaseGetter):
                 self.retry_count += 1
                 if self.retry_count > self.config.max_retry:
                     logging.error("Give up, After retry: %d times, Unable to get url: %s, total get %d items, "
-                                  "total filtered: %d items" % (self.base_url, self.config.max_retry,
+                                  "total filtered: %d items" % (self.config.max_retry, self.base_url,
                                                                 self.total_count, self.miss_count))
                     self.done = True
                     if self.need_return():

@@ -572,6 +572,7 @@ v 1.3.2
 * fix APIBulkGetter incompleted data
 * 3.5 compatiable
 * ESGetter get all data instead of half
+* compatible with elasticsearch-async-6.1.0
 
 v.1.2.0
 * mysql support

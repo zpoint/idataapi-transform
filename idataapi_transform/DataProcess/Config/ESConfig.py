@@ -203,6 +203,16 @@ def init_es(hosts, es_headers, timeout_):
                 logging.error("elasticsearch Exception, give up: %s" % (str(e), ))
                 return None, None, None
 
+        def __del__(self):
+            """
+            compatible with elasticsearch-async-6.1.0
+            """
+            try:
+                loop = asyncio.get_event_loop()
+                loop.run_until_complete(self.transport.close())
+            except Exception:
+                pass
+
     OriginAIOHttpConnection.perform_request = AIOHttpConnection.perform_request
     OriginAsyncTransport.perform_request = MyAsyncTransport.perform_request
     OriginAsyncTransport.main_loop = MyAsyncTransport.main_loop
