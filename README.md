@@ -299,7 +299,7 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
                 # do whatever you want with items
                 await mysql_writer.write(items)
 
-		# await mysql_config.get_mysql_pool_cli() # aiomysql connection pool
+        # await mysql_config.get_mysql_pool_cli() # aiomysql connection pool
         # mysql_config.connection # one of the connection in previous connection pool
         # mysql_config.cursor # cursor of previous connection
         # you should alaways call 'await mysql_config.get_mysql_pool_cli()' before use connection and cursor
@@ -324,7 +324,7 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
                 # do whatever you want with items
                 await mysql_writer.write(items)
 
-		# print(mongo_config.get_mysql_pget_mongo_cli()) # motor's AsyncIOMotorClient instance
+        # print(mongo_config.get_mysql_pget_mongo_cli()) # motor's AsyncIOMotorClient instance
         # provided by GetterConfig.RMongoConfig and WriterConfig.WMongoConfig
 
 	if __name__ == "__main__":
@@ -363,10 +363,10 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
 	from idataapi_transform import ProcessFactory, GetterConfig
 
 	async def example_simple():
-    	# if return_fail set to true, after retry 3(default) times,
+        # if return_fail set to true, after retry 3(default) times,
         # still unable to get data error info will be returned in "bad_items"
-    	url = "xxx"
-    	config = GetterConfig.RAPIConfig(url, return_fail=True)
+        url = "xxx"
+        config = GetterConfig.RAPIConfig(url, return_fail=True)
         reader = ProcessFactory.create_getter(config)
         async for good_items, bad_items in reader:
         	print(good_items)
@@ -401,9 +401,9 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
 	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
 
     async def example_simple():
-    	# default key_type is LIST in redis
+        # default key_type is LIST in redis
         # you can pass parameter "encoding" to specify how to encode before write to redis, default utf8
-    	json_lists = [...]
+        json_lists = [...]
         wredis_config = WriterConfig.WRedisConfig("my_key")
         writer = ProcessFactory.create_writer(wredis_config)
         await writer.write(json_lists)
@@ -412,7 +412,7 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
         client = await self.get_redis_pool_cli()
 
     async def example():
-    	# specify redis's key_type to HASH, default is LIST
+        # specify redis's key_type to HASH, default is LIST
         # compress means string object is compressed by zlib before write to redis,
         # we need to decompress it before turn to json object
         # you can pass parameter "need_del" to specify whether need to del the key after get object from redis, default false

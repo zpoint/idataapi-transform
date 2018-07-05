@@ -285,7 +285,7 @@ JSON 为一行一条数据的 JSON 文件
                 # do whatever you want with items
                 await mysql_writer.write(items)
 
-		# await mysql_config.get_mysql_pool_cli() # aiomysql 连接池
+        # await mysql_config.get_mysql_pool_cli() # aiomysql 连接池
         # mysql_config.connection # 连接池中的其中一个连接
         # mysql_config.cursor # 这个连接当前的光标
         # 在使用 cursor 和 connection 之前，需要 'await mysql_config.get_mysql_pool_cli()' 初始化
@@ -310,7 +310,7 @@ JSON 为一行一条数据的 JSON 文件
                 # do whatever you want with items
                 await mysql_writer.write(items)
 
-		# print(mongo_config.get_mysql_pget_mongo_cli()) # motor 的 AsyncIOMotorClient 实例
+        # print(mongo_config.get_mysql_pget_mongo_cli()) # motor 的 AsyncIOMotorClient 实例
         # GetterConfig.RMongoConfig 和 WriterConfig.WMongoConfig 均提供
 
 	if __name__ == "__main__":
@@ -348,8 +348,8 @@ JSON 为一行一条数据的 JSON 文件
 	async def example_simple():
         # 如果 return_fail 设置为 true, 当在重试次数过后还是无法获得数据，
         # 则错误信息会返回在 bad_items 中
-    	url = "xxx"
-    	config = GetterConfig.RAPIConfig(url, return_fail=True)
+        url = "xxx"
+        config = GetterConfig.RAPIConfig(url, return_fail=True)
         reader = ProcessFactory.create_getter(config)
         async for good_items, bad_items in reader:
         	print(good_items)
