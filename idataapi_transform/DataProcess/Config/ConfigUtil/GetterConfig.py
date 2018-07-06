@@ -153,9 +153,6 @@ class RESConfig(BaseGetterConfig):
         self.random_max_sleep = random_max_sleep
         self.filter = filter_
 
-    def __del__(self):
-        self.es_client.transport.close()
-
 
 class RJsonConfig(BaseGetterConfig):
     def __init__(self, filename, mode=DefaultVal.default_file_mode_r, encoding=DefaultVal.default_encoding,

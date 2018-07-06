@@ -221,8 +221,14 @@ def init_es(hosts, es_headers, timeout_):
     return True
 
 
+global_client = None
+
+g
 def get_es_client():
-    return AsyncElasticsearch(hosts=es_hosts)
+    global global_client
+    if global_client is None:
+        global_client = AsyncElasticsearch(hosts=es_hosts)
+    return global_client
 
 
 """

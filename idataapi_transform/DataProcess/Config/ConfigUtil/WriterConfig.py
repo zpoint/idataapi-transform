@@ -1,5 +1,6 @@
 import asyncio
 import aioredis
+import inspect
 
 try:
     import aiomysql
@@ -97,9 +98,6 @@ class WESConfig(BaseWriterConfig):
         self.random_min_sleep = random_min_sleep
         self.random_max_sleep = random_max_sleep
         self.auto_insert_createDate = auto_insert_createDate
-
-    def __del__(self):
-        self.es_client.transport.close()
 
 
 class WJsonConfig(BaseWriterConfig):
