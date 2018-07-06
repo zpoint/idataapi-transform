@@ -223,7 +223,7 @@ def init_es(hosts, es_headers, timeout_):
 
 global_client = None
 
-g
+
 def get_es_client():
     global global_client
     if global_client is None:
