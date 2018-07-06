@@ -567,12 +567,13 @@ JSON 为一行一条数据的 JSON 文件
 -------------------
 
 #### 升级
-v 1.3.2
+v 1.3.4
 * mongodb support
 * fix APIBulkGetter incompleted data
 * 3.5 compatiable
 * ESGetter get all data instead of half
 * compatible with elasticsearch-async-6.1.0
+* ESClient singleton
 
 v.1.2.0
 * mysql support
