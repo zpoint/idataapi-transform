@@ -32,11 +32,14 @@ class _SessionManger(object):
         return self.session
 
     def __del__(self):
-        if inspect.iscoroutinefunction(self.session.close):
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(self.session.close())
-        else:
-            self.session.close()
+        try:
+            if inspect.iscoroutinefunction(self.session.close):
+                loop = asyncio.get_event_loop()
+                loop.run_until_complete(self.session.close())
+            else:
+                self.session.close()
+        except Exception as e:
+            pass
 
 
 session_manger = _SessionManger()

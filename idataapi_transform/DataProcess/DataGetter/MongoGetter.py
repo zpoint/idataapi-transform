@@ -48,11 +48,10 @@ class MongoGetter(BaseGetter):
     async def get_total_size(self):
         size = await self.config.cursor.count()
         if size == 0:
-            self.finish()
+            await self.finish()
         return size
 
     async def fetch_per_limit(self):
-        results = list()
         curr_size = 0
         try_time = 0
         while try_time < self.config.max_retry:
@@ -81,7 +80,7 @@ class MongoGetter(BaseGetter):
         curr_miss_count = 0
         if self.config.filter:
             target_results = list()
-            for each in results:
+            for each in self.responses:
                 each = self.config.filter(each)
                 if each:
                     target_results.append(each)
@@ -91,7 +90,7 @@ class MongoGetter(BaseGetter):
             self.miss_count += curr_miss_count
 
         logging.info("Get %d items from %s, filtered: %d items, percentage: %.2f%%" %
-                     (len(results), self.config.name, curr_miss_count,
+                     (len(self.responses), self.config.name, curr_miss_count,
                       (self.total_count / self.total_size * 100) if self.total_size else 0))
 
     def clear_and_return(self):
