@@ -49,7 +49,7 @@ class MongoGetter(BaseGetter):
         if hasattr(self.config.cursor, "count"):
             size = await self.config.cursor.count()
         else:
-            size = await self.config.cursor.count_documents({})
+            size = await self.config.client[self.config.database][self.config.collection].count_documents({})
         if size == 0:
             await self.finish()
         return size
