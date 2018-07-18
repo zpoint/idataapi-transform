@@ -418,7 +418,8 @@ class WMongoConfig(BaseWriterConfig):
             }
             if self.username:
                 self.client = motor.motor_asyncio.AsyncIOMotorClient(
-                    "mongodb://%s:%s@%s:%s/" % (self.username, self.password, kwargs["host"], str(kwargs["port"])))
+                    "mongodb://%s:%s@%s:%s/%s" % (self.username, self.password, kwargs["host"],
+                                                  str(kwargs["port"]), self.collection))
             else:
                 self.client = motor.motor_asyncio.AsyncIOMotorClient(**kwargs)
             self.collection_cli = self.client[self.database][self.collection]

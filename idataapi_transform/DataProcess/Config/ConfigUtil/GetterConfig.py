@@ -508,12 +508,13 @@ class RMongoConfig(BaseGetterConfig):
                 "port": self.port
             }
             if self.username:
-                self.client = motor.motor_asyncio.AsyncIOMotorClient(
-                    "mongodb://%s:%s@%s:%s/" % (self.username, self.password, kwargs["host"], str(kwargs["port"])))
+                address = "mongodb://%s:%s@%s:%s/%s" % (self.username, self.password, kwargs["host"], str(kwargs["port"]), self.database)
+                self.client = motor.motor_asyncio.AsyncIOMotorClient(address)
             else:
                 self.client = motor.motor_asyncio.AsyncIOMotorClient(**kwargs)
+
             if self.query_body:
                 self.cursor = self.client[self.database][self.collection].find(self.query_body)
             else:
-                self.cursor = self.client[self.database][self.collection].find(self.query_body)
+                self.cursor = self.client[self.database][self.collection].find()
         return self.client
