@@ -71,7 +71,7 @@ mongo_config_content = """
 [mongo]
 host = localhost
 port = 0
-user = 
+username = 
 password = 
 database = test_database
 """
