@@ -4,7 +4,11 @@ import random
 import logging
 import traceback
 from .BaseWriter import BaseWriter
-
+InsertOne = DeleteMany = ReplaceOne = UpdateOne = None
+try:
+    from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
+except Exception:
+    pass
 
 class MongoWriter(BaseWriter):
     def __init__(self, config):
@@ -52,13 +56,19 @@ class MongoWriter(BaseWriter):
 
     async def perform_write(self, responses):
         try_time = 0
+        for each in responses:
+            if "_id" not in each:
+                each["_id"] = self.config.id_hash_func(each)
+
         while try_time < self.config.max_retry:
             try:
-                bulk = self.config.collection_cli.initialize_ordered_bulk_op()
-                for each in responses:
-                    each["_id"] = self.config.id_hash_func(each)
-                    bulk.find({"_id": each["_id"]}).upsert().replace_one(each)
-                await bulk.execute()
+                if UpdateOne is not None:
+                    await self.config.collection_cli.bulk_write([UpdateOne({'_id': each["_id"]}, {"$set": each}, upsert=True) for each in responses])
+                else:
+                    bulk = self.config.collection_cli.initialize_ordered_bulk_op()
+                    for each in responses:
+                        bulk.find({"_id": each["_id"]}).upsert().replace_one(each)
+                    await bulk.execute()
                 return True
             except Exception as e:
                 try_time += 1
