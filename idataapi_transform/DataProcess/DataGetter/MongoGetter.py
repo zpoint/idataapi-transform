@@ -46,7 +46,10 @@ class MongoGetter(BaseGetter):
         raise StopAsyncIteration
 
     async def get_total_size(self):
-        size = await self.config.cursor.count()
+        if hasattr(self.config.cursor, "count"):
+            size = await self.config.cursor.count()
+        else:
+            size = await self.config.cursor.count_documents({})
         if size == 0:
             await self.finish()
         return size
