@@ -582,7 +582,8 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
 -------------------
 
 #### Update
-v 1.3.4
+v 1.3.7
+* mongodb auth support and motor 2.0 support
 * mongodb support
 * fix APIBulkGetter incompleted data bug
 * 3.5 compatiable

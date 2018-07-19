@@ -63,7 +63,7 @@ class WESConfig(BaseWriterConfig):
         :param id_hash_func: function to generate id_ for each item
         :param appCode: if not None, add appCode to each item before write to es
         :param actions: if not None, will set actions to user define actions, else default actions is 'index'
-        :param appCode: if not None, add createDate to each item before write to es
+        :param createDate: if not None, add createDate to each item before write to es
         :param error_if_fail: if True, log to error if fail to insert to es, else log nothing
         :param timeout: http connection timeout when connect to es, seconds
         :param max_retry: if request fail, retry max_retry times
@@ -359,10 +359,10 @@ class WMongoConfig(BaseWriterConfig):
                  random_max_sleep=DefaultVal.random_max_sleep, filter_=None, host=main_config["mongo"].get("host"),
                  port=main_config["mongo"].getint("port"), username=main_config["mongo"].get("username"),
                  password=main_config["mongo"].get("password"), database=main_config["mongo"].get("database"),
-                 **kwargs):
+                 auto_insert_createDate=False, createDate=None, **kwargs):
         """
         :param collection: collection name
-        :param id_hash_func: function to generate id_ for each item
+        :param id_hash_func: function to generate id_ for each item, only if "_id" not in item will I use 'id_hash_func' to generate "_id"
         :param per_limit: how many items to get per request
         :param max_limit: get at most max_limit items, if not set, get all
         :param query_body: search query, default None, i.e: {'i': {'$lt': 5}}
@@ -377,6 +377,8 @@ class WMongoConfig(BaseWriterConfig):
         :param user: mongodb user -> str
         :param password: mongodb password -> str
         :param database: mongodb database -> str
+        :param createDate: if not None, add createDate to each item before write to mongodb
+        :param auto_insert_createDate: whether insert createDate for each item automatic -> boolean
         :param kwargs:
 
         Example:
@@ -407,6 +409,8 @@ class WMongoConfig(BaseWriterConfig):
         self.database = database
         self.name = "%s->%s" % (self.database, self.collection)
         self.id_hash_func = id_hash_func
+        self.auto_insert_createDate = auto_insert_createDate
+        self.createDate = createDate
 
         self.client = self.collection_cli = None
 
@@ -419,7 +423,7 @@ class WMongoConfig(BaseWriterConfig):
             if self.username:
                 self.client = motor.motor_asyncio.AsyncIOMotorClient(
                     "mongodb://%s:%s@%s:%s/%s" % (self.username, self.password, kwargs["host"],
-                                                  str(kwargs["port"]), self.collection))
+                                                  str(kwargs["port"]), self.database))
             else:
                 self.client = motor.motor_asyncio.AsyncIOMotorClient(**kwargs)
             self.collection_cli = self.client[self.database][self.collection]

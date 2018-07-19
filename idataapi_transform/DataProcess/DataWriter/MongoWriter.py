@@ -10,6 +10,7 @@ try:
 except Exception:
     pass
 
+
 class MongoWriter(BaseWriter):
     def __init__(self, config):
         super().__init__()
@@ -57,6 +58,8 @@ class MongoWriter(BaseWriter):
     async def perform_write(self, responses):
         try_time = 0
         for each in responses:
+            if self.config.auto_insert_createDate and self.config.createDate is not None:
+                each["createDate"] = self.config.createDate
             if "_id" not in each:
                 each["_id"] = self.config.id_hash_func(each)
 
