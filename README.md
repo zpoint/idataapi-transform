@@ -38,6 +38,7 @@ Features:
 * Every failure network write operation will log to error log before retry 3(default) times
 * Command line support for simple usage, python module provide more features
 * Every Getter and Writer support filter, you can alter or drop your data in filter
+* Auto header generation(csv/xlsx)/table generation(mysql) based on your data
 -------------------
 
 ### catalog
