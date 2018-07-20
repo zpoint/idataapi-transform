@@ -4,4 +4,4 @@ from .cli import main
 from .DataProcess.Config.ConfigUtil import WriterConfig
 from .DataProcess.Config.ConfigUtil import GetterConfig
 from .DataProcess.ProcessFactory import ProcessFactory
-__version__ = '1.3.8'
+__version__ = '1.3.9'

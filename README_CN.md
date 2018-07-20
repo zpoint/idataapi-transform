@@ -568,7 +568,7 @@ JSON 为一行一条数据的 JSON 文件
 -------------------
 
 #### 升级
-v 1.3.7
+v 1.3.9ss
 * mongodb auth support and motor 2.0 support
 * mongodb support
 * fix APIBulkGetter incompleted data

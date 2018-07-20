@@ -63,18 +63,22 @@ class MongoGetter(BaseGetter):
     async def fetch_per_limit(self):
         curr_size = 0
         try_time = 0
+        get_all = True
+
         while try_time < self.config.max_retry:
             try:
                 async for document in self.config.cursor:
                     curr_size += 1
                     self.responses.append(document)
                     if curr_size >= self.config.per_limit:
+                        get_all = False
                         break
-                # get all item
-                if self.total_count + len(self.responses) < self.total_size:
-                    logging.error("get all items: %d, but not reach 'total_size': %d" % (self.total_count, self.total_size))
-                    self.need_finish = True
-                break
+                if get_all:
+                    # get all item
+                    if self.total_count + curr_size < self.total_size:
+                        logging.error("get all items: %d, but not reach 'total_size': %d" % (self.total_count + curr_size, self.total_size))
+                        self.need_finish = True
+                    break
             except Exception as e:
                 try_time += 1
                 if try_time < self.config.max_retry:
