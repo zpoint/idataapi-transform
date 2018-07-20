@@ -55,7 +55,6 @@ class MongoGetter(BaseGetter):
             size = await self.config.cursor.count()
         else:
             size = await self.config.client[self.config.database][self.config.collection].count_documents({} if not self.config.query_body else self.config.query_body)
-            self.config.reset_cursor()
         size = min(size, self.config.max_limit if self.config.max_limit is not None else size)
         if size == 0:
             await self.finish()
@@ -79,7 +78,7 @@ class MongoGetter(BaseGetter):
                     if self.total_count + curr_size < self.total_size:
                         logging.error("get all items: %d, but not reach 'total_size': %d" % (self.total_count + curr_size, self.total_size))
                         self.need_finish = True
-                    break
+                break
             except Exception as e:
                 try_time += 1
                 if try_time < self.config.max_retry:
