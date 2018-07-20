@@ -13,18 +13,23 @@ class MongoGetter(BaseGetter):
         self.miss_count = 0
         self.total_count = 0
         self.total_size = None
+        self.need_finish = False
 
     def init_val(self):
         self.responses = list()
         self.miss_count = 0
         self.total_count = 0
         self.total_size = None
+        self.need_finish = False
 
     def __aiter__(self):
         return self
 
     async def __anext__(self):
         self.config.get_mongo_cli()  # init mongo pool
+
+        if self.need_finish:
+            await self.finish()
 
         if self.total_size is None:
             self.total_size = await self.get_total_size()
@@ -49,7 +54,8 @@ class MongoGetter(BaseGetter):
         if hasattr(self.config.cursor, "count"):
             size = await self.config.cursor.count()
         else:
-            size = await self.config.client[self.config.database][self.config.collection].count_documents({})
+            size = await self.config.client[self.config.database][self.config.collection].count_documents({} if not self.config.query_body else self.config.query_body)
+        size = min(size, self.config.max_limit if self.config.max_limit is not None else size)
         if size == 0:
             await self.finish()
         return size
@@ -65,6 +71,9 @@ class MongoGetter(BaseGetter):
                     if curr_size >= self.config.per_limit:
                         break
                 # get all item
+                if self.total_count + len(self.responses) < self.total_size:
+                    logging.error("get all items: %d, but not reach 'total_size': %d" % (self.total_count, self.total_size))
+                    self.need_finish = True
                 break
             except Exception as e:
                 try_time += 1
@@ -76,7 +85,7 @@ class MongoGetter(BaseGetter):
                                   "total get %d items, total filtered: %d items, reason: %s" %
                                   (self.config.name, self.config.max_retry, self.total_count, self.miss_count,
                                    str(traceback.format_exc())))
-                    await self.finish()
+                    self.need_finish = True
 
         self.total_count += len(self.responses)
 

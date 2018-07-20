@@ -16,6 +16,7 @@ class MySQLGetter(BaseGetter):
         self.total_size = None
         self.key_fields = list()
         self.key_fields_map = dict()
+        self.need_finish = False
 
     def init_val(self):
         self.responses = list()
@@ -24,12 +25,16 @@ class MySQLGetter(BaseGetter):
         self.total_size = None
         self.key_fields = list()
         self.key_fields_map = dict()
+        self.need_finish = False
 
     def __aiter__(self):
         return self
 
     async def __anext__(self):
         await self.config.get_mysql_pool_cli()  # init mysql pool
+
+        if self.need_finish:
+            await self.finish()
 
         if self.total_size is None:
             self.total_size, self.key_fields = await self.get_total_size_and_key_field()
@@ -91,7 +96,7 @@ class MySQLGetter(BaseGetter):
                                   "total get %d items, total filtered: %d items, reason: %s" %
                                   (self.config.name, self.config.max_retry, self.total_count, self.miss_count,
                                    str(traceback.format_exc())))
-                    await self.finish()
+                    self.need_finish = True
 
         self.responses = [self.decode(i) for i in results]
         curr_miss_count = 0
