@@ -513,8 +513,12 @@ class RMongoConfig(BaseGetterConfig):
             else:
                 self.client = motor.motor_asyncio.AsyncIOMotorClient(**kwargs)
 
-            if self.query_body:
-                self.cursor = self.client[self.database][self.collection].find(self.query_body)
-            else:
-                self.cursor = self.client[self.database][self.collection].find()
+            self.reset_cursor()
+
         return self.client
+
+    def reset_cursor(self):
+        if self.query_body:
+            self.cursor = self.client[self.database][self.collection].find(self.query_body)
+        else:
+            self.cursor = self.client[self.database][self.collection].find()
