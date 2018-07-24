@@ -41,7 +41,7 @@ class APIGetter(BaseGetter):
         self.page_token = ""
         self.miss_count = 0
         self.total_count = 0
-        self.config.call_back = self.async_call_back = None
+        self.call_back = self.async_call_back = None
         if self.config.call_back is not None:
             if inspect.iscoroutinefunction(self.config.call_back):
                 self.async_call_back = self.config.call_back
@@ -58,6 +58,7 @@ class APIGetter(BaseGetter):
         self.page_token = ""
         self.miss_count = 0
         self.total_count = 0
+        self.call_back = self.async_call_back = None
 
     def generate_sub_func(self):
         def sub_func(match):
@@ -117,9 +118,9 @@ class APIGetter(BaseGetter):
                     self.done = True
                     if self.config.return_fail:
                         self.bad_responses.append(SourceObject(None, self.config.tag, self.config.source, self.base_url))
-                        return self.clear_and_return()
+                        return await self.clear_and_return()
                     elif self.responses:
-                        return self.clear_and_return()
+                        return await self.clear_and_return()
                     else:
                         return await self.__anext__()
 
@@ -185,7 +186,13 @@ class APIGetter(BaseGetter):
             resp, bad_resp = self.responses, self.bad_responses
             self.responses, self.bad_responses = list(), list()
             if self.call_back is not None:
-                return self.call_back(resp, bad_resp)
+                r = self.call_back(resp, bad_resp)
+                if inspect.iscoroutine(r):
+                    # bind function for coroutine
+                    self.async_call_back = self.call_back
+                    self.call_back = None
+                    return await r
+                return r
             elif self.async_call_back is not None:
                 return await self.async_call_back(resp, bad_resp)
             else:
@@ -194,7 +201,13 @@ class APIGetter(BaseGetter):
             resp = self.responses
             self.responses = list()
             if self.call_back is not None:
-                return self.call_back(resp)
+                r = self.call_back(resp)
+                if inspect.iscoroutine(r):
+                    # bind function for coroutine
+                    self.async_call_back = self.call_back
+                    self.call_back = None
+                    return await r
+                return r
             elif self.async_call_back is not None:
                 return await self.async_call_back(resp)
             else:
