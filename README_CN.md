@@ -431,12 +431,19 @@ JSON 为一行一条数据的 JSON 文件
 ##### 写数据进ES
 
     import asyncio
+    import hashlib
 	from idataapi_transform import ProcessFactory, WriterConfig
+
+    def my_hash_func(item):
+    	# 按照 my_hash_func 规则生成 ES_ID
+        # 也可以按照其他规则，往下看 从API读取并写数据进入ES 的示例
+        return hashlib.md5(item["id"].encode("utf8")).hexdigest()
 
 	async def example():
         json_lists = [#一堆json object]
         # actions 支持 create, index, update 默认 index
-        es_config = WriterConfig.WESConfig("post20170630", "news")
+        # id_hash_func 是选填参数，可以不填则按照默认规则，往下看 从API读取并写数据进入ES 的示例
+        es_config = WriterConfig.WESConfig("post20170630", "news", id_hash_func=my_hash_func)
         es_writer = ProcessFactory.create_getter(es_config)
         await es_writer.write(json_lists)
 
@@ -477,8 +484,8 @@ JSON 为一行一条数据的 JSON 文件
     """
     写入ES的数据都要产生一个 ES_ID
     本工具按照以下两个规则生成 ES_ID
-    1) 当 appCode 和 id 字段同时存在这个 item 里面时，ES_ID 为 md5(appCode_id)
-    2) 以上条件不满足，并且用户创建 WESConfig 时提供了 id_hash_func 参数时，ES_ID 为 id_hash_func(item)
+    1) 当用户传入 id_hash_func 参数时，ES_ID 为 id_hash_func(item)
+    2) 以上条件不满足, 当 appCode 和 id 字段同时存在这个 item 里面时，ES_ID 为 md5(appCode_id)
     3) 以上条件均不满足时, ES_ID 为 md5(str(item))
     """
 
