@@ -3,12 +3,13 @@ import json
 import random
 import logging
 import asyncio
+import inspect
 import traceback
 from .BaseGetter import BaseGetter
 
 headers = {
     "Accept-Encoding": "gzip",
-    "Connection": "close"
+    # "Connection": "close"
 }
 
 
@@ -40,6 +41,12 @@ class APIGetter(BaseGetter):
         self.page_token = ""
         self.miss_count = 0
         self.total_count = 0
+        self.config.call_back = self.async_call_back = None
+        if self.config.call_back is not None:
+            if inspect.iscoroutinefunction(self.config.call_back):
+                self.async_call_back = self.config.call_back
+            else:
+                self.call_back = self.config.call_back
 
     def init_val(self):
         self.base_url = self.config.source
@@ -136,7 +143,7 @@ class APIGetter(BaseGetter):
                 if not result["pageToken"]:
                     self.done = True
                     if self.need_return():
-                        return self.clear_and_return()
+                        return await self.clear_and_return()
 
                 self.page_token = str(result["pageToken"])
                 self.update_base_url()
@@ -144,7 +151,7 @@ class APIGetter(BaseGetter):
             elif "retcode" in result and result["retcode"] in ("100002", "100301", "100103"):
                 self.done = True
                 if self.need_return():
-                    return self.clear_and_return()
+                    return await self.clear_and_return()
                 logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                              (self.config.source, self.total_count, self.miss_count))
                 return await self.__anext__()
@@ -156,16 +163,16 @@ class APIGetter(BaseGetter):
                                                                 self.total_count, self.miss_count))
                     self.done = True
                     if self.need_return():
-                        return self.clear_and_return()
+                        return await self.clear_and_return()
 
                 await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
                 return await self.__anext__()
 
             if self.config.max_limit and self.curr_size > self.config.max_limit:
                 self.done = True
-                return self.clear_and_return()
+                return await self.clear_and_return()
             elif len(self.responses) >= self.config.per_limit:
-                return self.clear_and_return()
+                return await self.clear_and_return()
             elif self.done:
                 # buffer has empty data, and done fetching
                 return await self.__anext__()
@@ -173,15 +180,25 @@ class APIGetter(BaseGetter):
     def __iter__(self):
         raise ValueError("APIGetter must be used with async generator, not normal generator")
 
-    def clear_and_return(self):
+    async def clear_and_return(self):
         if self.config.return_fail:
             resp, bad_resp = self.responses, self.bad_responses
             self.responses, self.bad_responses = list(), list()
-            return resp, bad_resp
+            if self.call_back is not None:
+                return self.call_back(resp, bad_resp)
+            elif self.async_call_back is not None:
+                return await self.async_call_back(resp, bad_resp)
+            else:
+                return resp, bad_resp
         else:
             resp = self.responses
             self.responses = list()
-            return resp
+            if self.call_back is not None:
+                return self.call_back(resp)
+            elif self.async_call_back is not None:
+                return await self.async_call_back(resp)
+            else:
+                return resp
 
     def need_return(self):
         return self.responses or (self.config.return_fail and (self.responses or self.bad_responses))

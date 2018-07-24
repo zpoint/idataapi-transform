@@ -23,7 +23,7 @@ class RAPIConfig(BaseGetterConfig):
     def __init__(self, source, per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit,
                  max_retry=DefaultVal.max_retry, random_min_sleep=DefaultVal.random_min_sleep,
                  random_max_sleep=DefaultVal.random_max_sleep, session=None, filter_=None, return_fail=False,
-                 tag=None, **kwargs):
+                 tag=None, call_back=None, **kwargs):
         """
         will request until no more next_page to get, or get "max_limit" items
 
@@ -43,6 +43,7 @@ class RAPIConfig(BaseGetterConfig):
                 A.tag: -> tag you pass to RAPIConfig
                 A.source: -> source you pass to RAPIConfig
 
+        :param call_back: a function(can be async function) to call on results before each "async for" return
         :param args:
         :param kwargs:
 
@@ -63,6 +64,7 @@ class RAPIConfig(BaseGetterConfig):
         self.filter = filter_
         self.return_fail = return_fail
         self.tag = tag
+        self.call_back = call_back
 
 
 class RCSVConfig(BaseGetterConfig):
