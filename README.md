@@ -66,6 +66,7 @@ Features:
 	* [Bulk API to ES](#bulk-api-to-es)
 	* [Extract error info from API](#extract-error-info-from-api)
 	* [REDIS Usage](#redis-usage)
+	* [call_back](#call_back)
 * [ES Base Operation](#es-base-operation)
 	* [Read data from ES](#read-data-from-es)
 	* [Write data to ES](#write-data-to-es)
@@ -427,6 +428,78 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
 
+##### call_back
+
+    import asyncio
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
+
+    """
+    call_back can be normal function or async funcion
+     only RAPIConfig support call_back parameter, call_back will be used after filter，
+    whatever call_back return will return to user
+    """
+
+    async def fetch_next_day(self, items):
+        """ for each item, fetch seven days in order, combine data and return to user """
+        prev_item = items[0]
+        date_obj = # get a timestamp or datetime object from prev_item
+        if date_obj not in seven_days:
+            call_back = None
+        else:
+            call_back = self.fetch_next_day
+        getter_config = GetterConfig.RAPIConfig(url, call_back=call_back)
+        getter = ProcessFactory.create_getter(getter_config)
+        async for items in getter:
+            item = items[0]
+            item = combine(item, prev_item)
+            return [item]
+
+    async def fetch_next_day_with_return_fail(self, good_items, bad_items):
+        """ for each item, fetch seven days in order, combine data and return to user """
+        if bad_items:
+            # error in current level
+            pass
+        prev_item = good_items[0]
+        date_obj = # get a timestamp or datetime object from prev_item
+        if date_obj not in seven_days:
+            call_back = None
+        else:
+            call_back = self.fetch_next_day_with_return_fail
+        getter_config = GetterConfig.RAPIConfig(url, call_back=call_back, return_fail=True)
+        getter = ProcessFactory.create_getter(getter_config)
+        async for good_items, bad_items in getter:
+            if bad_items:
+                # next level retrn error, how to handle it?
+                return None, bad_items
+
+            item = good_items[0]
+            item = combine(item, prev_item)
+            return [item], bad_items
+
+    async def start(self):
+		id_set = {...a set of id...}
+        url_generator = (GetterConfig.RAPIConfig(base_url % (id_, ), call_back=fetch_next_day) for id_ in self.id_set)
+        bulk_config = GetterConfig.RAPIBulkConfig(url_generator, concurrency=20, interval=1)
+        bulk_getter = ProcessFactory.create_getter(bulk_config)
+        with ProcessFactory.create_writer(...) as writer:
+            async for items in bulk_getter:
+                await writer.write(items)
+
+    async def start_with_return_fail(self):
+		id_set = {...a set of id...}
+        url_generator = (GetterConfig.RAPIConfig(base_url % (id_, ), call_back=fetch_next_day) for id_ in self.id_set, return_fail=True)
+        bulk_config = GetterConfig.RAPIBulkConfig(url_generator, concurrency=20, interval=1, return_fail=True)
+        bulk_getter = ProcessFactory.create_getter(bulk_config)
+        with ProcessFactory.create_writer(...) as writer:
+            async for items in bulk_getter:
+                await es_writer.write([i for i in good_items if i is not None])
+
+
+    if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(start())
+
+
 
 #### ES Base Operation
 
@@ -452,9 +525,14 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
     import asyncio
 	from idataapi_transform import ProcessFactory, WriterConfig
 
+    def my_hash_func(item):
+        # generate ES_ID by my_hash_func
+        return hashlib.md5(item["id"].encode("utf8")).hexdigest()
+
 	async def example():
         json_lists = [#lots of json object]
         # actions support create, index, update default index
+        # you can ignore "id_hash_func" to use default function to create ES_ID, see "API to ES in detail" below
         es_config = WriterConfig.WESConfig("post20170630", "news", actions="create")
         es_writer = ProcessFactory.create_getter(es_config)
         await es_writer.write(json_lists)
@@ -494,8 +572,8 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
     """
     Every es document need an _id
     There are two rules to generate _id for ES inside this tool
-    1) when the data(dictionary object) has key "id" and key "appCode"，_id will be md5(appCode_id)
-    2) if rule 1 doesn't fail to match，and you privide "id_hash_func" parameter when create WESConfig Object, _id will be id_hash_func(item)
+    1) iF privide "id_hash_func" parameter when create WESConfig Object, _id will be id_hash_func(item)
+    2) if rule 1 fail to match and the data(dictionary object) has key "id" and key "appCode"，_id will be md5(appCode_id)
     3) if rule 1 and rule 2 both fail to match, _id will be md5(str(item))
     """
 
@@ -583,7 +661,8 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
 -------------------
 
 #### Update
-v 1.3.9
+v 1.4.1
+* call_back support
 * mongodb auth support and motor 2.0 support
 * mongodb support
 * fix APIBulkGetter incompleted data bug

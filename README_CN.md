@@ -68,6 +68,7 @@ Features:
     * [并发从不同的 API 读取数据 并写入到 ES](#并发从不同的-api-读取数据-并写入到-es)
     * [访问API出错时 提取错误信息](#访问api出错时-提取错误信息)
     * [REDIS 基本示例](#redis-基本示例)
+    * [call_back](#callback)
 * [ES 基本操作](#es-基本操作)
 	* [从ES读取数据](#从es读取数据)
 	* [写数据进ES](#写数据进es)
@@ -409,6 +410,78 @@ JSON 为一行一条数据的 JSON 文件
         loop.run_until_complete(example())
 
 
+##### call_back
+
+    import asyncio
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
+
+    """
+    call_back 可以是普通函数，也可以是 async 函数
+    call_back 参数当前仅支持 RAPIConfig, call_back 顺序在过滤器之后，
+    并且 call_back 返回的结果会直接返回给调用者
+    """
+
+    async def fetch_next_day(self, items):
+        """ 对于一个item, 按顺序连续获取七天数据, 合并后再返回 """
+        prev_item = items[0]
+        date_obj = # 从 prev_item 获取到一个时间戳/datetime object
+        if date_obj 不在距离当天七天内的时候:
+            call_back = None
+        else:
+            call_back = self.fetch_next_day
+        getter_config = GetterConfig.RAPIConfig(url, call_back=call_back)
+        getter = ProcessFactory.create_getter(getter_config)
+        async for items in getter:
+            item = items[0]
+            item = combine(item, prev_item)
+            return [item]
+
+    async def fetch_next_day_with_return_fail(self, good_items, bad_items):
+        """ 对于一个item, 按顺序连续获取七天数据, 合并后再返回 """
+        if bad_items:
+            # 到达当前这一层出错?
+            pass
+        prev_item = good_items[0]
+        date_obj = # 从 prev_item 获取到一个时间戳/datetime object
+        if date_obj 在距离当天七天内的时候:
+            call_back = None
+        else:
+            call_back = self.fetch_next_day_with_return_fail
+        getter_config = GetterConfig.RAPIConfig(url, call_back=call_back, return_fail=True)
+        getter = ProcessFactory.create_getter(getter_config)
+        async for good_items, bad_items in getter:
+            if bad_items:
+                # 下一层返回错误结果?
+                return None, bad_items
+
+            item = good_items[0]
+            item = combine(item, prev_item)
+            return [item], bad_items
+
+    async def start(self):
+		id_set = {...一堆id...}
+        url_generator = (GetterConfig.RAPIConfig(base_url % (id_, ), call_back=fetch_next_day) for id_ in self.id_set)
+        bulk_config = GetterConfig.RAPIBulkConfig(url_generator, concurrency=20, interval=1)
+        bulk_getter = ProcessFactory.create_getter(bulk_config)
+        with ProcessFactory.create_writer(...) as writer:
+            async for items in bulk_getter:
+                await writer.write(items)
+
+    async def start_with_return_fail(self):
+		id_set = {...一堆id...}
+        url_generator = (GetterConfig.RAPIConfig(base_url % (id_, ), call_back=fetch_next_day) for id_ in self.id_set, return_fail=True)
+        bulk_config = GetterConfig.RAPIBulkConfig(url_generator, concurrency=20, interval=1, return_fail=True)
+        bulk_getter = ProcessFactory.create_getter(bulk_config)
+        with ProcessFactory.create_writer(...) as writer:
+            async for items in bulk_getter:
+                await es_writer.write([i for i in good_items if i is not None])
+
+
+    if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(start())
+
+
 #### ES 基本操作
 
 ##### 从ES读取数据
@@ -431,15 +504,14 @@ JSON 为一行一条数据的 JSON 文件
 ##### 写数据进ES
 
     import asyncio
-    import hashlib
 	from idataapi_transform import ProcessFactory, WriterConfig
 
     def my_hash_func(item):
-    	# 按照 my_hash_func 规则生成 ES_ID
+        # 按照 my_hash_func 规则生成 ES_ID
         # 也可以按照其他规则，往下看 从API读取并写数据进入ES 的示例
         return hashlib.md5(item["id"].encode("utf8")).hexdigest()
 
-	async def example():
+    async def example():
         json_lists = [#一堆json object]
         # actions 支持 create, index, update 默认 index
         # id_hash_func 是选填参数，可以不填则按照默认规则，往下看 从API读取并写数据进入ES 的示例
@@ -484,8 +556,8 @@ JSON 为一行一条数据的 JSON 文件
     """
     写入ES的数据都要产生一个 ES_ID
     本工具按照以下两个规则生成 ES_ID
-    1) 当用户传入 id_hash_func 参数时，ES_ID 为 id_hash_func(item)
-    2) 以上条件不满足, 当 appCode 和 id 字段同时存在这个 item 里面时，ES_ID 为 md5(appCode_id)
+    1) 当 appCode 和 id 字段同时存在这个 item 里面时，ES_ID 为 md5(appCode_id)
+    2) 以上条件不满足，并且用户创建 WESConfig 时提供了 id_hash_func 参数时，ES_ID 为 id_hash_func(item)
     3) 以上条件均不满足时, ES_ID 为 md5(str(item))
     """
 
@@ -575,7 +647,8 @@ JSON 为一行一条数据的 JSON 文件
 -------------------
 
 #### 升级
-v 1.3.9ss
+v 1.4.1
+* call_back support
 * mongodb auth support and motor 2.0 support
 * mongodb support
 * fix APIBulkGetter incompleted data
