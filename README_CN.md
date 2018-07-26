@@ -73,7 +73,7 @@ Features:
 	* [从ES读取数据](#从es读取数据)
 	* [写数据进ES](#写数据进es)
 	* [删除ES中的数据](#删除es中的数据)
-	* [从API读取并写数据进入ES](#从api读取并写数据进入es)
+	* [从API读取并写数据进入ES/MongoDB/Json](#从api读取并写数据进入es或mongodb或json)
 	* [获得ES Client](#获得es-client)
 * [说明](#说明)
 * [升级](#升级)
@@ -320,7 +320,7 @@ JSON 为一行一条数据的 JSON 文件
         loop.run_until_complete(example())
 
 
-##### 并发从不同的 API 读取数据 并写入到 ES
+##### 并发从不同的 API 读取数据 并写入到 ES或MongoDB或Json
 
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
@@ -337,6 +337,31 @@ JSON 为一行一条数据的 JSON 文件
             async for items in api_bulk_getter:
                 # do whatever you want with items
                 await es_writer.write(items)
+
+	def url_generator():
+    	for i in range(10000):
+        	yield url % (i, ) # yield RAPIConfig(url  % (i, )) 也是可以的
+
+    async def example2mongo():
+        urls = url_generator()
+        api_bulk_config = GetterConfig.RAPIBulkConfig(urls, concurrency=50)
+        api_bulk_getter = ProcessFactory.create_getter(api_bulk_config)
+        # host.port 那些在配置文件配置，或者在这里传入也行，这里传入优先级高于配置文件
+        mongo_config = WriterConfig.WMongoConfig("my_coll")
+        with ProcessFactory.create_writer(mongo_config) as mongo_writer:
+            async for items in api_bulk_getter:
+                # do whatever you want with items
+                await mongo_writer.write(items)
+
+    async def example2json():
+        urls = url_generator()
+        api_bulk_config = GetterConfig.RAPIBulkConfig(urls, concurrency=30)
+        api_bulk_getter = ProcessFactory.create_getter(api_bulk_config)
+        json_config = WriterConfig.WJsonConfig("./result.json")
+        with ProcessFactory.create_writer(json_config) as json_writer:
+            async for items in api_bulk_getter:
+                # do whatever you want with items
+                json_writer.write(items)
 
 	if __name__ == "__main__":
         loop = asyncio.get_event_loop()
