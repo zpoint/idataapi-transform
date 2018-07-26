@@ -39,6 +39,7 @@ Features:
 * Command line support for simple usage, python module provide more features
 * Every Getter and Writer support filter, you can alter or drop your data in filter
 * Auto header generation(csv/xlsx)/table generation(mysql) based on your data
+* APIGetter, will request next page automatically，each page will request max_limit before fail
 -------------------
 
 ### catalog
@@ -63,7 +64,7 @@ Features:
 	* [API to redis](#api-to-redis)
     * [redis to MySQL](#redis-to-mysql)
     * [MongoDB to redis](#mongodb-to-redis)
-	* [Bulk API to ES](#bulk-api-to-es)
+	* [Bulk API to ES/MongoDB/Json](#bulk-api-to-es-or-mongodb-or-json)
 	* [Extract error info from API](#extract-error-info-from-api)
 	* [REDIS Usage](#redis-usage)
 	* [call_back](#call_back)
@@ -335,11 +336,17 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
 
 
 
-##### Bulk API to ES
+##### Bulk API to ES or MongoDB or Json
 
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
 
+    """
+    RAPIConfig support parameter:
+    max_limit: get at most max_limit items, if not set, get all
+    max_retry: if request fail, retry max_retry times
+    filter_: run "transform --help" to see command line interface explanation for detail
+    """
 
     async def example():
         # urls can be any iterable object, each item can be api url or RAPIConfig
@@ -354,6 +361,31 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
             async for items in api_bulk_getter:
                 # do whatever you want with items
                 await es_writer.write(items)
+
+    def url_generator():
+        for i in range(10000):
+            yield url % (i, ) # yield RAPIConfig(url  % (i, )) will be OK
+
+    async def example2mongo():
+        urls = url_generator()
+        api_bulk_config = GetterConfig.RAPIBulkConfig(urls, concurrency=50)
+        api_bulk_getter = ProcessFactory.create_getter(api_bulk_config)
+        # you can config host.port in configure file，or pass as parameters，parameters have higher priority than configure file
+        mongo_config = WriterConfig.WMongoConfig("my_coll")
+        with ProcessFactory.create_writer(mongo_config) as mongo_writer:
+            async for items in api_bulk_getter:
+                # do whatever you want with items
+                await mongo_writer.write(items)
+
+    async def example2json():
+        urls = url_generator()
+        api_bulk_config = GetterConfig.RAPIBulkConfig(urls, concurrency=30)
+        api_bulk_getter = ProcessFactory.create_getter(api_bulk_config)
+        json_config = WriterConfig.WJsonConfig("./result.json")
+        with ProcessFactory.create_writer(json_config) as json_writer:
+            async for items in api_bulk_getter:
+                # do whatever you want with items
+                json_writer.write(items)
 
 	if __name__ == "__main__":
         loop = asyncio.get_event_loop()

@@ -41,6 +41,7 @@ Features:
 * 所有不同的格式均提供简便的命令行操作，在模块中提供更丰富的参数支持
 * 每一个 Getter 和 Writer 对象都支持过滤器，你可以在过滤器中修改或者过滤每一条数据
 * 自动生成表头(csv/xlsx)/表格(mysql)
+* 对于APIGetter, 会自动翻页，每次翻页会自动重试到限制次数再进行报错
 -------------------
 
 ### 目录
@@ -324,6 +325,14 @@ JSON 为一行一条数据的 JSON 文件
 
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
+
+    """
+    GetterConfig.RAPIConfig 支持如下参数:
+    max_limit: 最多获取到多少条
+    max_retry: 如果请求失败，最多重试多少次
+    filter_: 过滤器
+    其他参数可以跑 help(GetterConfig.RAPIConfig) 查看
+    """
 
     async def example():
         # urls 可以是任何可迭代对象, 列表，迭代器等, urls 里面的元素可以是一条 url, 也可以使配置好的 RAPIConfig 对象
