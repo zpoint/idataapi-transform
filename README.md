@@ -9,6 +9,8 @@ Provide
 * [Command line interface](#command-line-interface-example)
 * [Python API](#build-complex-routine-easily)
 
+![diagram](https://github.com/zpoint/idataapi-transform/blob/master/idataapi-transform.png)
+
 You can read data from one of
 
  * **API(http)**
@@ -39,7 +41,7 @@ Features:
 * Command line support for simple usage, python module provide more features
 * Every Getter and Writer support filter, you can alter or drop your data in filter
 * Auto header generation(csv/xlsx)/table generation(mysql) based on your data
-* APIGetter, will request next page automatically，each page will request max_limit before fail
+* APIGetter, will request next page automatically，each page will retry max_retry before fail
 -------------------
 
 ### catalog

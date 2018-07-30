@@ -9,6 +9,8 @@
 * [命令行支持](#命令行支持)
 * [Python模块支持](#Python模块支持)
 
+![示意图](https://github.com/zpoint/idataapi-transform/blob/master/idataapi-transform.png)
+
 可以从以下任意一种格式
 
  * **API(http)**
