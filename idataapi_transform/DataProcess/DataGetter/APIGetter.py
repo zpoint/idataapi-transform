@@ -34,7 +34,6 @@ class APIGetter(BaseGetter):
         self.config = config
         self.base_url = self.config.source
         self.retry_count = 0
-        self.curr_size = 0
         self.responses = list()
         self.bad_responses = list()
         self.done = False
@@ -51,7 +50,6 @@ class APIGetter(BaseGetter):
     def init_val(self):
         self.base_url = self.config.source
         self.retry_count = 0
-        self.curr_size = 0
         self.responses = list()
         self.bad_responses = list()
         self.done = False
@@ -137,7 +135,6 @@ class APIGetter(BaseGetter):
                 else:
                     curr_response = result["data"]
                 self.responses.extend(curr_response)
-                self.curr_size += len(curr_response)
 
             # get next page if success, retry if fail
             if "pageToken" in result:
@@ -169,7 +166,7 @@ class APIGetter(BaseGetter):
                 await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
                 return await self.__anext__()
 
-            if self.config.max_limit and self.curr_size > self.config.max_limit:
+            if self.config.max_limit and self.total_count > self.config.max_limit:
                 self.done = True
                 return await self.clear_and_return()
             elif len(self.responses) >= self.config.per_limit:

@@ -8,7 +8,6 @@ class JsonGetter(BaseGetter):
         super().__init__(self)
         self.config = config
         self.responses = list()
-        self.line_num = 0
         self.done = False
         self.f_in = open(self.config.filename, self.config.mode, encoding=self.config.encoding)
         self.miss_count = 0
@@ -16,7 +15,6 @@ class JsonGetter(BaseGetter):
 
     def init_val(self):
         self.responses = list()
-        self.line_num = 0
         self.done = False
         self.f_in.seek(0, 0)
         self.miss_count = 0
@@ -33,14 +31,17 @@ class JsonGetter(BaseGetter):
             raise StopAsyncIteration
 
         for line in self.f_in:
-            self.line_num += 1
+            if self.config.max_limit and self.total_count > self.config.max_limit:
+                self.done = True
+                return self.clear_and_return()
+
+            self.total_count += 1
             try:
                 json_obj = json.loads(line)
             except json.decoder.JSONDecodeError:
-                logging.error("JSONDecodeError. give up. line: %d" % (self.line_num, ))
+                logging.error("JSONDecodeError. give up. line: %d" % (self.total_count, ))
                 continue
 
-            self.total_count += 1
             if self.config.filter:
                 json_obj = self.config.filter(json_obj)
                 if not json_obj:
@@ -50,10 +51,6 @@ class JsonGetter(BaseGetter):
             self.responses.append(json_obj)
 
             if len(self.responses) > self.config.per_limit:
-                return self.clear_and_return()
-
-            if self.config.max_limit and len(self.responses) > self.config.max_limit:
-                self.done = True
                 return self.clear_and_return()
 
         self.done = True
@@ -67,14 +64,18 @@ class JsonGetter(BaseGetter):
 
     def __iter__(self):
         for line in self.f_in:
-            self.line_num += 1
+            if self.config.max_limit and self.total_count > self.config.max_limit:
+                self.done = True
+                yield self.clear_and_return()
+                break
+
+            self.total_count += 1
             try:
                 json_obj = json.loads(line)
             except json.decoder.JSONDecodeError:
-                logging.error("JSONDecodeError. give up. line: %d" % (self.line_num, ))
+                logging.error("JSONDecodeError. give up. line: %d" % (self.total_count, ))
                 continue
 
-            self.total_count += 1
             if self.config.filter:
                 json_obj = self.config.filter(json_obj)
                 if not json_obj:
@@ -85,11 +86,6 @@ class JsonGetter(BaseGetter):
 
             if len(self.responses) > self.config.per_limit:
                 yield self.clear_and_return()
-
-            if self.config.max_limit and len(self.responses) > self.config.max_limit:
-                self.done = True
-                yield self.clear_and_return()
-                break
 
         if self.responses:
             yield self.clear_and_return()

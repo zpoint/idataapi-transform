@@ -37,6 +37,10 @@ class CSVGetter(BaseGetter):
             raise StopAsyncIteration
 
         for row in self.reader:
+            if self.config.max_limit and self.total_count > self.config.max_limit:
+                self.done = True
+                return self.clear_and_return()
+
             self.total_count += 1
             if self.config.filter:
                 row = self.config.filter(row)
@@ -46,10 +50,6 @@ class CSVGetter(BaseGetter):
 
             self.responses.append(row)
             if len(self.responses) > self.config.per_limit:
-                return self.clear_and_return()
-
-            if self.config.max_limit and len(self.responses) > self.config.max_limit:
-                self.done = True
                 return self.clear_and_return()
 
         if self.responses:
@@ -63,6 +63,11 @@ class CSVGetter(BaseGetter):
 
     def __iter__(self):
         for row in self.reader:
+            if self.config.max_limit and self.total_count > self.config.max_limit:
+                self.done = True
+                yield self.clear_and_return()
+                break
+
             self.total_count += 1
             if self.config.filter:
                 row = self.config.filter(row)
@@ -73,10 +78,6 @@ class CSVGetter(BaseGetter):
             self.responses.append(row)
             if len(self.responses) > self.config.per_limit:
                 yield self.clear_and_return()
-
-            if self.config.max_limit and len(self.responses) > self.config.max_limit:
-                yield self.clear_and_return()
-                break
 
         if self.responses:
             yield self.responses
