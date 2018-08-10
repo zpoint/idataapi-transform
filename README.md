@@ -568,7 +568,7 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
         # actions support create, index, update default index
         # you can ignore "id_hash_func" to use default function to create ES_ID, see "API to ES in detail" below
         es_config = WriterConfig.WESConfig("post20170630", "news", actions="create")
-        es_writer = ProcessFactory.create_getter(es_config)
+        es_writer = ProcessFactory.create_writer(es_config)
         await es_writer.write(json_lists)
 
 	if __name__ == "__main__":
@@ -695,6 +695,10 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
 -------------------
 
 #### Update
+v 1.4.3
+* fix logging bug
+* max_limit limit number of data before filter
+
 v 1.4.1
 * call_back support
 * mongodb auth support and motor 2.0 support

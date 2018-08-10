@@ -552,7 +552,7 @@ JSON 为一行一条数据的 JSON 文件
         # actions 支持 create, index, update 默认 index
         # id_hash_func 是选填参数，可以不填则按照默认规则，往下看 从API读取并写数据进入ES 的示例
         es_config = WriterConfig.WESConfig("post20170630", "news", id_hash_func=my_hash_func)
-        es_writer = ProcessFactory.create_getter(es_config)
+        es_writer = ProcessFactory.create_writer(es_config)
         await es_writer.write(json_lists)
 
 	if __name__ == "__main__":
@@ -683,6 +683,10 @@ JSON 为一行一条数据的 JSON 文件
 -------------------
 
 #### 升级
+v 1.4.3
+* fix logging bug
+* max_limit limit number of data before filter
+
 v 1.4.1
 * call_back support
 * mongodb auth support and motor 2.0 support

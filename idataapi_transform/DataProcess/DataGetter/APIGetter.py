@@ -110,7 +110,7 @@ class APIGetter(BaseGetter):
                 else:
                     # fail
                     logging.error("Give up, After retry: %d times, Unable to get url: %s, total get %d items, "
-                                  "total filtered: %d items, error: %s" % (self.base_url, self.config.max_retry,
+                                  "total filtered: %d items, error: %s" % (self.config.max_retry, self.base_url,
                                                                            self.total_count, self.miss_count,
                                                                            str(traceback.format_exc())))
                     self.done = True
