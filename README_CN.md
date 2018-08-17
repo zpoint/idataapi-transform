@@ -686,6 +686,7 @@ JSON 为一行一条数据的 JSON 文件
 v 1.4.3
 * fix logging bug
 * max_limit limit number of data before filter
+* report_interval add for APIGetter
 
 v 1.4.1
 * call_back support

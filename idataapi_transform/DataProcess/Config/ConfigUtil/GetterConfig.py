@@ -23,13 +23,13 @@ class RAPIConfig(BaseGetterConfig):
     def __init__(self, source, per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit,
                  max_retry=DefaultVal.max_retry, random_min_sleep=DefaultVal.random_min_sleep,
                  random_max_sleep=DefaultVal.random_max_sleep, session=None, filter_=None, return_fail=False,
-                 tag=None, call_back=None, **kwargs):
+                 tag=None, call_back=None, report_interval=10, **kwargs):
         """
         will request until no more next_page to get, or get "max_limit" items
 
         :param source: API to get, i.e. "http://..."
-        :param per_limit: how many items to get per time
-        :param max_limit: get at most max_limit items, if not set, get all
+        :param per_limit: how many items to get per time (counter will add each item after filter)
+        :param max_limit: get at most max_limit items, if not set, get all (counter will add each item before filter)
         :param max_retry: if request fail, retry max_retry times
         :param random_min_sleep: if request fail, random sleep at least random_min_sleep seconds before request again
         :param random_max_sleep: if request fail, random sleep at most random_min_sleep seconds before request again
@@ -44,6 +44,8 @@ class RAPIConfig(BaseGetterConfig):
                 A.source: -> source you pass to RAPIConfig
 
         :param call_back: a function(can be async function) to call on results before each "async for" return
+        :param report_interval: an integer value, if set to 5, after 5 request times, current response counter still
+        less than 'per_limit', the "async for' won't return to user, there's going to be an INFO log to tell user what happen
         :param args:
         :param kwargs:
 
@@ -65,6 +67,7 @@ class RAPIConfig(BaseGetterConfig):
         self.return_fail = return_fail
         self.tag = tag
         self.call_back = call_back
+        self.report_interval = report_interval
 
 
 class RCSVConfig(BaseGetterConfig):

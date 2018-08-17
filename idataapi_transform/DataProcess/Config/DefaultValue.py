@@ -31,6 +31,7 @@ class DefaultVal(object):
     interval = 5
     concurrency = 50
     default_key_type = "LIST"
+    report_interval = 10
 
     @staticmethod
     def default_id_hash_func(item):

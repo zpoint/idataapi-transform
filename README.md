@@ -77,7 +77,7 @@ Features:
 	* [API to ES in detail](#api-to-es-in-detail)
 	* [Get ES Client](#get-es-client)
 * [doc string](#doc-string)
-* [Update](#ipdate)
+* [Update](#update)
 * [License](#license)
 
 -------------------
@@ -698,6 +698,7 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
 v 1.4.3
 * fix logging bug
 * max_limit limit number of data before filter
+* report_interval add for APIGetter
 
 v 1.4.1
 * call_back support

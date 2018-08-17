@@ -46,6 +46,7 @@ class APIGetter(BaseGetter):
                 self.async_call_back = self.config.call_back
             else:
                 self.call_back = self.config.call_back
+        self.request_time = 0
 
     def init_val(self):
         self.base_url = self.config.source
@@ -57,6 +58,7 @@ class APIGetter(BaseGetter):
         self.miss_count = 0
         self.total_count = 0
         self.call_back = self.async_call_back = None
+        self.request_time = 0
 
     def generate_sub_func(self):
         def sub_func(match):
@@ -96,23 +98,20 @@ class APIGetter(BaseGetter):
                     result = json.loads(text)
                     if "data" not in result:
                         if "retcode" not in result or result["retcode"] not in ("100002", "100301", "100103"):
-                            logging.error("retry: %d, %s: %s" % (self.retry_count, self.base_url, str(result)))
-                            if self.retry_count == self.config.max_retry:
-                                source_obj = SourceObject(result, self.config.tag, self.config.source, self.base_url)
-                                self.bad_responses.append(source_obj)
+                            raise ValueError("Bad retcode: %s" % (str(result["retcode"]), ))
 
             except Exception as e:
                 self.retry_count += 1
                 logging.error("retry: %d, %s: %s" % (self.retry_count, str(e), self.base_url))
                 await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
-                if self.retry_count <= self.config.max_retry:
+                if self.retry_count < self.config.max_retry:
                     continue
                 else:
                     # fail
                     logging.error("Give up, After retry: %d times, Unable to get url: %s, total get %d items, "
                                   "total filtered: %d items, error: %s" % (self.config.max_retry, self.base_url,
                                                                            self.total_count, self.miss_count,
-                                                                           str(traceback.format_exc())))
+                                                                           str(traceback.format_exc()) if "Bad retcode" not in str(e) else str(e)))
                     self.done = True
                     if self.config.return_fail:
                         self.bad_responses.append(SourceObject(None, self.config.tag, self.config.source, self.base_url))
@@ -122,6 +121,7 @@ class APIGetter(BaseGetter):
                     else:
                         return await self.__anext__()
 
+            self.request_time += 1
             if "data" in result:
                 # success
                 self.retry_count = 0
@@ -155,7 +155,7 @@ class APIGetter(BaseGetter):
                 return await self.__anext__()
             else:
                 self.retry_count += 1
-                if self.retry_count > self.config.max_retry:
+                if self.retry_count >= self.config.max_retry:
                     logging.error("Give up, After retry: %d times, Unable to get url: %s, total get %d items, "
                                   "total filtered: %d items" % (self.config.max_retry, self.base_url,
                                                                 self.total_count, self.miss_count))
@@ -175,10 +175,15 @@ class APIGetter(BaseGetter):
                 # buffer has empty data, and done fetching
                 return await self.__anext__()
 
+            if self.request_time % self.config.report_interval == 0:
+                logging.info("After request %d pages, current item count(%d) < per_limit(%d), latest request page: %s" %
+                             (self.request_time, len(self.responses), self.config.per_limit, self.base_url))
+
     def __iter__(self):
         raise ValueError("APIGetter must be used with async generator, not normal generator")
 
     async def clear_and_return(self):
+        self.request_time = 0
         if self.config.return_fail:
             resp, bad_resp = self.responses, self.bad_responses
             self.responses, self.bad_responses = list(), list()
