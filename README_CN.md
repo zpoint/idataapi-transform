@@ -592,8 +592,8 @@ JSON 为一行一条数据的 JSON 文件
     """
     写入ES的数据都要产生一个 ES_ID
     本工具按照以下两个规则生成 ES_ID
-    1) 当 appCode 和 id 字段同时存在这个 item 里面时，ES_ID 为 md5(appCode_id)
-    2) 以上条件不满足，并且用户创建 WESConfig 时提供了 id_hash_func 参数时，ES_ID 为 id_hash_func(item)
+    1）当用户创建 WESConfig 时提供了 id_hash_func 参数时，ES_ID 为 id_hash_func(item)
+    2) 以上条件不满足，并且当 appCode 和 id 字段同时存在这个 item 里面时，ES_ID 为 md5(appCode_id)
     3) 以上条件均不满足时, ES_ID 为 md5(str(item))
     """
 
