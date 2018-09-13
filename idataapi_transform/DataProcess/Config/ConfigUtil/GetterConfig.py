@@ -224,9 +224,10 @@ class RAPIBulkConfig(BaseGetterConfig):
     def __init__(self, sources, interval=DefaultVal.interval, concurrency=main_config["main"].getint("concurrency"),
                  filter_=None, return_fail=False, **kwargs):
         """
-        :param sources: an iterable object, each item must be "url" or instance of RAPIConfig
+        :param sources: an iterable object (can be async generator), each item must be "url" or instance of RAPIConfig
         :param interval: integer or float, each time you call async generator, you will wait for "interval" seconds
-                         and get all items fetch during this "interval"
+                         and get all items fetch during this "interval", notice if sources is an "async generator",
+                         the "interval" seconds will exclude the time processing async fenerator
         :param concurrency: how many concurrency task run, default read from config file, if concurrency set,
                             only string(url) in "sources" will work with this concurrency level, RAPIConfig instance won't
         :param filter_: run "transform --help" to see command line interface explanation for detail
@@ -249,18 +250,12 @@ class RAPIBulkConfig(BaseGetterConfig):
 
         """
         super().__init__()
-        self.configs = (self.to_config(i) for i in sources)
+        self.sources = sources
         self.interval = interval
         self.concurrency = concurrency
         self.session = session_manger._generate_session(concurrency_limit=concurrency)
         self.filter = filter_
         self.return_fail = return_fail
-
-    def to_config(self, item):
-        if isinstance(item, RAPIConfig):
-            return item
-        else:
-            return RAPIConfig(item, session=self.session, filter_=self.filter, return_fail=self.return_fail)
 
     def __del__(self):
         if inspect.iscoroutinefunction(self.session.close):

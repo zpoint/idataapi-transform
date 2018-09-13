@@ -336,6 +336,10 @@ JSON 为一行一条数据的 JSON 文件
     其他参数可以跑 help(GetterConfig.RAPIConfig) 查看
     """
 
+	def url_generator():
+    	for i in range(10000):
+        	yield url % (i, ) # yield RAPIConfig(url  % (i, )) 也是可以的
+
     async def example():
         # urls 可以是任何可迭代对象, 列表，迭代器等, urls 里面的元素可以是一条 url, 也可以使配置好的 RAPIConfig 对象
         # RAPIBulkConfig 有个 interval 参数，表示每一次异步迭代器返回的时间间隔，
@@ -349,10 +353,6 @@ JSON 为一行一条数据的 JSON 文件
                 # do whatever you want with items
                 await es_writer.write(items)
 
-	def url_generator():
-    	for i in range(10000):
-        	yield url % (i, ) # yield RAPIConfig(url  % (i, )) 也是可以的
-
     async def example2mongo():
         urls = url_generator()
         api_bulk_config = GetterConfig.RAPIBulkConfig(urls, concurrency=50)
@@ -364,7 +364,33 @@ JSON 为一行一条数据的 JSON 文件
                 # do whatever you want with items
                 await mongo_writer.write(items)
 
+    # ******************************************************
+    # 下面是使用 "async generator" 异步迭代器给 BulkGetter 传送任务的示例
+    # async 函数中使用 yield 的方法只在 python3.6+的版本支持，3.5+ 请参考下面资料定义异步迭代器
+    # https://github.com/python-trio/async_generator
+    # idataapi-transform 版本需 >= 1.4.4
+    # ******************************************************
+
+    async def put_task2redis():
+        writer = ProcessFactory.create_writer(WriterConfig.WRedisConfig("test"))
+        await writer.write([
+            {"keyword": "1"},
+            {"keyword": "2"},
+            {"keyword": "3"}
+        ])
+
+    async def async_generator():
+        """
+        I am async generator
+        """
+        getter = ProcessFactory.create_getter(GetterConfig.RRedisConfig("test"))
+        async for items in getter:
+            for item in items:
+                r = GetterConfig.RAPIConfig("http://xxx%sxxx" % (item["keyword"], ), max_limit=100)
+                yield r
+
     async def example2json():
+        # await put_task2redis()
         urls = url_generator()
         api_bulk_config = GetterConfig.RAPIBulkConfig(urls, concurrency=30)
         api_bulk_getter = ProcessFactory.create_getter(api_bulk_config)
@@ -683,6 +709,9 @@ JSON 为一行一条数据的 JSON 文件
 -------------------
 
 #### 升级
+v 1.4.4
+* RAPIBulkGetter support async generator
+
 v 1.4.3
 * fix logging bug
 * max_limit limit number of data before filter

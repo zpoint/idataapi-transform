@@ -350,6 +350,10 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
     filter_: run "transform --help" to see command line interface explanation for detail
     """
 
+    def url_generator():
+        for i in range(10000):
+            yield url % (i, ) # yield RAPIConfig(url  % (i, )) will be OK
+
     async def example():
         # urls can be any iterable object, each item can be api url or RAPIConfig
         # RAPIBulkConfig accept a parameter: interval，means interval between each async generator return
@@ -364,10 +368,6 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
                 # do whatever you want with items
                 await es_writer.write(items)
 
-    def url_generator():
-        for i in range(10000):
-            yield url % (i, ) # yield RAPIConfig(url  % (i, )) will be OK
-
     async def example2mongo():
         urls = url_generator()
         api_bulk_config = GetterConfig.RAPIBulkConfig(urls, concurrency=50)
@@ -379,8 +379,34 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
                 # do whatever you want with items
                 await mongo_writer.write(items)
 
+    # ******************************************************
+    # Below is "async generator" example for RAPIBulkConfig
+    # keyword "yield" in "async" function only support for python3.6+，for python 3.5+ please refer below
+    # https://github.com/python-trio/async_generator
+    # Only idataapi-transform version >= 1.4.4 support this feature
+    # ******************************************************
+
+    async def put_task2redis():
+        writer = ProcessFactory.create_writer(WriterConfig.WRedisConfig("test"))
+        await writer.write([
+            {"keyword": "1"},
+            {"keyword": "2"},
+            {"keyword": "3"}
+        ])
+
+    async def async_generator():
+        """
+        I am async generator
+        """
+        getter = ProcessFactory.create_getter(GetterConfig.RRedisConfig("test"))
+        async for items in getter:
+            for item in items:
+                r = GetterConfig.RAPIConfig("http://xxx%sxxx" % (item["keyword"], ), max_limit=100)
+                yield r
+
     async def example2json():
-        urls = url_generator()
+        # await put_task2redis()
+        urls = async_generator()
         api_bulk_config = GetterConfig.RAPIBulkConfig(urls, concurrency=30)
         api_bulk_getter = ProcessFactory.create_getter(api_bulk_config)
         json_config = WriterConfig.WJsonConfig("./result.json")
@@ -695,6 +721,9 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
 -------------------
 
 #### Update
+v 1.4.4
+* RAPIBulkGetter support async generator
+
 v 1.4.3
 * fix logging bug
 * max_limit limit number of data before filter

@@ -6,6 +6,7 @@ import asyncio
 import inspect
 import traceback
 from .BaseGetter import BaseGetter
+from ..Config.ConfigUtil.GetterConfig import RAPIConfig
 
 headers = {
     "Accept-Encoding": "gzip",
@@ -223,7 +224,7 @@ class APIBulkGetter(BaseGetter):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.api_configs = self.to_generator(self.config.configs)
+        self.async_api_configs = self.to_async_generator(self.config.sources)
 
         self.pending_tasks = list()
         self.buffers = list()
@@ -232,10 +233,19 @@ class APIBulkGetter(BaseGetter):
         self.curr_size = 0
         self.curr_bad_size = 0
 
-    @staticmethod
-    def to_generator(items):
-        for i in items:
-            yield i
+    def to_config(self, item):
+        if isinstance(item, RAPIConfig):
+            return item
+        else:
+            return RAPIConfig(item, session=self.config.session, filter_=self.config.filter, return_fail=self.config.return_fail)
+
+    async def to_async_generator(self, items):
+        if hasattr(items, "__aiter__"):
+            async for i in items:
+                yield self.to_config(i)
+        else:
+            for i in items:
+                yield self.to_config(i)
 
     async def fetch_items(self, api_config):
         if api_config.return_fail:
@@ -247,11 +257,11 @@ class APIBulkGetter(BaseGetter):
             async for items in APIGetter(api_config):
                 self.buffers.extend(items)
 
-    def fill_tasks(self):
+    async def fill_tasks(self):
         if len(self.pending_tasks) >= self.config.concurrency:
             return
 
-        for api_config in self.api_configs:
+        async for api_config in self.async_api_configs:
             self.pending_tasks.append(self.fetch_items(api_config))
             if len(self.pending_tasks) >= self.config.concurrency:
                 return
@@ -260,7 +270,7 @@ class APIBulkGetter(BaseGetter):
         return self
 
     async def __anext__(self):
-        self.fill_tasks()
+        await self.fill_tasks()
         while self.pending_tasks:
             done, pending = await asyncio.wait(self.pending_tasks, timeout=self.config.interval)
             self.pending_tasks = list(pending)
@@ -269,7 +279,7 @@ class APIBulkGetter(BaseGetter):
                 return self.clear_and_return()
             else:
                 # after interval seconds, no item fetched
-                self.fill_tasks()
+                await self.fill_tasks()
                 logging.info("After %.2f seconds, no new item fetched, current done task: %d, pending tasks: %d" %
                              (float(self.config.interval), self.success_task, len(self.pending_tasks)))
                 continue
