@@ -7,6 +7,7 @@ import inspect
 import traceback
 from .BaseGetter import BaseGetter
 from ..Config.ConfigUtil.GetterConfig import RAPIConfig
+from ..Config.ConfigUtil.AsyncHelper import AsyncGenerator
 
 headers = {
     "Accept-Encoding": "gzip",
@@ -224,7 +225,7 @@ class APIBulkGetter(BaseGetter):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.async_api_configs = self.to_async_generator(self.config.sources)
+        self.async_api_configs = AsyncGenerator(self.config.sources, self.to_config)
 
         self.pending_tasks = list()
         self.buffers = list()
@@ -238,14 +239,6 @@ class APIBulkGetter(BaseGetter):
             return item
         else:
             return RAPIConfig(item, session=self.config.session, filter_=self.config.filter, return_fail=self.config.return_fail)
-
-    async def to_async_generator(self, items):
-        if hasattr(items, "__aiter__"):
-            async for i in items:
-                yield self.to_config(i)
-        else:
-            for i in items:
-                yield self.to_config(i)
 
     async def fetch_items(self, api_config):
         if api_config.return_fail:
