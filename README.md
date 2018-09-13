@@ -42,6 +42,8 @@ Features:
 * Every Getter and Writer support filter, you can alter or drop your data in filter
 * Auto header generation(csv/xlsx)/table generation(mysql) based on your data
 * APIGetter, will request next page automatically，each page will retry max_retry before fail
+* APIBulkGetter support bulk processing for APIGetter/url object, you can feed iterable object or async generator
+
 -------------------
 
 ### catalog
@@ -537,7 +539,7 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
             return [item], bad_items
 
     async def start(self):
-		id_set = {...a set of id...}
+        id_set = {...a set of id...}
         url_generator = (GetterConfig.RAPIConfig(base_url % (id_, ), call_back=fetch_next_day) for id_ in self.id_set)
         bulk_config = GetterConfig.RAPIBulkConfig(url_generator, concurrency=20, interval=1)
         bulk_getter = ProcessFactory.create_getter(bulk_config)
@@ -546,7 +548,7 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
                 await writer.write(items)
 
     async def start_with_return_fail(self):
-		id_set = {...a set of id...}
+        id_set = {...a set of id...}
         url_generator = (GetterConfig.RAPIConfig(base_url % (id_, ), call_back=fetch_next_day) for id_ in self.id_set, return_fail=True)
         bulk_config = GetterConfig.RAPIBulkConfig(url_generator, concurrency=20, interval=1, return_fail=True)
         bulk_getter = ProcessFactory.create_getter(bulk_config)
