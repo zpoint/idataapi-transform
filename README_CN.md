@@ -44,6 +44,7 @@ Features:
 * 每一个 Getter 和 Writer 对象都支持过滤器，你可以在过滤器中修改或者过滤每一条数据
 * 自动生成表头(csv/xlsx)/表格(mysql)
 * 对于APIGetter, 会自动翻页，每次翻页会自动重试到限制次数再进行报错
+* APIBulkGetter 支持指定并发数后批量处理 APIGetter/url 对象, 可接受可迭代对象或者异步迭代器
 -------------------
 
 ### 目录
@@ -521,7 +522,7 @@ JSON 为一行一条数据的 JSON 文件
             return [item], bad_items
 
     async def start(self):
-		id_set = {...一堆id...}
+        id_set = {...一堆id...}
         url_generator = (GetterConfig.RAPIConfig(base_url % (id_, ), call_back=fetch_next_day) for id_ in self.id_set)
         bulk_config = GetterConfig.RAPIBulkConfig(url_generator, concurrency=20, interval=1)
         bulk_getter = ProcessFactory.create_getter(bulk_config)
@@ -530,7 +531,7 @@ JSON 为一行一条数据的 JSON 文件
                 await writer.write(items)
 
     async def start_with_return_fail(self):
-		id_set = {...一堆id...}
+        id_set = {...一堆id...}
         url_generator = (GetterConfig.RAPIConfig(base_url % (id_, ), call_back=fetch_next_day) for id_ in self.id_set, return_fail=True)
         bulk_config = GetterConfig.RAPIBulkConfig(url_generator, concurrency=20, interval=1, return_fail=True)
         bulk_getter = ProcessFactory.create_getter(bulk_config)
