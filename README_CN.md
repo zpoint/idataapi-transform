@@ -690,7 +690,7 @@ JSON 为一行一条数据的 JSON 文件
 * ./idataapi-transform.ini
 * ~/idataapi-transform.ini
 
-如果以上两个文件都不存在，程序会自动创建以下文件并将其当成配置文件  **~/idataapi-transform.ini**
+如果以上文件都不存在，程序会自动创建以下文件并将其当成配置文件  **~/idataapi-transform.ini**
 
 ##### 运行时指定配置
 
@@ -700,7 +700,7 @@ JSON 为一行一条数据的 JSON 文件
     from idataapi_transform import  ManualConfig
     ManualConfig.disable_log()
 
-如果你想要自己指定日志文件
+如果你想要自己指定配置文件
 
     from idataapi_transform import  ManualConfig
     ManualConfig.set_config("/Users/zpoint/Desktop/idataapi-transform.ini")
