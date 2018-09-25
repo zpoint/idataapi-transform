@@ -152,8 +152,6 @@ class APIGetter(BaseGetter):
                 self.done = True
                 if self.need_return():
                     return await self.clear_and_return()
-                logging.info("get source done: %s, total get %d items, total filtered: %d items" %
-                             (self.config.source, self.total_count, self.miss_count))
                 return await self.__anext__()
             else:
                 self.retry_count += 1
