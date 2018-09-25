@@ -90,6 +90,9 @@ class MainConfig(object):
                 with open(self.ini_path, "w") as f:
                     f.write(default_configure_content + redis_config_content + mysql_config_content + mongo_config_content)
 
+            if os.path.exists("./idataapi-transform.ini"):
+                self.ini_path = "./idataapi-transform.ini"
+
             self.__instance = configparser.ConfigParser()
             self.__instance.read(self.ini_path)
             MainConfig.__instance = self.__instance
