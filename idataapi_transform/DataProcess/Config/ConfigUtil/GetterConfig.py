@@ -16,14 +16,13 @@ from .BaseConfig import BaseGetterConfig
 
 from ..ESConfig import get_es_client
 from ..DefaultValue import DefaultVal
-from ..ConnectorConfig import session_manger, main_config
+from ..ConnectorConfig import session_manger
 
 
 class RAPIConfig(BaseGetterConfig):
     def __init__(self, source, per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit,
-                 max_retry=DefaultVal.max_retry, random_min_sleep=DefaultVal.random_min_sleep,
-                 random_max_sleep=DefaultVal.random_max_sleep, session=None, filter_=None, return_fail=False,
-                 tag=None, call_back=None, report_interval=10, **kwargs):
+                 max_retry=DefaultVal.max_retry, random_min_sleep=None, random_max_sleep=None, session=None,
+                 filter_=None, return_fail=False, tag=None, call_back=None, report_interval=10, **kwargs):
         """
         will request until no more next_page to get, or get "max_limit" items
 
@@ -56,6 +55,11 @@ class RAPIConfig(BaseGetterConfig):
                 print(items)
         """
         super().__init__()
+        if not random_min_sleep:
+            random_min_sleep = DefaultVal.random_min_sleep
+        if not random_max_sleep:
+            random_max_sleep = DefaultVal.random_max_sleep
+
         self.source = source
         self.per_limit = per_limit
         self.max_limit = max_limit
@@ -72,7 +76,7 @@ class RAPIConfig(BaseGetterConfig):
 
 class RCSVConfig(BaseGetterConfig):
     def __init__(self, filename, mode=DefaultVal.default_file_mode_r, encoding=DefaultVal.default_encoding,
-                 per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit, filter_=None, **kwargs):
+                 per_limit=None, max_limit=None, filter_=None, **kwargs):
         """
         :param filename: filename to read
         :param mode: file open mode, i.e "r"
@@ -93,6 +97,11 @@ class RCSVConfig(BaseGetterConfig):
                 print(items)
         """
         super().__init__()
+        if not per_limit:
+            per_limit = DefaultVal.per_limit
+        if not max_limit:
+            max_limit = DefaultVal.max_limit
+
         self.filename = filename
         self.mode = mode
         self.encoding = encoding
@@ -102,10 +111,9 @@ class RCSVConfig(BaseGetterConfig):
 
 
 class RESConfig(BaseGetterConfig):
-    def __init__(self, indices, doc_type, per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit,
-                 scroll="1m", query_body=None, return_source=True, max_retry=DefaultVal.max_retry,
-                 random_min_sleep=DefaultVal.random_min_sleep, random_max_sleep=DefaultVal.random_max_sleep,
-                 filter_=None, **kwargs):
+    def __init__(self, indices, doc_type, per_limit=None, max_limit=None, scroll="1m", query_body=None,
+                 return_source=True, max_retry=None, random_min_sleep=None, random_max_sleep=None, filter_=None,
+                 **kwargs):
         """
         :param indices: elasticsearch indices
         :param doc_type: elasticsearch doc_type
@@ -135,8 +143,20 @@ class RESConfig(BaseGetterConfig):
                 print(item)
         """
         super().__init__()
-        if not main_config.has_es_configured:
-            raise ValueError("You must config es_hosts before using Elasticsearch, Please edit configure file: %s" % (main_config.ini_path, ))
+
+        if not random_min_sleep:
+            random_min_sleep = DefaultVal.random_min_sleep
+        if not random_max_sleep:
+            random_max_sleep = DefaultVal.random_max_sleep
+        if not per_limit:
+            per_limit = DefaultVal.per_limit
+        if not max_limit:
+            max_limit = DefaultVal.max_limit
+        if not max_retry:
+            max_retry = DefaultVal.max_retry
+
+        if not DefaultVal.main_config.has_es_configured:
+            raise ValueError("You must config es_hosts before using Elasticsearch, Please edit configure file: %s" % (DefaultVal.main_config.ini_path, ))
 
         if not query_body:
             query_body = {
@@ -161,7 +181,7 @@ class RESConfig(BaseGetterConfig):
 
 class RJsonConfig(BaseGetterConfig):
     def __init__(self, filename, mode=DefaultVal.default_file_mode_r, encoding=DefaultVal.default_encoding,
-                 per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit, filter_=None, **kwargs):
+                 per_limit=None, max_limit=None, filter_=None, **kwargs):
         """
         :param filename: line by line json file to read
         :param mode: file open mode, i.e "r"
@@ -182,6 +202,12 @@ class RJsonConfig(BaseGetterConfig):
                 print(items)
         """
         super().__init__()
+
+        if not per_limit:
+            per_limit = DefaultVal.per_limit
+        if not max_limit:
+            max_limit = DefaultVal.max_limit
+
         self.filename = filename
         self.mode = mode
         self.encoding = encoding
@@ -191,8 +217,7 @@ class RJsonConfig(BaseGetterConfig):
 
 
 class RXLSXConfig(BaseGetterConfig):
-    def __init__(self, filename, per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit, sheet_index=0,
-                 filter_=None, **kwargs):
+    def __init__(self, filename, per_limit=None, max_limit=None, sheet_index=0, filter_=None, **kwargs):
         """
         :param filename: filename to read
         :param per_limit: how many items to get per time
@@ -213,6 +238,12 @@ class RXLSXConfig(BaseGetterConfig):
 
         """
         super().__init__()
+
+        if not per_limit:
+            per_limit = DefaultVal.per_limit
+        if not max_limit:
+            max_limit = DefaultVal.max_limit
+
         self.filename = filename
         self.per_limit = per_limit
         self.max_limit = max_limit
@@ -221,8 +252,7 @@ class RXLSXConfig(BaseGetterConfig):
 
 
 class RAPIBulkConfig(BaseGetterConfig):
-    def __init__(self, sources, interval=DefaultVal.interval, concurrency=main_config["main"].getint("concurrency"),
-                 filter_=None, return_fail=False, **kwargs):
+    def __init__(self, sources, interval=DefaultVal.interval, concurrency=None, filter_=None, return_fail=False, **kwargs):
         """
         :param sources: an iterable object (can be async generator), each item must be "url" or instance of RAPIConfig
         :param interval: integer or float, each time you call async generator, you will wait for "interval" seconds
@@ -250,6 +280,8 @@ class RAPIBulkConfig(BaseGetterConfig):
 
         """
         super().__init__()
+        if not concurrency:
+            concurrency = DefaultVal.main_config["main"].getint("concurrency")
         self.sources = sources
         self.interval = interval
         self.concurrency = concurrency
@@ -270,14 +302,9 @@ class RAPIBulkConfig(BaseGetterConfig):
 
 
 class RRedisConfig(BaseGetterConfig):
-    def __init__(self, key, key_type="LIST", per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit,
-                 filter_=None, max_retry=DefaultVal.max_retry, random_min_sleep=DefaultVal.random_min_sleep,
-                 random_max_sleep=DefaultVal.random_max_sleep, host=main_config["redis"].get("host"),
-                 port=main_config["redis"].getint("port"), db=main_config["redis"].getint("db"),
-                 password=main_config["redis"].get("password"), timeout=main_config["redis"].getint("timeout"),
-                 encoding=main_config["redis"].get("encoding"), need_del=main_config["redis"].getboolean("need_del"),
-                 direction=main_config["redis"].get("direction"), compress=main_config["redis"].getboolean("compress"),
-                 **kwargs):
+    def __init__(self, key, key_type="LIST", per_limit=None, max_limit=None, filter_=None, max_retry=None,
+                 random_min_sleep=None, random_max_sleep=None, host=None, port=None, db=None, password=None,
+                 timeout=None, encoding=None, need_del=None, direction=None, compress=None, **kwargs):
         """
         :param key: redis key to get data
         :param key_type: redis data type to operate, current only support LIST, HASH
@@ -305,8 +332,38 @@ class RRedisConfig(BaseGetterConfig):
                 print(items)
         """
         super().__init__()
-        if not main_config.has_redis_configured and port <= 0:
-            raise ValueError("You must config redis before using Redis, Please edit configure file: %s" % (main_config.ini_path, ))
+        # load default value
+        if not random_min_sleep:
+            random_min_sleep = DefaultVal.random_min_sleep
+        if not random_max_sleep:
+            random_max_sleep = DefaultVal.random_max_sleep
+        if not per_limit:
+            per_limit = DefaultVal.per_limit
+        if not max_limit:
+            max_limit = DefaultVal.max_limit
+        if not max_retry:
+            max_retry = DefaultVal.max_retry
+        if host is None:
+            host = DefaultVal.redis_host
+        if port is None:
+            port = DefaultVal.redis_port
+        if db is None:
+            db = DefaultVal.redis_db
+        if password is None:
+            password = DefaultVal.redis_password
+        if timeout is None:
+            timeout = DefaultVal.redis_timeout
+        if encoding is None:
+            encoding = DefaultVal.redis_encoding
+        if direction is None:
+            direction = DefaultVal.redis_direction
+        if need_del is None:
+            need_del = DefaultVal.redis_need_del
+        if compress is None:
+            compress = DefaultVal.redis_compress
+
+        if not DefaultVal.main_config.has_redis_configured and port <= 0:
+            raise ValueError("You must config redis before using Redis, Please edit configure file: %s" % (DefaultVal.main_config.ini_path, ))
 
         if key_type not in ("LIST", "HASH"):
             raise ValueError("key_type must be one of (%s)" % (str(("LIST", "HASH")), ))
@@ -374,12 +431,9 @@ class RRedisConfig(BaseGetterConfig):
 
 
 class RMySQLConfig(BaseGetterConfig):
-    def __init__(self, table, per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit,
-                 filter_=None, max_retry=DefaultVal.max_retry, random_min_sleep=DefaultVal.random_min_sleep,
-                 random_max_sleep=DefaultVal.random_max_sleep, host=main_config["mysql"].get("host"),
-                 port=main_config["mysql"].getint("port"), user=main_config["mysql"].get("user"),
-                 password=main_config["mysql"].get("password"), database=main_config["mysql"].get("database"),
-                 encoding=main_config["mysql"].get("encoding"), loop=None, **kwargs):
+    def __init__(self, table, per_limit=None, max_limit=None, filter_=None, max_retry=None, random_min_sleep=None,
+                 random_max_sleep=None, host=None, port=None, user=None, password=None, database=None,
+                 encoding=None, loop=None, **kwargs):
         """
         :param table: mysql table
         :param per_limit: how many items to get per time
@@ -404,8 +458,32 @@ class RMySQLConfig(BaseGetterConfig):
                 print(items)
         """
         super().__init__()
-        if not main_config.has_mysql_configured and port <= 0:
-            raise ValueError("You must config mysql before using MySQL, Please edit configure file: %s" % (main_config.ini_path, ))
+
+        if not random_min_sleep:
+            random_min_sleep = DefaultVal.random_min_sleep
+        if not random_max_sleep:
+            random_max_sleep = DefaultVal.random_max_sleep
+        if not per_limit:
+            per_limit = DefaultVal.per_limit
+        if not max_limit:
+            max_limit = DefaultVal.max_limit
+        if not max_retry:
+            max_retry = DefaultVal.max_retry
+        if not host:
+            host = DefaultVal.mysql_host
+        if not port:
+            port = DefaultVal.mysql_port
+        if not user:
+            user = DefaultVal.mysql_user
+        if not password:
+            password = DefaultVal.mysql_password
+        if not database:
+            database = DefaultVal.mysql_database
+        if not encoding:
+            encoding = DefaultVal.mysql_encoding
+
+        if not DefaultVal.main_config.has_mysql_configured and port <= 0:
+            raise ValueError("You must config mysql before using MySQL, Please edit configure file: %s" % (DefaultVal.main_config.ini_path, ))
         if "aiomysql" not in globals():
             raise ValueError("module mysql disabled, please reinstall "
                              "requirements with python version higher than 3.5.3 to enable it")
@@ -457,12 +535,9 @@ class RMySQLConfig(BaseGetterConfig):
 
 
 class RMongoConfig(BaseGetterConfig):
-    def __init__(self, collection, per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit,
-                 query_body=None, max_retry=DefaultVal.max_retry,
-                 random_min_sleep=DefaultVal.random_min_sleep, random_max_sleep=DefaultVal.random_max_sleep,
-                 filter_=None, host=main_config["mongo"].get("host"), port=main_config["mongo"].getint("port"),
-                 username=main_config["mongo"].get("username"), password=main_config["mongo"].get("password"),
-                 database=main_config["mongo"].get("database"), **kwargs):
+    def __init__(self, collection, per_limit=None, max_limit=None, query_body=None, max_retry=None,
+                 random_min_sleep=None, random_max_sleep=None, filter_=None, host=None, port=None, username=None,
+                 password=None, database=None, **kwargs):
         """
         :param collection: collection name
         :param per_limit: how many items to get per request
@@ -483,8 +558,30 @@ class RMongoConfig(BaseGetterConfig):
                 print(item)
         """
         super().__init__()
-        if not main_config.has_mongo_configured:
-            raise ValueError("You must config MongoDB before using MongoDB, Please edit configure file: %s" % (main_config.ini_path, ))
+
+        if not random_min_sleep:
+            random_min_sleep = DefaultVal.random_min_sleep
+        if not random_max_sleep:
+            random_max_sleep = DefaultVal.random_max_sleep
+        if not per_limit:
+            per_limit = DefaultVal.per_limit
+        if not max_limit:
+            max_limit = DefaultVal.max_limit
+        if not max_retry:
+            max_retry = DefaultVal.max_retry
+        if not host:
+            host = DefaultVal.mongo_host
+        if not port:
+            port = DefaultVal.mongo_port
+        if not username:
+            username = DefaultVal.mongo_username
+        if not password:
+            password = DefaultVal.mongo_password
+        if not database:
+            database = DefaultVal.mongo_database
+
+        if not DefaultVal.main_config.has_mongo_configured:
+            raise ValueError("You must config MongoDB before using MongoDB, Please edit configure file: %s" % (DefaultVal.main_config.ini_path, ))
         if "motor" not in globals():
             raise ValueError("module motor disabled, please reinstall "
                              "requirements in linux")

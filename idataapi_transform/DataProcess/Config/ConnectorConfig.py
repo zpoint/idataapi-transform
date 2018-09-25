@@ -3,28 +3,28 @@ import asyncio
 import inspect
 from .MainConfig import main_config
 
-main_config = main_config()
-default_concurrency_limit = main_config["main"].getint("concurrency")
-
 
 class _SessionManger(object):
-    def __init__(self, concurrency_limit=default_concurrency_limit, loop=None):
+    def __init__(self, concurrency_limit=None, loop=None):
+        concurrency_limit = main_config()["main"].getint("concurrency") if concurrency_limit is None else concurrency_limit
         self.session = self._generate_session(concurrency_limit=concurrency_limit, loop=loop)
 
     @staticmethod
-    def _generate_connector(limit=default_concurrency_limit, loop=None):
+    def _generate_connector(limit=None, loop=None):
         """
         https://github.com/KeepSafe/aiohttp/issues/883
         if connector is passed to session, it is not available anymore
         """
+        limit = main_config()["main"].getint("concurrency") if limit is None else limit
         if not loop:
             loop = asyncio.get_event_loop()
         return aiohttp.TCPConnector(limit=limit, loop=loop)
 
     @staticmethod
-    def _generate_session(concurrency_limit=default_concurrency_limit, loop=None):
+    def _generate_session(concurrency_limit=None, loop=None):
         if not loop:
             loop = asyncio.get_event_loop()
+        concurrency_limit = main_config()["main"].getint("concurrency") if concurrency_limit is None else concurrency_limit
         return aiohttp.ClientSession(connector=_SessionManger._generate_connector(limit=concurrency_limit, loop=loop),
                                      loop=loop)
 

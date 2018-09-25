@@ -2,7 +2,7 @@ import os
 import json
 import configparser
 from os.path import expanduser
-from .LogConfig import init_log
+from .LogConfig import init_log, remove_log
 from .ESConfig import init_es
 
 
@@ -77,38 +77,48 @@ database = test_database
 """
 
 
+main_config_box = None
+
+
 class MainConfig(object):
     def __init__(self, ini_path=None):
+        global main_config_box
+        main_config_box = self
         # singleton
         if not hasattr(self, "__instance"):
-            self.ini_path = ini_path
-            if not self.ini_path:
+            if not ini_path:
                 home = expanduser("~")
-                self.ini_path = home + "/idataapi-transform.ini"
+                ini_path = home + "/idataapi-transform.ini"
 
-            if not os.path.exists(self.ini_path):
-                with open(self.ini_path, "w") as f:
+            if not os.path.exists(ini_path):
+                with open(ini_path, "w") as f:
                     f.write(default_configure_content + redis_config_content + mysql_config_content + mongo_config_content)
 
             if os.path.exists("./idataapi-transform.ini"):
-                self.ini_path = "./idataapi-transform.ini"
+                ini_path = "./idataapi-transform.ini"
 
-            self.__instance = configparser.ConfigParser()
-            self.__instance.read(self.ini_path)
-            MainConfig.__instance = self.__instance
+            self.read_config(ini_path)
 
-            self.has_log_file = self.__instance.has_log_file = self.config_log()
-            self.has_es_configured = self.__instance.has_es_configured = self.config_es()
-            self.has_redis_configured = self.__instance.has_redis_configured = self.config_redis()
-            self.has_mysql_configured = self.__instance.has_mysql_configured = self.config_mysql()
-            self.has_mongo_configured = self.__instance.has_mongo_configured = self.config_mongo()
+    def read_config(self, ini_path):
+        self.ini_path = ini_path
+        self.__instance = configparser.ConfigParser()
 
-            self.__instance.ini_path = self.ini_path
+        self.__instance.read(ini_path)
+        MainConfig.__instance = self.__instance
+
+        self.has_log_file = self.__instance.has_log_file = self.config_log()
+        self.has_es_configured = self.__instance.has_es_configured = self.config_es()
+        self.has_redis_configured = self.__instance.has_redis_configured = self.config_redis()
+        self.has_mysql_configured = self.__instance.has_mysql_configured = self.config_mysql()
+        self.has_mongo_configured = self.__instance.has_mongo_configured = self.config_mongo()
+
+        self.__instance.ini_path = self.ini_path
 
     def __call__(self):
         return self.__instance
 
     def config_log(self):
+        remove_log()
         max_log_file_bytes = self.__instance["log"].getint("log_byte")
         log_path = self.__instance["log"].get("path")
         return init_log(log_path, max_log_file_bytes, self.ini_path)

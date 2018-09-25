@@ -79,6 +79,9 @@ Features:
 	* [删除ES中的数据](#删除es中的数据)
 	* [从API读取并写数据进入ES](#从api读取并写数据进入es)
 	* [获得ES Client](#获得es-client)
+* [配置](#配置)
+	* [配置文件路径](#配置文件路径)
+	* [运行时指定配置](#运行时指定配置)
 * [说明](#说明)
 * [升级](#升级)
 * [许可](#许可)
@@ -678,6 +681,31 @@ JSON 为一行一条数据的 JSON 文件
 
 -------------------
 
+#### 配置
+
+##### 配置文件路径
+
+默认情况下，程序按照以下顺序读取配置文件
+* 自己指定的日志文件(往下看)
+* ./idataapi-transform.ini
+* ~/idataapi-transform.ini
+如果以上两个文件都不存在，程序会自动创建以下文件并将其当成配置文件  **~/idataapi-transform.ini**
+
+##### 运行时指定配置
+
+默认情况下，程序会把日志格式化，输出到 **idataapi-transform.ini** 指定的目录下， 并且输出到终端
+如果你不想要这些输出，或者不想要当前程序的日志格式
+
+    from idataapi_transform import  ManualConfig
+    ManualConfig.disable_log()
+
+如果你想要自己指定日志文件
+
+    from idataapi_transform import  ManualConfig
+    ManualConfig.set_config("/Users/zpoint/Desktop/idataapi-transform.ini")
+
+-------------------
+
 #### 说明
 
 	from idataapi_transform import WriterConfig, GetterConfig
@@ -710,8 +738,9 @@ JSON 为一行一条数据的 JSON 文件
 -------------------
 
 #### 升级
-v 1.4.4
+v 1.4.4 - 1.4.6
 * RAPIBulkGetter support async generator
+* ini config relative path support, manual config support
 
 v 1.4.3
 * fix logging bug

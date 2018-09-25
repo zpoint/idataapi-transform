@@ -15,7 +15,6 @@ except Exception as e:
 from .BaseConfig import BaseWriterConfig
 from ..ESConfig import get_es_client
 from ..DefaultValue import DefaultVal
-from ..ConnectorConfig import main_config
 
 
 class WCSVConfig(BaseWriterConfig):
@@ -51,10 +50,8 @@ class WCSVConfig(BaseWriterConfig):
 
 class WESConfig(BaseWriterConfig):
     def __init__(self, indices, doc_type, filter_=None, expand=None, id_hash_func=DefaultVal.default_id_hash_func,
-                 appCode=None, actions=None, createDate=None, error_if_fail=True, timeout=None,
-                 max_retry=DefaultVal.max_retry, random_min_sleep=DefaultVal.random_min_sleep,
-                 random_max_sleep=DefaultVal.random_max_sleep,
-                 auto_insert_createDate=True, **kwargs):
+                 appCode=None, actions=None, createDate=None, error_if_fail=True, timeout=None, max_retry=None,
+                 random_min_sleep=None, random_max_sleep=None, auto_insert_createDate=True, **kwargs):
         """
         :param indices: elasticsearch indices
         :param doc_type: elasticsearch doc_type
@@ -80,8 +77,16 @@ class WESConfig(BaseWriterConfig):
                     await csv_writer.write(items)
         """
         super().__init__()
-        if not main_config.has_es_configured:
-            raise ValueError("You must config es_hosts before using Elasticsearch, Please edit configure file: %s" % (main_config.ini_path, ))
+
+        if not random_min_sleep:
+            random_min_sleep = DefaultVal.random_min_sleep
+        if not random_max_sleep:
+            random_max_sleep = DefaultVal.random_max_sleep
+        if not max_retry:
+            max_retry = DefaultVal.max_retry
+
+        if not DefaultVal.main_config.has_es_configured:
+            raise ValueError("You must config es_hosts before using Elasticsearch, Please edit configure file: %s" % (DefaultVal.main_config.ini_path, ))
 
         self.indices = indices
         self.doc_type = doc_type
@@ -182,13 +187,9 @@ class WXLSXConfig(BaseWriterConfig):
 
 
 class WRedisConfig(BaseWriterConfig):
-    def __init__(self, key, key_type="LIST", filter_=None, host=main_config["redis"].get("host"),
-                 port=main_config["redis"].getint("port"), db=main_config["redis"].getint("db"),
-                 password=main_config["redis"].get("password"), timeout=main_config["redis"].getint("timeout"),
-                 encoding=main_config["redis"].get("encoding"), direction=main_config["redis"].get("direction"),
-                 max_retry=DefaultVal.max_retry, random_min_sleep=DefaultVal.random_min_sleep,
-                 random_max_sleep=DefaultVal.random_max_sleep, compress=main_config["redis"].getboolean("compress"),
-                 **kwargs):
+    def __init__(self, key, key_type="LIST", filter_=None, host=None, port=None, db=None, password=None, timeout=None,
+                 encoding=None, direction=None, max_retry=None, random_min_sleep=None, random_max_sleep=None,
+                 compress=None, **kwargs):
         """
         :param key: redis key to write data
         :param key_type: redis data type to operate, current only support LIST, HASH
@@ -210,8 +211,33 @@ class WRedisConfig(BaseWriterConfig):
                     await redis_writer.write(items)
         """
         super().__init__()
-        if not main_config.has_redis_configured and port <= 0:
-            raise ValueError("You must config redis before using Redis, Please edit configure file: %s" % (main_config.ini_path, ))
+        # load default value
+        if not random_min_sleep:
+            random_min_sleep = DefaultVal.random_min_sleep
+        if not random_max_sleep:
+            random_max_sleep = DefaultVal.random_max_sleep
+        if not max_retry:
+            max_retry = DefaultVal.max_retry
+        if host is None:
+            host = DefaultVal.redis_host
+        if port is None:
+            port = DefaultVal.redis_port
+        if db is None:
+            db = DefaultVal.redis_db
+        if password is None:
+            password = DefaultVal.redis_password
+        if timeout is None:
+            timeout = DefaultVal.redis_timeout
+        if encoding is None:
+            encoding = DefaultVal.redis_encoding
+        if direction is None:
+            direction = DefaultVal.redis_direction
+        if compress is None:
+            compress = DefaultVal.redis_compress
+
+        # check value
+        if not DefaultVal.main_config.has_redis_configured and port <= 0:
+            raise ValueError("You must config redis before using Redis, Please edit configure file: %s" % (DefaultVal.main_config.ini_path, ))
         if key_type not in ("LIST", "HASH"):
             raise ValueError("key_type must be one of (%s)" % (str(("LIST", )), ))
         if not encoding:
@@ -274,12 +300,8 @@ class WRedisConfig(BaseWriterConfig):
 
 
 class WMySQLConfig(BaseWriterConfig):
-    def __init__(self, table, filter_=None, max_retry=DefaultVal.max_retry,
-                 random_min_sleep=DefaultVal.random_min_sleep, random_max_sleep=DefaultVal.random_max_sleep,
-                 host=main_config["mysql"].get("host"), port=main_config["mysql"].getint("port"),
-                 user=main_config["mysql"].get("user"), password=main_config["mysql"].get("password"),
-                 database=main_config["mysql"].get("database"), encoding=main_config["mysql"].get("encoding"),
-                 loop=None, **kwargs):
+    def __init__(self, table, filter_=None, max_retry=None, random_min_sleep=None, random_max_sleep=None,
+                 host=None, port=None, user=None, password=None, database=None, encoding=None, loop=None, **kwargs):
         """
         :param table: mysql table
         :param filter_: run "transform --help" to see command line interface explanation for detail
@@ -302,8 +324,27 @@ class WMySQLConfig(BaseWriterConfig):
                 await mysql_writer.write(items)
         """
         super().__init__()
-        if not main_config.has_mysql_configured and port <= 0:
-            raise ValueError("You must config mysql before using MySQL, Please edit configure file: %s" % (main_config.ini_path, ))
+        if not random_min_sleep:
+            random_min_sleep = DefaultVal.random_min_sleep
+        if not random_max_sleep:
+            random_max_sleep = DefaultVal.random_max_sleep
+        if not max_retry:
+            max_retry = DefaultVal.max_retry
+        if not host:
+            host = DefaultVal.mysql_host
+        if not port:
+            port = DefaultVal.mysql_port
+        if not user:
+            user = DefaultVal.mysql_user
+        if not password:
+            password = DefaultVal.mysql_password
+        if not database:
+            database = DefaultVal.mysql_database
+        if not encoding:
+            encoding = DefaultVal.mysql_encoding
+
+        if not DefaultVal.main_config.has_mysql_configured and port <= 0:
+            raise ValueError("You must config mysql before using MySQL, Please edit configure file: %s" % (DefaultVal.main_config.ini_path, ))
         if "aiomysql" not in globals():
             raise ValueError("module mysql disabled, please reinstall "
                              "requirements with python version higher than 3.5.3 to enable it")
@@ -353,19 +394,12 @@ class WMySQLConfig(BaseWriterConfig):
 
 
 class WMongoConfig(BaseWriterConfig):
-    def __init__(self, collection, id_hash_func=DefaultVal.default_id_hash_func,
-                 per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit, query_body=None,
-                 max_retry=DefaultVal.max_retry, random_min_sleep=DefaultVal.random_min_sleep,
-                 random_max_sleep=DefaultVal.random_max_sleep, filter_=None, host=main_config["mongo"].get("host"),
-                 port=main_config["mongo"].getint("port"), username=main_config["mongo"].get("username"),
-                 password=main_config["mongo"].get("password"), database=main_config["mongo"].get("database"),
-                 auto_insert_createDate=False, createDate=None, **kwargs):
+    def __init__(self, collection, id_hash_func=DefaultVal.default_id_hash_func, max_retry=None, random_min_sleep=None,
+                 random_max_sleep=None, filter_=None, host=None, port=None, username=None, password=None,
+                 database=None, auto_insert_createDate=False, createDate=None, **kwargs):
         """
         :param collection: collection name
         :param id_hash_func: function to generate id_ for each item, only if "_id" not in item will I use 'id_hash_func' to generate "_id"
-        :param per_limit: how many items to get per request
-        :param max_limit: get at most max_limit items, if not set, get all
-        :param query_body: search query, default None, i.e: {'i': {'$lt': 5}}
         :param return_source: if set to True, will return [item , ..., itemN], item is the "_source" object
                               if set to False, will return whatever elasticsearch return, i.e {"hits": {"total": ...}}
         :param max_retry: if request fail, retry max_retry times
@@ -388,16 +422,30 @@ class WMongoConfig(BaseWriterConfig):
                 await mongo_writer.write(data)
         """
         super().__init__()
-        if not main_config.has_mongo_configured:
-            raise ValueError("You must config MongoDB before using MongoDB, Please edit configure file: %s" % (main_config.ini_path, ))
+        if not random_min_sleep:
+            random_min_sleep = DefaultVal.random_min_sleep
+        if not random_max_sleep:
+            random_max_sleep = DefaultVal.random_max_sleep
+        if not max_retry:
+            max_retry = DefaultVal.max_retry
+        if not host:
+            host = DefaultVal.mongo_host
+        if not port:
+            port = DefaultVal.mongo_port
+        if not username:
+            username = DefaultVal.mongo_username
+        if not password:
+            password = DefaultVal.mongo_password
+        if not database:
+            database = DefaultVal.mongo_database
+
+        if not DefaultVal.main_config.has_mongo_configured:
+            raise ValueError("You must config MongoDB before using MongoDB, Please edit configure file: %s" % (DefaultVal.main_config.ini_path, ))
         if "motor" not in globals():
             raise ValueError("module motor disabled, please reinstall "
                              "requirements in linux")
 
         self.collection = collection
-        self.query_body = query_body
-        self.per_limit = per_limit
-        self.max_limit = max_limit
         self.max_retry = max_retry
         self.random_min_sleep = random_min_sleep
         self.random_max_sleep = random_max_sleep

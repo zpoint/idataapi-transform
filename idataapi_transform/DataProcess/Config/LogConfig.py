@@ -52,3 +52,8 @@ def init_log(log_dir, max_log_file_bytes, ini_path):
         root_logger.addHandler(h1)
         return True
     return False
+
+
+def remove_log():
+    root_logger = logging.getLogger()
+    root_logger.handlers.clear()
