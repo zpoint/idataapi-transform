@@ -702,6 +702,7 @@ By default, program will load config file in the following order
 * the ini file your specific(see below)
 * ./idataapi-transform.ini
 * ~/idataapi-transform.ini
+
 if none of the configure file exists, program will create **~/idataapi-transform.ini** automatically and use it as default
 
 ##### manual config in program
