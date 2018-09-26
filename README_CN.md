@@ -11,7 +11,7 @@
 
 ![示意图](https://github.com/zpoint/idataapi-transform/blob/master/idataapi-transform.png)
 
-可以从以下任意一种格式
+可以从以下任意 **格式/文件/数据库** 读取数据
 
  * **API(http)**
  * **ES(ElasticSearch)**
@@ -22,7 +22,7 @@
  * **MySQL**
  * **MongoDB**
 
-转换为以下任意一种格式
+并存储到以下任意 **格式/文件/数据库**
 
  * **CSV**
  * **XLSX**

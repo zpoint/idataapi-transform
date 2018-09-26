@@ -449,7 +449,7 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
         config = GetterConfig.RAPIBulkConfig((RAPIConfig(base_url % (i,), return_fail=True, tag=i) for i in unfinished_id_set), return_fail=True, concurrency=100)
         reader = ProcessFactory.create_getter(config)
         async for good_items, bad_items in reader:
-            # A: Whrn you set RAPIBulkConfig's return_fail to True,
+            # A: When you set RAPIBulkConfig's return_fail to True,
             # 1）normal url will retuen error info
             # 2) RAPIConfig Object with return_fail set to True will retuen error info
             # 3) RAPIConfig Object with return_fail set to False will not retuen error info
