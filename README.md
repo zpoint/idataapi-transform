@@ -710,12 +710,12 @@ if none of the configure file exists, program will create **~/idataapi-transform
 By default, program will log to file configured in **idataapi-transform.ini**, and also log to console, all of the log will be formatted
 If you don't want any of it, you can disable it
 
-    from idataapi_transform import  ManualConfig
+    from idataapi_transform import ManualConfig
     ManualConfig.disable_log()
 
 If you want to specific your own configure file
 
-    from idataapi_transform import  ManualConfig
+    from idataapi_transform import ManualConfig
     ManualConfig.set_config("/Users/zpoint/Desktop/idataapi-transform.ini")
 
 -------------------

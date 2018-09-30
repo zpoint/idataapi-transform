@@ -697,12 +697,12 @@ JSON 为一行一条数据的 JSON 文件
 默认情况下，程序会把日志格式化，输出到 **idataapi-transform.ini** 指定的目录下， 并且输出到终端
 如果你不想要这些输出，或者不想要当前程序的日志格式
 
-    from idataapi_transform import  ManualConfig
+    from idataapi_transform import ManualConfig
     ManualConfig.disable_log()
 
 如果你想要自己指定配置文件
 
-    from idataapi_transform import  ManualConfig
+    from idataapi_transform import ManualConfig
     ManualConfig.set_config("/Users/zpoint/Desktop/idataapi-transform.ini")
 
 -------------------
