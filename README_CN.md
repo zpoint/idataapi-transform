@@ -71,8 +71,8 @@ Features:
     * [MongoDB to redis](#mongodb-to-redis)
     * [并发从不同的 API 读取数据 并写入到 ES/MongoDB/Json](#并发从不同的-api-读取数据-并写入到-es或mongodb或json)
     * [访问API出错时 提取错误信息](#访问api出错时-提取错误信息)
-    * [REDIS 基本示例](#redis-基本示例)
     * [call_back](#callback)
+* [REDIS 基本示例](#redis-基本示例)
 * [ES 基本操作](#es-基本操作)
 	* [从ES读取数据](#从es读取数据)
 	* [写数据进ES](#写数据进es)
@@ -462,7 +462,8 @@ JSON 为一行一条数据的 JSON 文件
         client = await self.get_redis_pool_cli()
         # 如果你用的是 getter_config, 你也可以通过如下方法获得 'getter_config.get_redis_pool_cli()'
         # 之后你就可以对 redis 进行操作
-        r = await client.hset("xxx")
+        r = await client.hset("xxx", "k1", "v1")
+        print(r)
 
     async def example():
         # 指定 redis 的 key_type 为 HASH, 默认为 LIST

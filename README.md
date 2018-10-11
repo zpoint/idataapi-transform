@@ -70,8 +70,8 @@ Features:
     * [MongoDB to redis](#mongodb-to-redis)
 	* [Bulk API to ES/MongoDB/Json](#bulk-api-to-es-or-mongodb-or-json)
 	* [Extract error info from API](#extract-error-info-from-api)
-	* [REDIS Usage](#redis-usage)
 	* [call_back](#call_back)
+* [REDIS Usage](#redis-usage)
 * [ES Base Operation](#es-base-operation)
 	* [Read data from ES](#read-data-from-es)
 	* [Write data to ES](#write-data-to-es)
@@ -462,40 +462,6 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
         loop.run_until_complete(example_simple())
 
 
-##### REDIS Usage
-
-    import asyncio
-	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
-
-    async def example_simple():
-        # default key_type is LIST in redis
-        # you can pass parameter "encoding" to specify how to encode before write to redis, default utf8
-        json_lists = [...]
-        wredis_config = WriterConfig.WRedisConfig("my_key")
-        writer = ProcessFactory.create_writer(wredis_config)
-        await writer.write(json_lists)
-
-        # get async redis client
-        client = await wredis_config.get_redis_pool_cli()
-        # if you instance a getter_config, you can get client by 'getter_config.get_redis_pool_cli()'
-        # then, you can do watever you want in redis
-        r = await client.hset("xxx")
-
-    async def example():
-        # specify redis's key_type to HASH, default is LIST
-        # compress means string object is compressed by zlib before write to redis,
-        # we need to decompress it before turn to json object
-        # you can pass parameter "need_del" to specify whether need to del the key after get object from redis, default false
-        # you can pass parameter "direction" to specify whether read data from left to right or right to left, default left to right(only work for LIST key type)
-        getter_config = GetterConfig.RRedisConfig("my_key_hash", key_type="HASH", compress=True)
-        async for items in reader:
-            print(items)
-
-
-    if __name__ == "__main__":
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(example())
-
 ##### call_back
 
     import asyncio
@@ -567,6 +533,41 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
         loop = asyncio.get_event_loop()
         loop.run_until_complete(start())
 
+
+### REDIS Usage
+
+    import asyncio
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
+
+    async def example_simple():
+        # default key_type is LIST in redis
+        # you can pass parameter "encoding" to specify how to encode before write to redis, default utf8
+        json_lists = [...]
+        wredis_config = WriterConfig.WRedisConfig("my_key")
+        writer = ProcessFactory.create_writer(wredis_config)
+        await writer.write(json_lists)
+
+        # get async redis client
+        client = await wredis_config.get_redis_pool_cli()
+        # if you instance a getter_config, you can get client by 'getter_config.get_redis_pool_cli()'
+        # then, you can do watever you want in redis
+        r = await client.hset("xxx", "k1", "v1")
+        print(r)
+
+    async def example():
+        # specify redis's key_type to HASH, default is LIST
+        # compress means string object is compressed by zlib before write to redis,
+        # we need to decompress it before turn to json object
+        # you can pass parameter "need_del" to specify whether need to del the key after get object from redis, default false
+        # you can pass parameter "direction" to specify whether read data from left to right or right to left, default left to right(only work for LIST key type)
+        getter_config = GetterConfig.RRedisConfig("my_key_hash", key_type="HASH", compress=True)
+        async for items in reader:
+            print(items)
+
+
+    if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
 
 
 #### ES Base Operation
