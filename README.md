@@ -476,7 +476,10 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
         await writer.write(json_lists)
 
         # get async redis client
-        client = await self.get_redis_pool_cli()
+        client = await wredis_config.get_redis_pool_cli()
+        # if you instance a getter_config, you can get client by 'getter_config.get_redis_pool_cli()'
+        # then, you can do watever you want in redis
+        r = await client.hset("xxx")
 
     async def example():
         # specify redis's key_type to HASH, default is LIST

@@ -460,6 +460,9 @@ JSON 为一行一条数据的 JSON 文件
 
         # 获取异步redis客户端
         client = await self.get_redis_pool_cli()
+        # 如果你用的是 getter_config, 你也可以通过如下方法获得 'getter_config.get_redis_pool_cli()'
+        # 之后你就可以对 redis 进行操作
+        r = await client.hset("xxx")
 
     async def example():
         # 指定 redis 的 key_type 为 HASH, 默认为 LIST
