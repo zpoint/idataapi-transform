@@ -445,40 +445,6 @@ JSON 为一行一条数据的 JSON 文件
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example_simple())
 
-##### REDIS 基本示例
-
-    import asyncio
-	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
-
-    async def example_simple():
-        # 默认 key_type 是 Redis 的 LIST 结构
-        # 你也可以指定 encoding 参数表示在写入 redis 之前进行什么编码，默认utf8
-        json_lists = [...]
-        wredis_config = WriterConfig.WRedisConfig("my_key")
-        writer = ProcessFactory.create_writer(wredis_config)
-        await writer.write(json_lists)
-
-        # 获取异步redis客户端
-        client = await self.get_redis_pool_cli()
-        # 如果你用的是 getter_config, 你也可以通过如下方法获得 'getter_config.get_redis_pool_cli()'
-        # 之后你就可以对 redis 进行操作
-        r = await client.hset("xxx", "k1", "v1")
-        print(r)
-
-    async def example():
-        # 指定 redis 的 key_type 为 HASH, 默认为 LIST
-        # compress 参数表示数据在redis中被 zlib 压缩过，取出来要进行解压才能做json处理
-        # 你可以指定 need_del 参数表示是否要在读取完数据后删除redis的key值, 默认 false
-        # 你可以指定 "direction" 参数表示数据是从左往右读取还是从右往左读取(仅对 LIST 类型有效)
-        getter_config = GetterConfig.RRedisConfig("my_key_hash", key_type="HASH", compress=True)
-        async for items in reader:
-            print(items)
-
-
-    if __name__ == "__main__":
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(example())
-
 
 ##### call_back
 
@@ -550,6 +516,41 @@ JSON 为一行一条数据的 JSON 文件
     if __name__ == "__main__":
         loop = asyncio.get_event_loop()
         loop.run_until_complete(start())
+
+
+##### REDIS 基本示例
+
+    import asyncio
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
+
+    async def example_simple():
+        # 默认 key_type 是 Redis 的 LIST 结构
+        # 你也可以指定 encoding 参数表示在写入 redis 之前进行什么编码，默认utf8
+        json_lists = [...]
+        wredis_config = WriterConfig.WRedisConfig("my_key")
+        writer = ProcessFactory.create_writer(wredis_config)
+        await writer.write(json_lists)
+
+        # 获取异步redis客户端
+        client = await wredis_config.get_redis_pool_cli()
+        # 如果你用的是 getter_config, 你也可以通过如下方法获得 'getter_config.get_redis_pool_cli()'
+        # 之后你就可以对 redis 进行操作
+        r = await client.hset("xxx", "k1", "v1")
+        print(r)
+
+    async def example():
+        # 指定 redis 的 key_type 为 HASH, 默认为 LIST
+        # compress 参数表示数据在redis中被 zlib 压缩过，取出来要进行解压才能做json处理
+        # 你可以指定 need_del 参数表示是否要在读取完数据后删除redis的key值, 默认 false
+        # 你可以指定 "direction" 参数表示数据是从左往右读取还是从右往左读取(仅对 LIST 类型有效)
+        getter_config = GetterConfig.RRedisConfig("my_key_hash", key_type="HASH", compress=True)
+        async for items in reader:
+            print(items)
+
+
+    if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
 
 
 #### ES 基本操作
