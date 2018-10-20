@@ -1,6 +1,8 @@
+import re
 import logging
 from openpyxl import Workbook
 from .BaseWriter import BaseWriter
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
 _warning = False
 
@@ -37,7 +39,14 @@ class XLSXWriter(BaseWriter):
                     self.col_dict[key] = len(self.col_dict) + 1
                     self.ws1.cell(row=1, column=self.col_dict[key], value=key)
                 value = str(value) if value is not None else ""
-                self.ws1.cell(row=self.row, column=self.col_dict[key], value=value)
+                try:
+                    self.ws1.cell(row=self.row, column=self.col_dict[key], value=value)
+                except Exception:
+                    new_value = re.sub(ILLEGAL_CHARACTERS_RE, "", value)
+                    logging.warning("row num: %d, key: %s, value: %s contains illegal characters, "
+                                    "replaced illegal characters to: %s" % (self.row, key, value, new_value))
+                    self.ws1.cell(row=self.row, column=self.col_dict[key], value=new_value)
+
             self.row += 1
             self.success_count += 1
         logging.info("%s write %d item, filtered %d item" % (self.config.filename, len(responses), miss_count))
