@@ -60,6 +60,7 @@ class DefaultValObject(object):
     concurrency = 50
     default_key_type = "LIST"
     report_interval = 10
+    success_ret_code = ("100002", "100301", "100103")
 
     @staticmethod
     def default_id_hash_func(item):

@@ -22,7 +22,8 @@ from ..ConnectorConfig import session_manger
 class RAPIConfig(BaseGetterConfig):
     def __init__(self, source, per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit,
                  max_retry=DefaultVal.max_retry, random_min_sleep=None, random_max_sleep=None, session=None,
-                 filter_=None, return_fail=False, tag=None, call_back=None, report_interval=10, **kwargs):
+                 filter_=None, return_fail=False, tag=None, call_back=None, report_interval=10, success_ret_code=None,
+                 **kwargs):
         """
         will request until no more next_page to get, or get "max_limit" items
 
@@ -45,6 +46,7 @@ class RAPIConfig(BaseGetterConfig):
         :param call_back: a function(can be async function) to call on results before each "async for" return
         :param report_interval: an integer value, if set to 5, after 5 request times, current response counter still
         less than 'per_limit', the "async for' won't return to user, there's going to be an INFO log to tell user what happen
+        :param success_ret_code: ret_code indicate success, default is ("100002", "100301", "100103") ===> ("search no result", "account not found", "account processing")
         :param args:
         :param kwargs:
 
@@ -59,6 +61,8 @@ class RAPIConfig(BaseGetterConfig):
             random_min_sleep = DefaultVal.random_min_sleep
         if not random_max_sleep:
             random_max_sleep = DefaultVal.random_max_sleep
+        if not success_ret_code:
+            success_ret_code = DefaultVal.success_ret_code
 
         self.source = source
         self.per_limit = per_limit
@@ -72,6 +76,7 @@ class RAPIConfig(BaseGetterConfig):
         self.tag = tag
         self.call_back = call_back
         self.report_interval = report_interval
+        self.success_ret_code = success_ret_code
 
 
 class RCSVConfig(BaseGetterConfig):

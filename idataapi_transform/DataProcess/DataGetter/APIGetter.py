@@ -99,7 +99,7 @@ class APIGetter(BaseGetter):
                     text = await resp.text()
                     result = json.loads(text)
                     if "data" not in result:
-                        if "retcode" not in result or result["retcode"] not in ("100002", "100301", "100103"):
+                        if "retcode" not in result or result["retcode"] not in self.config.success_ret_code:
                             raise ValueError("Bad retcode: %s" % (str(result["retcode"]), ))
 
             except Exception as e:
@@ -148,7 +148,7 @@ class APIGetter(BaseGetter):
                 self.page_token = str(result["pageToken"])
                 self.update_base_url()
 
-            elif "retcode" in result and result["retcode"] in ("100002", "100301", "100103"):
+            elif "retcode" in result and result["retcode"] in self.config.success_ret_code:
                 self.done = True
                 if self.need_return():
                     return await self.clear_and_return()
