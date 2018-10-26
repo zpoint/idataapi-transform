@@ -20,4 +20,4 @@ class ManualConfig(object):
         remove_log()
 
 
-__version__ = '1.4.8'
+__version__ = '1.4.9'

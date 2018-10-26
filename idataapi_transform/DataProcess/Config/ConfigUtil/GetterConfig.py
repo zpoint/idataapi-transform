@@ -296,12 +296,10 @@ class RAPIBulkConfig(BaseGetterConfig):
 
     def __del__(self):
         if inspect.iscoroutinefunction(self.session.close):
-            close_coroutine = self.session.close()
-            try:
-                loop = asyncio.get_event_loop()
-                loop.run_until_complete(close_coroutine)
-            except Exception:
-                asyncio.ensure_future(close_coroutine)
+            if not self.session.closed:
+                if self.session._connector_owner:
+                    self.session._connector.close()
+                self.session._connector = None
         else:
             self.session.close()
 
