@@ -297,9 +297,9 @@ class RAPIBulkConfig(BaseGetterConfig):
     def __del__(self):
         if inspect.iscoroutinefunction(self.session.close):
             if not self.session.closed:
-                if self.session._connector_owner:
-                    self.session._connector.close()
-                self.session._connector = None
+                if self.session._connector is not None and self.session._connector_owner:
+                    self._connector.close()
+                self._connector = None
         else:
             self.session.close()
 
