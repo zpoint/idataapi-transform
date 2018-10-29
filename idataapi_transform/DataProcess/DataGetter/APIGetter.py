@@ -137,6 +137,10 @@ class APIGetter(BaseGetter):
                 else:
                     curr_response = result["data"]
                 self.responses.extend(curr_response)
+                # check if done
+                if self.config.done_if is not None and self.config.done_if(curr_response):
+                    self.done = True
+                    return await self.clear_and_return()
 
             # get next page if success, retry if fail
             if "pageToken" in result:
@@ -236,7 +240,7 @@ class APIBulkGetter(BaseGetter):
         if isinstance(item, RAPIConfig):
             return item
         else:
-            return RAPIConfig(item, session=self.config.session, filter_=self.config.filter, return_fail=self.config.return_fail)
+            return RAPIConfig(item, session=self.config.session, filter_=self.config.filter, return_fail=self.config.return_fail, done_if=self.config.done_if)
 
     async def fetch_items(self, api_config):
         if api_config.return_fail:

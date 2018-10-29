@@ -81,8 +81,8 @@ Features:
 * [Config](#config)
 	* [ini file](#ini-file)
 	* [manual config in program](#manual-config-in-program)
-* [doc string](#doc-string)
-* [Update](#update)
+* [Doc String](#doc-string)
+* [Change Log](#changelog)
 * [License](#license)
 
 -------------------
@@ -234,11 +234,25 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
 
 ##### API to xlsx
 
+    import time
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
 
+    yesterday_ts = int(time.time()) - 24 * 60 * 60
+
+    def my_done_if(items):
+        # RAPIConfig will fetch next page until
+        # 1. no more page or
+        # 2. reach max_limit or
+        # 3. error occurs
+        # if you want to terminate fetching in some condition, you can provide done_if function
+        if items[-1]["publishDate"] < yesterday_ts:
+        	return True
+        return False
+
 	async def example():
         api_config = GetterConfig.RAPIConfig("http://xxxx")
+        # or you can use: api_config = GetterConfig.RAPIConfig("http://xxxx", done_if=my_done_if)
         getter = ProcessFactory.create_getter(api_config)
         xlsx_config = WriterConfig.WXLSXConfig("./result.xlsx")
         with ProcessFactory.create_writer(xlsx_config) as xlsx_writer:
@@ -755,7 +769,12 @@ If you want to specific your own configure file
 
 -------------------
 
-#### Update
+#### ChangeLog
+v 1.4.7 - 1.5.1
+* done_if param support
+* manual success_ret_code config for user
+* xlsxWriter replace ilegal characters automatically
+
 v 1.4.4 - 1.4.6
 * RAPIBulkGetter support async generator
 * ini config relative path support, manual config support

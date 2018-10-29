@@ -23,7 +23,7 @@ class RAPIConfig(BaseGetterConfig):
     def __init__(self, source, per_limit=DefaultVal.per_limit, max_limit=DefaultVal.max_limit,
                  max_retry=DefaultVal.max_retry, random_min_sleep=None, random_max_sleep=None, session=None,
                  filter_=None, return_fail=False, tag=None, call_back=None, report_interval=10, success_ret_code=None,
-                 **kwargs):
+                 done_if=None, **kwargs):
         """
         will request until no more next_page to get, or get "max_limit" items
 
@@ -47,6 +47,7 @@ class RAPIConfig(BaseGetterConfig):
         :param report_interval: an integer value, if set to 5, after 5 request times, current response counter still
         less than 'per_limit', the "async for' won't return to user, there's going to be an INFO log to tell user what happen
         :param success_ret_code: ret_code indicate success, default is ("100002", "100301", "100103") ===> ("search no result", "account not found", "account processing")
+        :param done_if: the APIGetter will automatically fetch next page until max_limit or no more page, if you provide a function, APIGetter will terminate fetching next page when done_if(items) return True
         :param args:
         :param kwargs:
 
@@ -77,6 +78,7 @@ class RAPIConfig(BaseGetterConfig):
         self.call_back = call_back
         self.report_interval = report_interval
         self.success_ret_code = success_ret_code
+        self.done_if = done_if
 
 
 class RCSVConfig(BaseGetterConfig):
@@ -257,7 +259,8 @@ class RXLSXConfig(BaseGetterConfig):
 
 
 class RAPIBulkConfig(BaseGetterConfig):
-    def __init__(self, sources, interval=DefaultVal.interval, concurrency=None, filter_=None, return_fail=False, **kwargs):
+    def __init__(self, sources, interval=DefaultVal.interval, concurrency=None, filter_=None, return_fail=False,
+                 done_if=None, **kwargs):
         """
         :param sources: an iterable object (can be async generator), each item must be "url" or instance of RAPIConfig
         :param interval: integer or float, each time you call async generator, you will wait for "interval" seconds
@@ -273,7 +276,7 @@ class RAPIBulkConfig(BaseGetterConfig):
                 A.response: -> json object: '{"appCode": "weixinpro", "dataType": "post", "message": "param error", "retcode": "100005"}', if fail in request, response will be None
                 A.tag: -> tag you pass to RAPIConfig
                 A.source: -> source you pass to RAPIConfig
-
+        :param done_if: if will only work if the source[n] is type string, if the source[n] is type RAPIConfig, it won't work, please refer to RAPIConfig for more detail
         :param kwargs:
 
         Example:
@@ -293,6 +296,7 @@ class RAPIBulkConfig(BaseGetterConfig):
         self.session = session_manger._generate_session(concurrency_limit=concurrency)
         self.filter = filter_
         self.return_fail = return_fail
+        self.done_if = done_if
 
     def __del__(self):
         if inspect.iscoroutinefunction(self.session.close):

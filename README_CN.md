@@ -83,7 +83,7 @@ Features:
 	* [配置文件路径](#配置文件路径)
 	* [运行时指定配置](#运行时指定配置)
 * [说明](#说明)
-* [升级](#升级)
+* [升级](#changelog)
 * [许可](#许可)
 
 -------------------
@@ -241,8 +241,21 @@ JSON 为一行一条数据的 JSON 文件
     import asyncio
 	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
 
+    yesterday_ts = int(time.time()) - 24 * 60 * 60
+
+    def my_done_if(items):
+        # RAPIConfig 会自动翻页直到以下其中的一种情况发生
+        # 1. 没有下一页
+        # 2. 达到你传入的 max_limit 值
+        # 3. 发生某种错误三次以上
+        # 如果你想要提供自己的中止条件，比如时间戳小于昨天的某个值就停止翻页，可以提供done_if参数
+        if items[-1]["publishDate"] < yesterday_ts:
+        	return True
+        return False
+
 	async def example():
         api_config = GetterConfig.RAPIConfig("http://xxxx")
+        # 你也可以使用: api_config = GetterConfig.RAPIConfig("http://xxxx", done_if=my_done_if)
         getter = ProcessFactory.create_getter(api_config)
         xlsx_config = WriterConfig.WXLSXConfig("./result.xlsx")
         with ProcessFactory.create_writer(xlsx_config) as xlsx_writer:
@@ -743,7 +756,12 @@ JSON 为一行一条数据的 JSON 文件
 
 -------------------
 
-#### 升级
+#### ChangeLog
+v 1.4.7 - 1.5.1
+* done_if param support
+* manual success_ret_code config for user
+* xlsxWriter replace ilegal characters automatically
+
 v 1.4.4 - 1.4.6
 * RAPIBulkGetter support async generator
 * ini config relative path support, manual config support
