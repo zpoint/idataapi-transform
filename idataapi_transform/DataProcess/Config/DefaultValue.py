@@ -61,6 +61,8 @@ class DefaultValObject(object):
     default_key_type = "LIST"
     report_interval = 10
     success_ret_code = ("100002", "100301", "100103")
+    trim_to_max_limit = False
+    exclude_filtered_to_max_limit = True
 
     @staticmethod
     def default_id_hash_func(item):

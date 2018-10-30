@@ -128,7 +128,6 @@ class APIGetter(BaseGetter):
                 # success
                 self.retry_count = 0
                 origin_length = len(result["data"])
-                self.total_count += origin_length
 
                 if self.config.filter:
                     curr_response = [self.config.filter(i) for i in result["data"]]
@@ -136,7 +135,14 @@ class APIGetter(BaseGetter):
                     self.miss_count += origin_length - len(curr_response)
                 else:
                     curr_response = result["data"]
+                self.total_count += origin_length if self.config.exclude_filtered_to_max_limit else len(curr_response)
                 self.responses.extend(curr_response)
+                # trim_to_max_limit
+                if self.config.max_limit and self.total_count > self.config.max_limit:
+                    need_trim_items = self.total_count - self.config.max_limit
+                    self.responses = self.responses[:-need_trim_items]
+                    logging.info("trim %d items to fit max_limit: %d" % (need_trim_items, self.config.max_limit))
+                    self.total_count -= need_trim_items
                 # check if done
                 if self.config.done_if is not None and self.config.done_if(curr_response):
                     self.done = True
@@ -170,7 +176,7 @@ class APIGetter(BaseGetter):
                 await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
                 return await self.__anext__()
 
-            if self.config.max_limit and self.total_count > self.config.max_limit:
+            if self.config.max_limit and self.total_count >= self.config.max_limit:
                 self.done = True
                 return await self.clear_and_return()
             elif len(self.responses) >= self.config.per_limit:
@@ -240,7 +246,10 @@ class APIBulkGetter(BaseGetter):
         if isinstance(item, RAPIConfig):
             return item
         else:
-            return RAPIConfig(item, session=self.config.session, filter_=self.config.filter, return_fail=self.config.return_fail, done_if=self.config.done_if)
+            return RAPIConfig(item, session=self.config.session, filter_=self.config.filter,
+                              return_fail=self.config.return_fail, done_if=self.config.done_if,
+                              trim_to_max_limit=self.config.trim_to_max_limit,
+                              exclude_filtered_to_max_limit=self.config.exclude_filtered_to_max_limit)
 
     async def fetch_items(self, api_config):
         if api_config.return_fail:
