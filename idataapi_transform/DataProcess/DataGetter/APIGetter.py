@@ -138,7 +138,7 @@ class APIGetter(BaseGetter):
                 self.total_count += origin_length if self.config.exclude_filtered_to_max_limit else len(curr_response)
                 self.responses.extend(curr_response)
                 # trim_to_max_limit
-                if self.config.max_limit and self.total_count > self.config.max_limit:
+                if self.config.trim_to_max_limit and self.config.max_limit and self.total_count > self.config.max_limit:
                     need_trim_items = self.total_count - self.config.max_limit
                     self.responses = self.responses[:-need_trim_items]
                     logging.info("trim %d items to fit max_limit: %d" % (need_trim_items, self.config.max_limit))
