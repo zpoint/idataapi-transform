@@ -43,9 +43,14 @@ class CSVWriter(BaseWriter):
         # headers
         if not self.f_csv:
             if not self.headers:
-                self.headers = self.generate_headers(responses)
-            self.f_csv = csv.DictWriter(self.f_out, self.headers)
-            self.f_csv.writeheader()
+                if "a" in self.config.mode:
+                    self.headers = self.generate_headers(responses, append_mode=True)
+                    self.f_csv = csv.DictWriter(self.f_out, self.headers)
+                else:
+                    self.headers = self.generate_headers(responses)
+                    self.f_csv = csv.DictWriter(self.f_out, self.headers)
+                    self.f_csv.writeheader()
+
 
         # encoding process
         for each_response in responses:
@@ -63,13 +68,21 @@ class CSVWriter(BaseWriter):
             self.f_csv.writerow(each_response)
         logging.info("%s write %d item, filtered %d item" % (self.config.filename, len(responses), miss_count))
 
-    @staticmethod
-    def generate_headers(responses):
+    def generate_headers(self, responses, append_mode=False):
         headers = set()
         for r in responses:
             for key in r.keys():
                 headers.add(key)
+
+        if append_mode:
+            f_in = open(self.config.filename, "r", encoding=self.config.encoding, newline="")
+            reader = csv.DictReader(f_in)
+            exists_fields = reader.fieldnames
+            if set(exists_fields) != headers:
+                raise ValueError("append mode for csv file: %s, but header field mismatch, exist fields: %s, generated fields: %s" % (self.config.filename, repr(exists_fields), repr(headers)))
+            return exists_fields
         return list(headers)
+
 
     def __enter__(self):
         return self
