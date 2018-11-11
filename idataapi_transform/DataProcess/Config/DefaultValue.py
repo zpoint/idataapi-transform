@@ -37,6 +37,8 @@ class DefaultValObject(object):
         self.mysql_password = self.main_config["mysql"].get("password")
         self.mysql_database = self.main_config["mysql"].get("database")
         self.mysql_encoding = self.main_config["mysql"].get("encoding")
+        if not self.mysql_encoding:
+            self.mysql_encoding = self.default_encoding
 
         # mongo config
         self.mongo_host = self.main_config["mongo"].get("host")

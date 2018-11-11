@@ -82,8 +82,7 @@ class MySQLGetter(BaseGetter):
         while try_time < self.config.max_retry:
             try:
                 await self.config.cursor.execute("SELECT * FROM %s LIMIT %d,%d" %
-                                                 (self.config.table, self.total_count,
-                                                  self.total_count + self.config.per_limit))
+                                                 (self.config.table, self.total_count, self.config.per_limit))
                 results = await self.config.cursor.fetchall()
                 break
             except Exception as e:
@@ -115,6 +114,9 @@ class MySQLGetter(BaseGetter):
         logging.info("Get %d items from %s, filtered: %d items, percentage: %.2f%%" %
                      (len(results), self.config.name, curr_miss_count,
                       (self.total_count / self.total_size * 100) if self.total_size else 0))
+        if self.total_count >= self.config.max_limit:
+            self.need_finish = True
+        return
 
     def decode(self, item):
         """

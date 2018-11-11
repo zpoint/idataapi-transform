@@ -357,7 +357,7 @@ class WMySQLConfig(BaseWriterConfig):
         self.random_max_sleep = random_max_sleep
         self.filter = filter_
 
-        self.name = "%s->%s" % (self.table, self.database)
+        self.name = "%s->%s" % (self.database, self.table)
 
         self.host = host
         self.port = port
