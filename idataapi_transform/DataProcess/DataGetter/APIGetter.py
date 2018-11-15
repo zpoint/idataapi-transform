@@ -49,6 +49,7 @@ class APIGetter(BaseGetter):
             else:
                 self.call_back = self.config.call_back
         self.request_time = 0
+        self.method = "POST" if self.config.post_body else "GET"
 
     def init_val(self):
         self.base_url = self.config.source
@@ -95,12 +96,13 @@ class APIGetter(BaseGetter):
 
         while True:
             try:
-                async with self.config.session.get(self.base_url, headers=headers) as resp:
-                    text = await resp.text()
-                    result = json.loads(text)
-                    if "data" not in result:
-                        if "retcode" not in result or result["retcode"] not in self.config.success_ret_code:
-                            raise ValueError("Bad retcode: %s" % (str(result["retcode"]), ))
+                resp = await self.config.session._request(self.method, self.base_url, headers=headers, data=self.config.post_body)
+                text = await resp.text()
+                print(text)
+                result = json.loads(text)
+                if "data" not in result:
+                    if "retcode" not in result or result["retcode"] not in self.config.success_ret_code:
+                        raise ValueError("Bad retcode: %s" % (str(result["retcode"]), ))
 
             except Exception as e:
                 self.retry_count += 1

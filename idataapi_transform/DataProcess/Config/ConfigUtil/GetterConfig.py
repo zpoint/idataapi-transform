@@ -1,3 +1,4 @@
+import json
 import asyncio
 import inspect
 import aioredis
@@ -24,7 +25,7 @@ class RAPIConfig(BaseGetterConfig):
                  max_retry=DefaultVal.max_retry, random_min_sleep=None, random_max_sleep=None, session=None,
                  filter_=None, return_fail=False, tag=None, call_back=None, report_interval=10, success_ret_code=None,
                  done_if=None, trim_to_max_limit=DefaultVal.trim_to_max_limit,
-                 exclude_filtered_to_max_limit=DefaultVal.exclude_filtered_to_max_limit, **kwargs):
+                 exclude_filtered_to_max_limit=DefaultVal.exclude_filtered_to_max_limit, post_body=None, **kwargs):
         """
         will request until no more next_page to get, or get "max_limit" items
 
@@ -51,6 +52,7 @@ class RAPIConfig(BaseGetterConfig):
         :param done_if: the APIGetter will automatically fetch next page until max_limit or no more page, if you provide a function, APIGetter will terminate fetching next page when done_if(items) return True
         :param trim_to_max_limit: set max_limit to the precise value, default max_limit is rough value
         :param exclude_filtered_to_max_limit: max_limit including filtered object or excluding filtered object
+        :param post_body: POST with post_body instead of get
         :param args:
         :param kwargs:
 
@@ -84,6 +86,10 @@ class RAPIConfig(BaseGetterConfig):
         self.done_if = done_if
         self.trim_to_max_limit = trim_to_max_limit
         self.exclude_filtered_to_max_limit = exclude_filtered_to_max_limit
+        if post_body:
+            if not isinstance(post_body, (bytes, str)):
+                post_body = json.dumps(post_body).encode(DefaultVal.default_encoding)
+        self.post_body = post_body
 
 
 class RCSVConfig(BaseGetterConfig):
