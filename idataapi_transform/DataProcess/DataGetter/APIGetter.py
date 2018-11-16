@@ -98,7 +98,7 @@ class APIGetter(BaseGetter):
             try:
                 resp = await self.config.session._request(self.method, self.base_url, headers=headers, data=self.config.post_body)
                 text = await resp.text()
-                print(text)
+                # print(text)
                 result = json.loads(text)
                 if "data" not in result:
                     if "retcode" not in result or result["retcode"] not in self.config.success_ret_code:
