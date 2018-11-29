@@ -723,6 +723,12 @@ JSON 为一行一条数据的 JSON 文件
     from idataapi_transform import ManualConfig
     ManualConfig.set_config("/Users/zpoint/Desktop/idataapi-transform.ini")
 
+如果在程序运行时更改日志文件路径
+
+    from idataapi_transform import ManualConfig
+    # 每个日志文件最多只有5MB大小
+    ManualConfig.set_log_path("/Users/zpoint/Desktop/logs/", 5242880)
+
 -------------------
 
 #### 说明

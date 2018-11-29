@@ -736,6 +736,12 @@ If you want to specific your own configure file
     from idataapi_transform import ManualConfig
     ManualConfig.set_config("/Users/zpoint/Desktop/idataapi-transform.ini")
 
+If you want to change log directory in the run time
+
+    from idataapi_transform import ManualConfig
+    # at most 5MB per log file
+    ManualConfig.set_log_path("/Users/zpoint/Desktop/logs/", 5242880)
+
 -------------------
 
 #### doc string

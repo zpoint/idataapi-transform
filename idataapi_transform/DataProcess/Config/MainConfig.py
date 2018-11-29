@@ -117,11 +117,15 @@ class MainConfig(object):
     def __call__(self):
         return self.__instance
 
-    def config_log(self):
+    def config_log(self, log_path=None, max_log_file_bytes=None):
         remove_log()
-        max_log_file_bytes = self.__instance["log"].getint("log_byte")
-        log_path = self.__instance["log"].get("path")
-        return init_log(log_path, max_log_file_bytes, self.ini_path)
+        if log_path:
+            manual = True
+        else:
+            max_log_file_bytes = self.__instance["log"].getint("log_byte")
+            log_path = self.__instance["log"].get("path")
+            manual = False
+        return init_log(log_path, max_log_file_bytes, self.ini_path, manual=manual)
 
     def config_es(self):
         hosts = self.__instance["es"].get("hosts")
