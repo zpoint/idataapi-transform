@@ -51,7 +51,8 @@ class WCSVConfig(BaseWriterConfig):
 class WESConfig(BaseWriterConfig):
     def __init__(self, indices, doc_type, filter_=None, expand=None, id_hash_func=DefaultVal.default_id_hash_func,
                  appCode=None, actions=None, createDate=None, error_if_fail=True, timeout=None, max_retry=None,
-                 random_min_sleep=None, random_max_sleep=None, auto_insert_createDate=True, **kwargs):
+                 random_min_sleep=None, random_max_sleep=None, auto_insert_createDate=True, hosts=None, headers=None,
+                 **kwargs):
         """
         :param indices: elasticsearch indices
         :param doc_type: elasticsearch doc_type
@@ -67,6 +68,8 @@ class WESConfig(BaseWriterConfig):
         :param random_min_sleep: if request fail, random sleep at least random_min_sleep seconds before request again
         :param random_max_sleep: if request fail, random sleep at most random_min_sleep seconds before request again
         :param auto_insert_createDate: whether insert createDate for each item automatic -> boolean
+        :param hosts: elasticsearch hosts, list type, i.e: ["localhost:8888", "127.0.0.2:8889"]
+        :param headers: headers when perform http requests to elasticsearch, dict type, i.e: {"Host": "aaa", "apikey": "bbb"}
         :param kwargs:
 
         Example:
@@ -93,7 +96,7 @@ class WESConfig(BaseWriterConfig):
         self.filter = filter_
         self.expand = expand
         self.id_hash_func = id_hash_func
-        self.es_client = get_es_client()
+        self.es_client = get_es_client(hosts=hosts, headers=headers)
         self.app_code = appCode
         self.actions = actions
         self.create_date = createDate

@@ -47,7 +47,7 @@ class ESWriter(BaseWriter):
                         logging.error("Fail to write after try: %d times, Write 0 items to index: %s, doc_type: %s" %
                                       (self.config.max_retry, self.config.indices, self.config.doc_type))
                     else:
-                        await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
+                        await asyncio.sleep(random.uniform(self.config.random_min_sleep, self.config.random_max_sleep))
         else:
             # all filtered, or pass empty result
             logging.info("Write 0 items to index: %s, doc_type: %s (all filtered, or pass empty result)" % (self.config.indices, self.config.doc_type))

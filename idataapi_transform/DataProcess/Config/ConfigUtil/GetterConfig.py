@@ -44,6 +44,7 @@ class RAPIConfig(BaseGetterConfig):
                 A.response: -> json object: '{"appCode": "weixinpro", "dataType": "post", "message": "param error", "retcode": "100005"}', if fail in request, response will be None
                 A.tag: -> tag you pass to RAPIConfig
                 A.source: -> source you pass to RAPIConfig
+                A.post_body: -> http post body
 
         :param call_back: a function(can be async function) to call on results before each "async for" return
         :param report_interval: an integer value, if set to 5, after 5 request times, current response counter still
@@ -131,7 +132,7 @@ class RCSVConfig(BaseGetterConfig):
 class RESConfig(BaseGetterConfig):
     def __init__(self, indices, doc_type, per_limit=None, max_limit=None, scroll="1m", query_body=None,
                  return_source=True, max_retry=None, random_min_sleep=None, random_max_sleep=None, filter_=None,
-                 **kwargs):
+                 hosts=None, headers=None, **kwargs):
         """
         :param indices: elasticsearch indices
         :param doc_type: elasticsearch doc_type
@@ -146,6 +147,8 @@ class RESConfig(BaseGetterConfig):
         :param random_max_sleep: if request fail, random sleep at most random_min_sleep seconds before request again
         :param filter_: run "transform --help" to see command line interface explanation for detail,
             only work if return_source is False
+        :param hosts: elasticsearch hosts, list type, i.e: ["localhost:8888", "127.0.0.2:8889"]
+        :param headers: headers when perform http requests to elasticsearch, dict type, i.e: {"Host": "aaa", "apikey": "bbb"}
         :param kwargs:
 
         Example:
@@ -189,7 +192,7 @@ class RESConfig(BaseGetterConfig):
         self.per_limit = per_limit
         self.max_limit = max_limit
         self.scroll = scroll
-        self.es_client = get_es_client()
+        self.es_client = get_es_client(hosts=hosts, headers=headers)
         self.return_source = return_source
         self.max_retry = max_retry
         self.random_min_sleep = random_min_sleep

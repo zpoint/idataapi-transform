@@ -770,6 +770,11 @@ If you want to specific your own configure file
 -------------------
 
 #### ChangeLog
+v 1.5.1 - 1.5.8
+* random sleep float seconds support
+* es specific host && headers
+* RAPIGetter HTTP POST support
+
 v 1.4.7 - 1.5.1
 * done_if param support
 * manual success_ret_code config for user

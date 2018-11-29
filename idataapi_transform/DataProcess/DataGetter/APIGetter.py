@@ -16,18 +16,20 @@ headers = {
 
 
 class SourceObject(object):
-    def __init__(self, response, tag, source, error_url):
+    def __init__(self, response, tag, source, error_url, post_body):
         """
         When error occur
         :param response: error response body
         :param tag: tag user pass in
         :param source: source url user pass in
         :param error_url: current url elicit error
+        :param post_body: HTTP post body
         """
         self.response = response
         self.tag = tag
         self.source = source
         self.error_url = error_url
+        self.post_body = post_body
 
 
 class APIGetter(BaseGetter):
@@ -95,6 +97,7 @@ class APIGetter(BaseGetter):
             raise StopAsyncIteration
 
         while True:
+            result = None # for SourceObject
             try:
                 resp = await self.config.session._request(self.method, self.base_url, headers=headers, data=self.config.post_body)
                 text = await resp.text()
@@ -107,7 +110,7 @@ class APIGetter(BaseGetter):
             except Exception as e:
                 self.retry_count += 1
                 logging.error("retry: %d, %s: %s" % (self.retry_count, str(e), self.base_url))
-                await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
+                await asyncio.sleep(random.uniform(self.config.random_min_sleep, self.config.random_max_sleep))
                 if self.retry_count < self.config.max_retry:
                     continue
                 else:
@@ -118,7 +121,7 @@ class APIGetter(BaseGetter):
                                                                            str(traceback.format_exc()) if "Bad retcode" not in str(e) else str(e)))
                     self.done = True
                     if self.config.return_fail:
-                        self.bad_responses.append(SourceObject(None, self.config.tag, self.config.source, self.base_url))
+                        self.bad_responses.append(SourceObject(result, self.config.tag, self.config.source, self.base_url, self.config.post_body))
                         return await self.clear_and_return()
                     elif self.responses:
                         return await self.clear_and_return()
@@ -175,7 +178,7 @@ class APIGetter(BaseGetter):
                     if self.need_return():
                         return await self.clear_and_return()
 
-                await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
+                await asyncio.sleep(random.uniform(self.config.random_min_sleep, self.config.random_max_sleep))
                 return await self.__anext__()
 
             if self.config.max_limit and self.total_count >= self.config.max_limit:

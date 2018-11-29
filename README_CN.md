@@ -757,6 +757,11 @@ JSON 为一行一条数据的 JSON 文件
 -------------------
 
 #### ChangeLog
+v 1.5.1 - 1.5.8
+* random sleep float seconds support
+* es specific host, headers
+* RAPIGetter HTTP POST support
+
 v 1.4.7 - 1.5.1
 * done_if param support
 * manual success_ret_code config for user

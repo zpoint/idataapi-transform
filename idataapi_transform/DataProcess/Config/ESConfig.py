@@ -16,6 +16,7 @@ from elasticsearch.connection_pool import ConnectionPool, DummyConnectionPool
 
 from elasticsearch_async import AsyncTransport
 from elasticsearch_async import AsyncElasticsearch
+from elasticsearch.client import _make_path, query_params
 
 es_hosts = None
 
@@ -124,10 +125,7 @@ def init_es(hosts, es_headers, timeout_):
 
             start = self.loop.time()
             response = None
-            local_headers = es_headers
-            if headers:
-                local_headers = copy.deepcopy(es_headers) if es_headers else dict()
-                local_headers.update(headers)
+            local_headers = headers if headers else es_headers
             try:
                 with async_timeout_func(timeout or timeout_ or self.timeout):
                     response = yield from self.session.request(method, url, data=body, headers=local_headers)
@@ -157,6 +155,13 @@ def init_es(hosts, es_headers, timeout_):
             return response.status, response.headers, raw_data
 
     class MyAsyncElasticsearch(AsyncElasticsearch):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            if "headers" in kwargs:
+                self.headers = kwargs["headers"]
+            else:
+                self.headers = None
+
         async def add_dict_to_es(self, indices, doc_type, items, id_hash_func, app_code=None, actions=None,
                                  create_date=None, error_if_fail=True, timeout=None, auto_insert_createDate=True):
             if not actions:
@@ -183,7 +188,7 @@ def init_es(hosts, es_headers, timeout_):
                 body += json.dumps(action) + "\n" + json.dumps(item) + "\n"
             try:
                 success = fail = 0
-                r = await self.transport.perform_request("POST", "/_bulk?pretty", body=body, timeout=timeout)
+                r = await self.transport.perform_request("POST", "/_bulk?pretty", body=body, timeout=timeout, headers=self.headers)
                 if r["errors"]:
                     for item in r["items"]:
                         for k, v in item.items():
@@ -202,6 +207,25 @@ def init_es(hosts, es_headers, timeout_):
                 logging.error(traceback.format_exc())
                 logging.error("elasticsearch Exception, give up: %s" % (str(e), ))
                 return None, None, None
+
+        @query_params('_source', '_source_exclude', '_source_include',
+                      'allow_no_indices', 'allow_partial_search_results', 'analyze_wildcard',
+                      'analyzer', 'batched_reduce_size', 'default_operator', 'df',
+                      'docvalue_fields', 'expand_wildcards', 'explain', 'from_',
+                      'ignore_unavailable', 'lenient', 'max_concurrent_shard_requests',
+                      'pre_filter_shard_size', 'preference', 'q', 'request_cache', 'routing',
+                      'scroll', 'search_type', 'size', 'sort', 'stats', 'stored_fields',
+                      'suggest_field', 'suggest_mode', 'suggest_size', 'suggest_text',
+                      'terminate_after', 'timeout', 'track_scores', 'track_total_hits',
+                      'typed_keys', 'version')
+        def search(self, index=None, doc_type=None, body=None, params=None):
+            # from is a reserved word so it cannot be used, use from_ instead
+            if 'from_' in params:
+                params['from'] = params.pop('from_')
+
+            if doc_type and not index:
+                index = '_all'
+            return self.transport.perform_request('GET', _make_path(index, doc_type, '_search'), params=params, body=body, headers=self.headers)
 
         def __del__(self):
             """
@@ -224,11 +248,14 @@ def init_es(hosts, es_headers, timeout_):
 global_client = None
 
 
-def get_es_client():
+def get_es_client(hosts=None, headers=None):
     global global_client
-    if global_client is None:
-        global_client = AsyncElasticsearch(hosts=es_hosts)
-    return global_client
+    if not hosts:
+        if global_client is None:
+            global_client = AsyncElasticsearch(hosts=es_hosts)
+        return global_client
+    else:
+        return AsyncElasticsearch(hosts=hosts, headers=headers)
 
 
 """

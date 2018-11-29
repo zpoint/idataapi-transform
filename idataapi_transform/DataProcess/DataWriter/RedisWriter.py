@@ -54,7 +54,7 @@ class RedisWriter(BaseWriter):
                                       "filtered %d item before write, error: %s" %
                                       (self.config.max_retry, miss_count, str(traceback.format_exc())))
                     else:
-                        await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
+                        await asyncio.sleep(random.uniform(self.config.random_min_sleep, self.config.random_max_sleep))
         else:
             logging.info("Write 0 items to %s, filtered: %d, (all filtered, or pass empty result)" % (self.config.name, miss_count))
 

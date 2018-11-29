@@ -77,7 +77,7 @@ class MongoWriter(BaseWriter):
                 try_time += 1
                 if try_time < self.config.max_retry:
                     logging.error("retry: %d, %s" % (try_time, str(e)))
-                    await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
+                    await asyncio.sleep(random.uniform(self.config.random_min_sleep, self.config.random_max_sleep))
                 else:
                     logging.error("Give up MongoWriter writer: %s, After retry: %d times, still fail to write, "
                                   "total write %d items, total filtered: %d items, reason: %s" %

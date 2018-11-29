@@ -84,7 +84,7 @@ class RedisGetter(BaseGetter):
             except Exception as e:
                 if retry < self.config.max_retry:
                     logging.error("retry: %d, %s" % (retry, str(e)))
-                    await asyncio.sleep(random.randint(self.config.random_min_sleep, self.config.random_max_sleep))
+                    await asyncio.sleep(random.uniform(self.config.random_min_sleep, self.config.random_max_sleep))
                     return await self.__anext__(retry+1)
                 else:
                     logging.error("Give up redis getter, After retry: %d times, still fail to get key: %s, "
