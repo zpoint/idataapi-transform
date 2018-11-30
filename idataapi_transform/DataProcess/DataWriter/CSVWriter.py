@@ -1,3 +1,4 @@
+import os
 import csv
 import types
 import logging
@@ -8,6 +9,7 @@ class CSVWriter(BaseWriter):
     def __init__(self, config):
         super().__init__()
         self.config = config
+        self.file_already_exists = os.path.exists(self.config.filename) and os.path.getsize(self.config.filename)
         self.f_out = open(self.config.filename, self.config.mode, encoding=self.config.encoding, newline="")
         self.f_csv = None
         self.headers = dict() if not self.config.headers else self.config.headers
@@ -43,7 +45,7 @@ class CSVWriter(BaseWriter):
         # headers
         if not self.f_csv:
             if not self.headers:
-                if "a" in self.config.mode:
+                if "a" in self.config.mode and self.file_already_exists:
                     self.headers = self.generate_headers(responses, append_mode=True)
                     self.f_csv = csv.DictWriter(self.f_out, self.headers)
                 else:
