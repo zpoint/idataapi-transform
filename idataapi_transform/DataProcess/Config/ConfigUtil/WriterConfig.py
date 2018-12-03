@@ -167,12 +167,15 @@ class WTXTConfig(BaseWriterConfig):
 
 
 class WXLSXConfig(BaseWriterConfig):
-    def __init__(self, filename, title=DefaultVal.title, expand=None, filter_=None, **kwargs):
+    def __init__(self, filename, mode=DefaultVal.default_file_mode_w, title=DefaultVal.title, expand=None, filter_=None, headers=None, sheet_index=0, **kwargs):
         """
         :param filename: filename to write
+        :param mode: file open mode, i.e "w" or "a+"
         :param title: sheet title
         :param expand: run "transform --help" to see command line interface explanation for detail
         :param filter_: run "transform --help" to see command line interface explanation for detail
+        :param headers: xlsx headers in first row, if not set, automatically extract in first bulk of items
+        :param sheet_index: which sheet to get, 0 means 0th sheet, only work for append mode
         :param kwargs:
 
         Example:
@@ -184,9 +187,12 @@ class WXLSXConfig(BaseWriterConfig):
         """
         super().__init__()
         self.filename = filename
+        self.mode = mode
         self.title = title
         self.expand = expand
         self.filter = filter_
+        self.headers = headers
+        self.sheet_index = sheet_index
 
 
 class WRedisConfig(BaseWriterConfig):
