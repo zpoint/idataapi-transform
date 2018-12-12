@@ -71,6 +71,8 @@ Features:
 	* [Bulk API to ES/MongoDB/Json](#bulk-api-to-es-or-mongodb-or-json)
 	* [Extract error info from API](#extract-error-info-from-api)
 	* [call_back](#call_back)
+	* [filter](#redis-to-mysql)
+    * [done_if](#api-to-xlsx)
 * [REDIS Usage](#redis-usage)
 * [ES Base Operation](#es-base-operation)
 	* [Read data from ES](#read-data-from-es)
@@ -776,10 +778,11 @@ If you want to change log directory in the run time
 -------------------
 
 #### ChangeLog
-v 1.5.1 - 1.5.8
+v 1.5.1 - 1.6.1
 * random sleep float seconds support
 * es specific host && headers
 * RAPIGetter HTTP POST support
+* xlsx/csv headers, append mode support
 
 v 1.4.7 - 1.5.1
 * done_if param support

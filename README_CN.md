@@ -53,25 +53,27 @@ Features:
 * [安装指南](#安装指南)
 * [命令行支持及示例](#命令行支持及示例)
 	* [Elasticsearch to CSV](#从-elasticsearch-读取数据-转换为-csv-格式)
-	* [API to XLSX](#从-qpi-读取数据-转换为-xlsx-格式)
+	* [API to XLSX](#从-api-读取数据-转换为-xlsx-格式)
 	* [JSON to CSV](#从-json-文件读取数据-转换为-csv-格式)
 	* [CSV to XLSX](#从-csv-读取数据-转换至-xlsx)
-	* [Elasticsearch to CSV with parameters](#从-elasticsearch-读取数据-转换至-csv-(复杂示例))
+	* [Elasticsearch to CSV with parameters](#从-elasticsearch-读取数据-转换至-csv)
 	* [API to Redis](#从-api-读取数据-存储至-redis)
-	* [Redis to CSV](#从-reidis-读取数据-存储至-csv)
+	* [Redis to CSV](#从-redis-读取数据-存储至-csv)
 	* [API to MySQL](#从-api-读取数据-写入-mysql)
 	* [MySQL to redis](#从-mysql-读取数据-写入-redis)
 	* [MongoDB to csv](#从-mongodb-读取数据-写入-csv)
 * [Python模块支持](#Python模块支持)
     * [ES to CSV](#es-to-csv)
     * [API to XLSX](#api-to-xlsx)
-    * [CSV to XLSX](#csv-to-xlsx)
+	* [CSV to xlsx](#csv-to-xlsx)
     * [API to Redis](#api-to-redis)
     * [redis to MySQL](#redis-to-mysql)
     * [MongoDB to redis](#mongodb-to-redis)
     * [并发从不同的 API 读取数据 并写入到 ES/MongoDB/Json](#并发从不同的-api-读取数据-并写入到-es或mongodb或json)
     * [访问API出错时 提取错误信息](#访问api出错时-提取错误信息)
     * [call_back](#callback)
+    * [filter](#redis-to-mysql)
+    * [done_if](#api-to-xlsx)
 * [REDIS 基本示例](#redis-基本示例)
 * [ES 基本操作](#es-基本操作)
 	* [从ES读取数据](#从es读取数据)
@@ -142,7 +144,8 @@ JSON 为一行一条数据的 JSON 文件
 	transform CSV xlsx "./a.csv"
 
 
-##### 从 Elasticsearch 读取数据 转换至 CSV (复杂示例)
+##### 从 Elasticsearch 读取数据 转换至 CSV
+* 以下示例详细展开了部分参数
 * 以 "gbk" **(--w_encoding)** 编码保存 CSV 文件
 * 指定 ES 的 index: knowledge20170517, doc_type: question **(knowledge20170517:question)**
 * 指定如下过滤条件 **(--query_body)**
@@ -264,6 +267,24 @@ JSON 为一行一条数据的 JSON 文件
                 xlsx_writer.write(items)
 
 	if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+##### CSV to xlsx
+
+    import asyncio
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
+
+    async def example():
+        csv_config = GetterConfig.RCSVConfig("./result.csv")
+        getter = ProcessFactory.create_getter(csv_config)
+        xlsx_config = WriterConfig.WXLSXConfig("./result.xlsx")
+        with ProcessFactory.create_writer(xlsx_config) as xlsx_writer:
+            for items in getter:
+                # do whatever you want with items
+                xlsx_writer.write(items)
+
+    if __name__ == "__main__":
         loop = asyncio.get_event_loop()
         loop.run_until_complete(example())
 
@@ -763,10 +784,11 @@ JSON 为一行一条数据的 JSON 文件
 -------------------
 
 #### ChangeLog
-v 1.5.1 - 1.5.8
+v 1.5.1 - 1.6.1
 * random sleep float seconds support
 * es specific host, headers
 * RAPIGetter HTTP POST support
+* xlsx/csv headers, append mode support
 
 v 1.4.7 - 1.5.1
 * done_if param support
