@@ -74,7 +74,7 @@ class WESConfig(BaseWriterConfig):
 
         Example:
             ...
-            es_config = WCSVConfig("post20170630", "news")
+            es_config = WESConfig("post20170630", "news")
             with ProcessFactory.create_writer(es_config) as es_writer:
                     # asyncio function must call with await
                     await csv_writer.write(items)

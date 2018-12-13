@@ -105,7 +105,7 @@ class APIGetter(BaseGetter):
                 result = json.loads(text)
                 if "data" not in result:
                     if "retcode" not in result or result["retcode"] not in self.config.success_ret_code:
-                        raise ValueError("Bad retcode: %s" % (str(result["retcode"]), ))
+                        raise ValueError("Bad retcode: %s" % (str(result["retcode"]) if "retcode" in result else str(result), ))
 
             except Exception as e:
                 self.retry_count += 1

@@ -44,14 +44,14 @@ class CSVWriter(BaseWriter):
 
         # headers
         if not self.f_csv:
-            if not self.headers:
-                if "a" in self.config.mode and self.file_already_exists:
-                    self.headers = self.generate_headers(responses, append_mode=True)
-                    self.f_csv = csv.DictWriter(self.f_out, self.headers)
-                else:
+            if "a" in self.config.mode and self.file_already_exists:
+                self.headers = self.generate_headers(responses, append_mode=True)
+                self.f_csv = csv.DictWriter(self.f_out, self.headers)
+            else:
+                if not self.headers:
                     self.headers = self.generate_headers(responses)
-                    self.f_csv = csv.DictWriter(self.f_out, self.headers)
-                    self.f_csv.writeheader()
+                self.f_csv = csv.DictWriter(self.f_out, self.headers)
+                self.f_csv.writeheader()
 
 
         # encoding process
