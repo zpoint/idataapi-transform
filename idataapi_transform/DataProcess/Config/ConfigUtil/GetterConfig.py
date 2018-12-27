@@ -25,7 +25,8 @@ class RAPIConfig(BaseGetterConfig):
                  max_retry=DefaultVal.max_retry, random_min_sleep=None, random_max_sleep=None, session=None,
                  filter_=None, return_fail=False, tag=None, call_back=None, report_interval=10, success_ret_code=None,
                  done_if=None, trim_to_max_limit=DefaultVal.trim_to_max_limit,
-                 exclude_filtered_to_max_limit=DefaultVal.exclude_filtered_to_max_limit, post_body=None, **kwargs):
+                 exclude_filtered_to_max_limit=DefaultVal.exclude_filtered_to_max_limit, post_body=None,
+                 persistent_writer=None, persistent_to_disk_if_give_up=True, **kwargs):
         """
         will request until no more next_page to get, or get "max_limit" items
 
@@ -54,6 +55,8 @@ class RAPIConfig(BaseGetterConfig):
         :param trim_to_max_limit: set max_limit to the precise value, default max_limit is rough value
         :param exclude_filtered_to_max_limit: max_limit including filtered object or excluding filtered object
         :param post_body: POST with post_body instead of get
+        :param persistent_writer: corporate with RAPIBulkConfig
+        :param persistent_to_disk_if_give_up: corporate with RAPIBulkConfig, when retry to max_retry times, still fail to get result, whether regard this job as success and persistent to disk or not
         :param args:
         :param kwargs:
 
@@ -91,6 +94,8 @@ class RAPIConfig(BaseGetterConfig):
             if not isinstance(post_body, (bytes, str)):
                 post_body = json.dumps(post_body).encode(DefaultVal.default_encoding)
         self.post_body = post_body
+        self.persistent_writer = persistent_writer
+        self.persistent_to_disk_if_give_up = persistent_to_disk_if_give_up
 
 
 class RCSVConfig(BaseGetterConfig):
@@ -275,7 +280,8 @@ class RXLSXConfig(BaseGetterConfig):
 class RAPIBulkConfig(BaseGetterConfig):
     def __init__(self, sources, interval=DefaultVal.interval, concurrency=None, filter_=None, return_fail=False,
                  done_if=None, trim_to_max_limit=DefaultVal.trim_to_max_limit,
-                 exclude_filtered_to_max_limit=DefaultVal.exclude_filtered_to_max_limit, **kwargs):
+                 exclude_filtered_to_max_limit=DefaultVal.exclude_filtered_to_max_limit, persistent=False,
+                 persistent_key=None, persistent_start_fresh_if_done=True, persistent_to_disk_if_give_up=True, **kwargs):
         """
         :param sources: an iterable object (can be async generator), each item must be "url" or instance of RAPIConfig
         :param interval: integer or float, each time you call async generator, you will wait for "interval" seconds
@@ -294,6 +300,11 @@ class RAPIBulkConfig(BaseGetterConfig):
         :param done_if: if will only work if the source[n] is type string, if the source[n] is type RAPIConfig, it won't work, please refer to RAPIConfig for more detail
         :param trim_to_max_limit: set max_limit to the precise value, default max_limit is rough value
         :param exclude_filtered_to_max_limit: max_limit including filtered object or excluding filtered object
+        :param persistent: whether save progress to disk, if set to true, the job progress will be persistent to disk every "interval" seconds
+        :param persistent_key: the key to identify the task
+        :param persistent_start_fresh_if_done: if all task done, whether remove the persistent record file, if the persistent file hasn't been removed and all of the jobs finished,
+               next time you run the program, there will be no job to schedule
+        :param persistent_to_disk_if_give_up: if there's a job fail after retry max_retry times, whether regard this job as success and persistent to disk or not
         :param kwargs:
 
         Example:
@@ -316,6 +327,10 @@ class RAPIBulkConfig(BaseGetterConfig):
         self.done_if = done_if
         self.trim_to_max_limit = trim_to_max_limit
         self.exclude_filtered_to_max_limit = exclude_filtered_to_max_limit
+        self.persistent = persistent
+        self.persistent_key = persistent_key
+        self.persistent_start_fresh_if_done = persistent_start_fresh_if_done
+        self.persistent_to_disk_if_give_up = persistent_to_disk_if_give_up
 
     def __del__(self):
         if inspect.iscoroutinefunction(self.session.close):

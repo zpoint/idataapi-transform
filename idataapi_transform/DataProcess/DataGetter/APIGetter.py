@@ -1,5 +1,6 @@
 import re
 import json
+import hashlib
 import random
 import logging
 import asyncio
@@ -8,6 +9,7 @@ import traceback
 from .BaseGetter import BaseGetter
 from ..Config.ConfigUtil.GetterConfig import RAPIConfig
 from ..Config.ConfigUtil.AsyncHelper import AsyncGenerator
+from ..PersistentUtil.PersistentWriter import PersistentWriter
 
 headers = {
     "Accept-Encoding": "gzip",
@@ -52,6 +54,7 @@ class APIGetter(BaseGetter):
                 self.call_back = self.config.call_back
         self.request_time = 0
         self.method = "POST" if self.config.post_body else "GET"
+        self.give_up = False
 
     def init_val(self):
         self.base_url = self.config.source
@@ -64,6 +67,8 @@ class APIGetter(BaseGetter):
         self.total_count = 0
         self.call_back = self.async_call_back = None
         self.request_time = 0
+        self.config.persistent_writer = None
+        self.give_up = False
 
     def generate_sub_func(self):
         def sub_func(match):
@@ -93,6 +98,8 @@ class APIGetter(BaseGetter):
         if self.done:
             logging.info("get source done: %s, total get %d items, total filtered: %d items" %
                          (self.config.source, self.total_count, self.miss_count))
+            if self.config.persistent_writer and (not self.give_up or self.config.persistent_to_disk_if_give_up):
+                self.config.persistent_writer.add(self.config.source)
             self.init_val()
             raise StopAsyncIteration
 
@@ -119,7 +126,7 @@ class APIGetter(BaseGetter):
                                   "total filtered: %d items, error: %s" % (self.config.max_retry, self.base_url,
                                                                            self.total_count, self.miss_count,
                                                                            str(traceback.format_exc()) if "Bad retcode" not in str(e) else str(e)))
-                    self.done = True
+                    self.done = self.give_up = True
                     if self.config.return_fail:
                         self.bad_responses.append(SourceObject(result, self.config.tag, self.config.source, self.base_url, self.config.post_body))
                         return await self.clear_and_return()
@@ -174,7 +181,7 @@ class APIGetter(BaseGetter):
                     logging.error("Give up, After retry: %d times, Unable to get url: %s, total get %d items, "
                                   "total filtered: %d items" % (self.config.max_retry, self.base_url,
                                                                 self.total_count, self.miss_count))
-                    self.done = True
+                    self.done = self.give_up = True
                     if self.need_return():
                         return await self.clear_and_return()
 
@@ -246,15 +253,26 @@ class APIBulkGetter(BaseGetter):
         self.success_task = 0
         self.curr_size = 0
         self.curr_bad_size = 0
+        self.persistent_writer = None
+        self.skip_num = 0
 
     def to_config(self, item):
         if isinstance(item, RAPIConfig):
-            return item
+            r = item
         else:
-            return RAPIConfig(item, session=self.config.session, filter_=self.config.filter,
+            r = RAPIConfig(item, session=self.config.session, filter_=self.config.filter,
                               return_fail=self.config.return_fail, done_if=self.config.done_if,
                               trim_to_max_limit=self.config.trim_to_max_limit,
-                              exclude_filtered_to_max_limit=self.config.exclude_filtered_to_max_limit)
+                              exclude_filtered_to_max_limit=self.config.exclude_filtered_to_max_limit,
+                           persistent_to_disk_if_give_up=self.config.persistent_to_disk_if_give_up)
+        # persistent
+        if self.config.persistent:
+            if not self.config.persistent_key:
+                self.config.persistent_key = hashlib.md5(r.source.encode("utf8")).hexdigest()
+            if self.persistent_writer is None:
+                self.persistent_writer = PersistentWriter(self.config.persistent_key)
+            r.persistent_writer = self.persistent_writer
+        return r
 
     async def fetch_items(self, api_config):
         if api_config.return_fail:
@@ -271,9 +289,17 @@ class APIBulkGetter(BaseGetter):
             return
 
         async for api_config in self.async_api_configs:
+            # skip already done task
+            if self.config.persistent:
+                if api_config.source in self.persistent_writer:
+                    self.skip_num += 1
+                    continue
             self.pending_tasks.append(self.fetch_items(api_config))
             if len(self.pending_tasks) >= self.config.concurrency:
+                self.persistent()
                 return
+
+        self.persistent()
 
     def __aiter__(self):
         return self
@@ -289,14 +315,20 @@ class APIBulkGetter(BaseGetter):
             else:
                 # after interval seconds, no item fetched
                 await self.fill_tasks()
-                logging.info("After %.2f seconds, no new item fetched, current done task: %d, pending tasks: %d" %
-                             (float(self.config.interval), self.success_task, len(self.pending_tasks)))
+                log_str = "After %.2f seconds, no new item fetched, current done task: %d, pending tasks: %d" % (float(self.config.interval), self.success_task, len(self.pending_tasks))
+                if self.config.persistent:
+                    log_str += ", skip %d already finished tasks with persistent mode on" % (self.skip_num, )
+                logging.info(log_str)
                 continue
 
         ret_log = "APIBulkGetter Done, total perform: %d tasks, fetch: %d items" % (self.success_task, self.curr_size)
         if self.config.return_fail:
-            ret_log += " fail: %d items" % (self.curr_bad_size, )
+            ret_log += ", fail: %d items" % (self.curr_bad_size, )
+        if self.config.persistent:
+            ret_log += ", skip %d already finished tasks with persistent mode on" % (self.skip_num,)
         logging.info(ret_log)
+        if self.config.persistent:
+            self.persistent_writer.clear(self.config.persistent_start_fresh_if_done)
         raise StopAsyncIteration
 
     def __iter__(self):
@@ -314,3 +346,9 @@ class APIBulkGetter(BaseGetter):
             self.curr_size += len(self.buffers)
             self.buffers = list()
             return buffers
+
+    def persistent(self):
+        # persistent task to file
+        if self.config.persistent:
+            self.persistent_writer.write()
+            # logging.info("persistent mode on, after sync, totally skip %d already finished tasks" % (self.skip_num,))

@@ -74,6 +74,7 @@ Features:
     * [call_back](#callback)
     * [filter](#redis-to-mysql)
     * [done_if](#api-to-xlsx)
+    * [持久化任务到硬盘(断点续传)](#persistent-to-disk)
 * [REDIS 基本示例](#redis-基本示例)
 * [ES 基本操作](#es-基本操作)
 	* [从ES读取数据](#从es读取数据)
@@ -552,6 +553,32 @@ JSON 为一行一条数据的 JSON 文件
         loop.run_until_complete(start())
 
 
+##### persistent to disk
+
+    import asyncio
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
+
+    ### persistent -> 只有 RAPIBulkConfig 支持 persistent 参数，为 bool 值, 表示是否每隔 interval 时间间隔就将这个 bulk 里面已经做了的任务数持久化到硬盘，默认为 False, 表示不开启
+    ### 如果 persistent 设置为 True, 比如传入一批任务给到 RAPIBulkConfig, 因为基于事件驱动的无阻塞请求，无法预测或者记录完成任务的顺序，不能简单的记录一个位置信息，所以采用如下方案，在当前目录下创建一个json文件，记录已经完成的任务的source的哈希值，当程序意外中断，下次程序启动时，会预先加载这个文件，重复的任务(source相同)将不会被执行，只会执行那些未被记录过的任务
+    ### persistent_key -> 为json文件名称，用来定位是哪一批任务的记录，默认会以这一批任务的第一个任务(source)的哈希值作为 persistent_key, 如果不提供 persistent_key 参数，请保证两次程序的批量任务的第一个任务名称是相同的
+    ### persistent_start_fresh_if_done -> 如果这一批任务全部做完，是否移除这个记录文件，如果不移除的话，所有任务都做完，并且所有任务都在记录文件中，下次启动程序的时候就有可能会出现没有任务可以做的情况，因为这一批任务全部匹配上了记录文件里面的任务, 默认为 True
+    ### persistent_to_disk_if_give_up ->  每个任务除了成功，还有可能重试到默认重试次数后失败，这个值表示是否要把失败的任务记录到 记录文件 中，默认为 True
+
+    async def exapmle():
+        urls = [
+            "http://xxx",
+            "http://xxx",
+            GetterConfig.RAPIConfig("http://xxx", persistent_to_disk_if_give_up=True)
+        ]
+        getter = ProcessFactory.create_getter(GetterConfig.RAPIBulkConfig(urls, persistent=True, persistent_to_disk_if_give_up=False))
+        async for items in getter:
+            print(items)
+
+    if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+
 ##### REDIS 基本示例
 
     import asyncio
@@ -784,6 +811,9 @@ JSON 为一行一条数据的 JSON 文件
 -------------------
 
 #### ChangeLog
+v 1.6.3
+* persistent to disk
+
 v 1.5.1 - 1.6.1
 * random sleep float seconds support
 * es specific host, headers

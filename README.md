@@ -73,6 +73,7 @@ Features:
 	* [call_back](#call_back)
 	* [filter](#redis-to-mysql)
     * [done_if](#api-to-xlsx)
+    * [persistent to disk(resume from break point)](#persistent-to-disk)
 * [REDIS Usage](#redis-usage)
 * [ES Base Operation](#es-base-operation)
 	* [Read data from ES](#read-data-from-es)
@@ -549,6 +550,32 @@ will read at most 50 data from "my_coll", and save to **./result.csv**
         loop = asyncio.get_event_loop()
         loop.run_until_complete(start())
 
+##### persistent to disk
+
+    import asyncio
+	from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig
+
+    ### persistent -> only RAPIBulkConfig support this parameter，it's a boolean value, means whether to persist finished job ID to disk, default value is False
+    ### if persistent set to True, and you provide a batch of jobs to RAPIBulkConfig, because of the non-blocking event driven architecture，we can't simply record an order to disk, we create a json file in the working directory，and persist every finished job ID to disk, when program restart，it will load this json file，and won't execute those job that has been executed before
+    ### persistent_key -> the json file name, to identify record of which batch of jobs
+    ### persistent_start_fresh_if_done -> if all jobs done, whether remove the persistent json file, if the persistent file hasn't been removed and all of the jobs finished, next time you run the program, there will be no job to schedule, default is True
+    ### persistent_to_disk_if_give_up ->  if there's a job fail after retry max_retry times, whether regard this job as success and persistent to disk or not, default is True
+
+    async def exapmle():
+        urls = [
+            "http://xxx",
+            "http://xxx",
+            GetterConfig.RAPIConfig("http://xxx", persistent_to_disk_if_give_up=True)
+        ]
+        getter = ProcessFactory.create_getter(GetterConfig.RAPIBulkConfig(urls, persistent=True, persistent_to_disk_if_give_up=False))
+        async for items in getter:
+            print(items)
+
+    if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(example())
+
+
 
 ### REDIS Usage
 
@@ -778,6 +805,9 @@ If you want to change log directory in the run time
 -------------------
 
 #### ChangeLog
+v 1.6.3
+* persistent to disk
+
 v 1.5.1 - 1.6.1
 * random sleep float seconds support
 * es specific host && headers
