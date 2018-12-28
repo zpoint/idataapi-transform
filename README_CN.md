@@ -811,8 +811,9 @@ JSON 为一行一条数据的 JSON 文件
 -------------------
 
 #### ChangeLog
-v 1.6.3
+v 1.6.3 - 1.6.4
 * persistent to disk
+* debug mode support
 
 v 1.5.1 - 1.6.1
 * random sleep float seconds support

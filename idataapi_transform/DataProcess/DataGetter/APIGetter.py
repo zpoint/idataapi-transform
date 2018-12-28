@@ -106,6 +106,9 @@ class APIGetter(BaseGetter):
         while True:
             result = None # for SourceObject
             try:
+                if self.config.debug_mode:
+                    log_str = "HTTP method: %s, url: %s" % (self.method, self.base_url)
+                    logging.info(log_str)
                 resp = await self.config.session._request(self.method, self.base_url, headers=headers, data=self.config.post_body)
                 text = await resp.text()
                 # print(text)
@@ -264,7 +267,8 @@ class APIBulkGetter(BaseGetter):
                               return_fail=self.config.return_fail, done_if=self.config.done_if,
                               trim_to_max_limit=self.config.trim_to_max_limit,
                               exclude_filtered_to_max_limit=self.config.exclude_filtered_to_max_limit,
-                           persistent_to_disk_if_give_up=self.config.persistent_to_disk_if_give_up)
+                           persistent_to_disk_if_give_up=self.config.persistent_to_disk_if_give_up,
+                           debug_mode=self.config.debug_mode)
         # persistent
         if self.config.persistent:
             if not self.config.persistent_key:
