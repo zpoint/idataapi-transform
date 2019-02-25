@@ -26,7 +26,8 @@ class RAPIConfig(BaseGetterConfig):
                  filter_=None, return_fail=False, tag=None, call_back=None, report_interval=10, success_ret_code=None,
                  done_if=None, trim_to_max_limit=DefaultVal.trim_to_max_limit,
                  exclude_filtered_to_max_limit=DefaultVal.exclude_filtered_to_max_limit, post_body=None,
-                 persistent_writer=None, persistent_to_disk_if_give_up=True, debug_mode=False, **kwargs):
+                 persistent_writer=None, persistent_to_disk_if_give_up=True, debug_mode=False, keep_other_fields=False,
+                 **kwargs):
         """
         will request until no more next_page to get, or get "max_limit" items
 
@@ -58,6 +59,7 @@ class RAPIConfig(BaseGetterConfig):
         :param persistent_writer: corporate with RAPIBulkConfig
         :param persistent_to_disk_if_give_up: corporate with RAPIBulkConfig, when retry to max_retry times, still fail to get result, whether regard this job as success and persistent to disk or not
         :param debug_mode: whether log every http request url
+        :param keep_other_fields: keep dataType and appCode in each json_object
         :param args:
         :param kwargs:
 
@@ -98,6 +100,7 @@ class RAPIConfig(BaseGetterConfig):
         self.persistent_writer = persistent_writer
         self.persistent_to_disk_if_give_up = persistent_to_disk_if_give_up
         self.debug_mode = debug_mode
+        self.keep_other_fields = keep_other_fields
 
 
 class RCSVConfig(BaseGetterConfig):

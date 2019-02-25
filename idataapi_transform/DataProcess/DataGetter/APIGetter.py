@@ -55,6 +55,8 @@ class APIGetter(BaseGetter):
         self.request_time = 0
         self.method = "POST" if self.config.post_body else "GET"
         self.give_up = False
+        self.data_type = ""
+        self.app_code = ""
 
     def init_val(self):
         self.base_url = self.config.source
@@ -69,6 +71,8 @@ class APIGetter(BaseGetter):
         self.request_time = 0
         self.config.persistent_writer = None
         self.give_up = False
+        self.data_type = ""
+        self.app_code = ""
 
     def generate_sub_func(self):
         def sub_func(match):
@@ -90,6 +94,20 @@ class APIGetter(BaseGetter):
                 self.base_url = self.base_url + "&" + key + self.page_token
         else:
             self.base_url = re.sub("(" + key + ")(.+?)($|&)", self.generate_sub_func(), self.base_url)
+
+    def generate_new_filter(self):
+        def next_filter(item):
+            item["appCode"] = self.app_code
+            item["dataType"] = self.data_type
+            return item
+
+        def combine(item):
+            result = old_filter(item) if old_filter else item
+            if result is not None:
+                return next_filter(result)
+
+        old_filter = self.config.filter
+        self.config.filter = combine
 
     def __aiter__(self):
         return self
@@ -116,6 +134,10 @@ class APIGetter(BaseGetter):
                 if "data" not in result:
                     if "retcode" not in result or result["retcode"] not in self.config.success_ret_code:
                         raise ValueError("Bad retcode: %s" % (str(result["retcode"]) if "retcode" in result else str(result), ))
+                if not self.data_type and self.config.keep_other_fields:
+                    self.data_type = result["dataType"]
+                    self.app_code = result["appCode"]
+                    self.generate_new_filter()
 
             except Exception as e:
                 self.retry_count += 1
