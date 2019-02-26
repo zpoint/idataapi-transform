@@ -3,15 +3,15 @@ requires=["flit"]
 build-backend="flit.buildapi"
 
 [tool.flit.metadata]
-module="idataapi_transform"
+module="transform"
 author="zpoint"
 author-email="zp@zp0int.com"
-home-page="https://github.com/zpoint/idataapi-transform"
+home-page="https://github.com/zpoint"
 classifiers=["License :: OSI Approved :: MIT License"]
 requires=["aiohttp", "openpyxl", "elasticsearch-async", "aioredis"]
 requires-python=">=3.5.2"
-keywords="idataapi transform"
-dist-name="idataapi-transform"
+keywords="transform"
+dist-name="transform"
 
 [tool.flit.scripts]
-transform="idataapi_transform:main"
+transform="transform:main"
