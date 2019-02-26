@@ -36,7 +36,7 @@ random_max_sleep = 3
 
 [log]
 # a directory to save log file
-# path = /Users/zpoint/Desktop/idataapi-transform/logs/
+# path = /Users/zpoint/Desktop/transform/logs/
 
 # max byte per log file
 # log_byte = 5242880
@@ -88,14 +88,14 @@ class MainConfig(object):
         if not hasattr(self, "__instance"):
             if not ini_path:
                 home = expanduser("~")
-                ini_path = home + "/idataapi-transform.ini"
+                ini_path = home + "/transform.ini"
 
             if not os.path.exists(ini_path):
                 with open(ini_path, "w") as f:
                     f.write(default_configure_content + redis_config_content + mysql_config_content + mongo_config_content)
 
-            if os.path.exists("./idataapi-transform.ini"):
-                ini_path = "./idataapi-transform.ini"
+            if os.path.exists("./transform.ini"):
+                ini_path = "./transform.ini"
 
             self.read_config(ini_path)
 
