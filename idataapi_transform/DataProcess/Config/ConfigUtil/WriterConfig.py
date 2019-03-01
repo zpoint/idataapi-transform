@@ -310,7 +310,7 @@ class WRedisConfig(BaseWriterConfig):
 
 class WMySQLConfig(BaseWriterConfig):
     def __init__(self, table, filter_=None, max_retry=None, random_min_sleep=None, random_max_sleep=None,
-                 host=None, port=None, user=None, password=None, database=None, encoding=None, loop=None, **kwargs):
+                 host=None, port=None, user=None, password=None, database=None, charset=None, loop=None, **kwargs):
         """
         :param table: mysql table
         :param filter_: run "transform --help" to see command line interface explanation for detail
@@ -349,8 +349,8 @@ class WMySQLConfig(BaseWriterConfig):
             password = DefaultVal.mysql_password
         if not database:
             database = DefaultVal.mysql_database
-        if not encoding:
-            encoding = DefaultVal.mysql_encoding
+        if not charset:
+            charset = DefaultVal.mysql_encoding
 
         if not DefaultVal.main_config.has_mysql_configured and port <= 0:
             raise ValueError("You must config mysql before using MySQL, Please edit configure file: %s" % (DefaultVal.main_config.ini_path, ))
@@ -375,7 +375,7 @@ class WMySQLConfig(BaseWriterConfig):
             password = ''
         self.password = password
         self.database = database
-        self.encoding = encoding
+        self.charset = charset
 
         if not loop:
             loop = asyncio.get_event_loop()
@@ -389,7 +389,7 @@ class WMySQLConfig(BaseWriterConfig):
         if self.mysql_pool_cli is None:
             self.mysql_pool_cli = await aiomysql.create_pool(host=self.host, port=self.port, user=self.user,
                                                              password=self.password, db=self.database, loop=self.loop,
-                                                             minsize=1, maxsize=3, charset=self.encoding)
+                                                             minsize=1, maxsize=3, charset=self.charset)
             self.connection = await self.mysql_pool_cli.acquire()
             self.cursor = await self.connection.cursor()
         return self.mysql_pool_cli

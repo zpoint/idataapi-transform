@@ -805,6 +805,10 @@ If you want to change log directory in the run time
 -------------------
 
 #### ChangeLog
+v 1.6.6
+* keep_other_fields
+* mysql charset
+
 v 1.6.3 - 1.6.4
 * persistent to disk
 * debug mode support

@@ -482,7 +482,7 @@ class RRedisConfig(BaseGetterConfig):
 class RMySQLConfig(BaseGetterConfig):
     def __init__(self, table, per_limit=None, max_limit=None, filter_=None, max_retry=None, random_min_sleep=None,
                  random_max_sleep=None, host=None, port=None, user=None, password=None, database=None,
-                 encoding=None, loop=None, **kwargs):
+                 charset=None, loop=None, **kwargs):
         """
         :param table: mysql table
         :param per_limit: how many items to get per time
@@ -528,8 +528,8 @@ class RMySQLConfig(BaseGetterConfig):
             password = DefaultVal.mysql_password
         if not database:
             database = DefaultVal.mysql_database
-        if not encoding:
-            encoding = DefaultVal.mysql_encoding
+        if not charset:
+            charset = DefaultVal.mysql_encoding
 
         if not DefaultVal.main_config.has_mysql_configured and port <= 0:
             raise ValueError("You must config mysql before using MySQL, Please edit configure file: %s" % (DefaultVal.main_config.ini_path, ))
@@ -556,7 +556,7 @@ class RMySQLConfig(BaseGetterConfig):
             password = ''
         self.password = password
         self.database = database
-        self.encoding = encoding
+        self.charset = charset
 
         if not loop:
             loop = asyncio.get_event_loop()
@@ -570,7 +570,7 @@ class RMySQLConfig(BaseGetterConfig):
         if self.mysql_pool_cli is None:
             self.mysql_pool_cli = await aiomysql.create_pool(host=self.host, port=self.port, user=self.user,
                                                              password=self.password, db=self.database, loop=self.loop,
-                                                             minsize=1, maxsize=3, charset=self.encoding)
+                                                             minsize=1, maxsize=3, charset=self.charset)
             self.connection = await self.mysql_pool_cli.acquire()
             self.cursor = await self.connection.cursor()
         return self.mysql_pool_cli

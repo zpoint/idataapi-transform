@@ -811,6 +811,10 @@ JSON 为一行一条数据的 JSON 文件
 -------------------
 
 #### ChangeLog
+v 1.6.6
+* keep_other_fields
+* mysql charset
+
 v 1.6.3 - 1.6.4
 * persistent to disk
 * debug mode support

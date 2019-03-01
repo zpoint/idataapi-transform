@@ -124,7 +124,7 @@ class MySQLWriter(BaseWriter):
         tail_sql = """
         \tPRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=%s
-        """ % (self.config.encoding, )
+        """ % (self.config.charset, )
         sql += tail_sql
         logging.info("Creating table: %s\n%s", self.config.table, sql)
         await self.config.cursor.execute(sql)
@@ -149,7 +149,7 @@ class MySQLWriter(BaseWriter):
         try_time = 0
         while try_time < self.config.max_retry:
             try:
-                await self.config.cursor.execute(sql.encode(self.config.encoding))
+                await self.config.cursor.execute(sql.encode(self.config.charset))
                 await self.config.cursor.connection.commit()
                 return True
             except Exception as e:
