@@ -14,6 +14,7 @@ class MySQLWriter(BaseWriter):
         self.success_count = 0
         self.table_checked = False
         self.key_fields = list()
+        self.auto_increment_keys = set()
 
     async def write(self, responses):
         await self.config.get_mysql_pool_cli()  # init mysql pool
@@ -62,6 +63,10 @@ class MySQLWriter(BaseWriter):
         # check field
         await self.config.cursor.execute("DESC %s" % (self.config.table, ))
         results = await self.config.cursor.fetchall()
+        for field in results:
+            if "auto_increment" in field:
+                self.auto_increment_keys.add(field[0])
+
         fields = set(i[0] for i in results)
         self.key_fields = list(i[0] for i in results)
         real_keys = set(responses[0].keys())
@@ -133,10 +138,20 @@ class MySQLWriter(BaseWriter):
 
     async def perform_write(self, responses):
         sql = "REPLACE INTO %s VALUES " % (self.config.table, )
+        normal_sql = False
+        sql_without_auto_increment_keys = list()
+
         for each in responses:
+            need_specific_sql = False
+            keys = list()
+
             curr_sql = '('
             for field in self.key_fields:
+                if field in self.auto_increment_keys and field not in each:
+                    need_specific_sql = True
+                    continue
                 val = each[field]
+                keys.append(field)
                 if isinstance(val, dict) or isinstance(val, list):
                     val = json.dumps(val)
                 if val is None:
@@ -144,12 +159,26 @@ class MySQLWriter(BaseWriter):
                 else:
                     curr_sql += repr(val) + ","
             curr_sql = curr_sql[:-1] + '),\n'
-            sql += curr_sql
+            if need_specific_sql:
+                sql_keys = "("
+                for each_sql_key in keys:
+                    sql_keys += each_sql_key + ","
+                sql_keys = sql_keys[:-1] + ")"
+                sql_without_auto_increment_keys.append("REPLACE INTO %s%s VALUES " % (self.config.table, sql_keys) + curr_sql[:-2])
+            else:
+                normal_sql = True
+                sql += curr_sql
         sql = sql[:-2]
         try_time = 0
         while try_time < self.config.max_retry:
             try:
-                await self.config.cursor.execute(sql.encode(self.config.charset))
+                ret_sql = ""
+                if normal_sql:
+                    ret_sql += sql + ";\n"
+                if sql_without_auto_increment_keys:
+                    ret_sql += ";\n".join(sql_without_auto_increment_keys)
+                    ret_sql += ";"
+                await self.config.cursor.execute(ret_sql)
                 await self.config.cursor.connection.commit()
                 return True
             except Exception as e:

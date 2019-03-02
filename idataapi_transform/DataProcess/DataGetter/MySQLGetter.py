@@ -114,7 +114,7 @@ class MySQLGetter(BaseGetter):
         logging.info("Get %d items from %s, filtered: %d items, percentage: %.2f%%" %
                      (len(results), self.config.name, curr_miss_count,
                       (self.total_count / self.total_size * 100) if self.total_size else 0))
-        if self.total_count >= self.config.max_limit:
+        if self.total_count >= self.total_size:
             self.need_finish = True
         return
 
