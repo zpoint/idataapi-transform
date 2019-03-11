@@ -4,7 +4,7 @@
 
 -------------------
 
-以下是简单的示例，如果需要详细的示例/说明:
+以下是简单的命令行示例，如果需要详细的命令行示例/代码调用示例:
 
 * [详细中文说明戳这里](https://github.com/zpoint/idataapi-transform/blob/master/README_CN.md)
 
