@@ -287,7 +287,7 @@ class WRedisConfig(BaseWriterConfig):
         """
         if self.redis_pool_cli is None:
             kwargs = {
-                "db": self.db,
+                "db": int(self.db),
                 "password": self.password,
                 "encoding": self.encoding,
                 "timeout": self.timeout,

@@ -811,7 +811,8 @@ JSON 为一行一条数据的 JSON 文件
 -------------------
 
 #### ChangeLog
-v 1.6.6
+v 1.6.6 - 1.6.7
+* redis manual db fix
 * keep_other_fields
 * mysql charset
 
