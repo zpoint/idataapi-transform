@@ -55,8 +55,8 @@ class APIGetter(BaseGetter):
         self.request_time = 0
         self.method = "POST" if self.config.post_body else "GET"
         self.give_up = False
-        self.data_type = ""
-        self.app_code = ""
+        self.need_keep_fields = None
+        self.origin_filter = None
 
     def init_val(self):
         self.base_url = self.config.source
@@ -71,8 +71,8 @@ class APIGetter(BaseGetter):
         self.request_time = 0
         self.config.persistent_writer = None
         self.give_up = False
-        self.data_type = ""
-        self.app_code = ""
+        self.need_keep_fields = None
+        self.origin_filter = None
 
     def generate_sub_func(self):
         def sub_func(match):
@@ -95,18 +95,32 @@ class APIGetter(BaseGetter):
         else:
             self.base_url = re.sub("(" + key + ")(.+?)($|&)", self.generate_sub_func(), self.base_url)
 
-    def generate_new_filter(self):
+    def generate_new_filter(self, json_result):
         def next_filter(item):
-            item["appCode"] = self.app_code
-            item["dataType"] = self.data_type
+            for each_key in self.need_keep_fields:
+                if each_key not in json_result:
+                    logging.error("keep_other_field set to True, but key: %s not found in curr_page: %s" % (each_key, self.base_url))
+                    return item
+                item[each_key] = json_result[each_key]
             return item
 
         def combine(item):
-            result = old_filter(item) if old_filter else item
+            result = self.origin_filter(item) if self.origin_filter else item
             if result is not None:
                 return next_filter(result)
 
-        old_filter = self.config.filter
+        if self.need_keep_fields is None:
+            # first time to generate field map
+            self.need_keep_fields = dict()
+            for key in self.config.keep_fields:
+                if key not in json_result:
+                    logging.error("key: %s not in page response, not going to add this filed in the following result" % (key, ))
+                    continue
+                self.need_keep_fields[key] = json_result[key]
+            self.origin_filter = self.config.filter
+
+        if not self.need_keep_fields or not self.config.keep_fields:
+            return
         self.config.filter = combine
 
     def __aiter__(self):
@@ -134,10 +148,8 @@ class APIGetter(BaseGetter):
                 if "data" not in result:
                     if "retcode" not in result or result["retcode"] not in self.config.success_ret_code:
                         raise ValueError("Bad retcode: %s" % (str(result["retcode"]) if "retcode" in result else str(result), ))
-                if not self.data_type and self.config.keep_other_fields:
-                    self.data_type = result["dataType"]
-                    self.app_code = result["appCode"]
-                    self.generate_new_filter()
+                if self.config.keep_other_fields:
+                    self.generate_new_filter(result)
 
             except Exception as e:
                 self.retry_count += 1

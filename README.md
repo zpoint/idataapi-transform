@@ -805,9 +805,9 @@ If you want to change log directory in the run time
 -------------------
 
 #### ChangeLog
-v 1.6.6 - 1.6.7
+v 1.6.6 - 1.6.8
 * redis manual db fix
-* keep_other_fields
+* keep_other_fields, keep_fields
 * mysql charset
 
 v 1.6.3 - 1.6.4
