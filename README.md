@@ -104,7 +104,7 @@ Features:
     # edit ~/idataapi-transform.ini to config elasticsearch hosts, redis, mysql etc...
 
     # Install MySQL module, if your python version >= 3.5.3
-    python3 -m pip install 'PyMySQL>=0.7.5,<0.9'
+    python3 -m pip install 'PyMySQL<=0.9.2,>=0.9'
     python3 -m pip install aiomysql
 
     # Install MongoDB module, if your platform is not Windows

@@ -25,7 +25,7 @@
     # 编辑配置文件 ~/idataapi-transform.ini 配置 ElasticSearch, redis, mysql 主机, 端口, 默认并发数等参数
 
     # 如果你的 python 版本 >= 3.5.3, 并且需要安装 MySQL 模块
-    python3 -m pip install 'PyMySQL>=0.7.5,<0.9'
+    python3 -m pip install 'PyMySQL<=0.9.2,>=0.9'
     python3 -m pip install aiomysql
 
     # 如果你不在 Windows 下, 并且需要安装 MongoDB 模块
