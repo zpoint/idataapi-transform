@@ -1,6 +1,8 @@
 # idataapi-transform
 
-Full async support **Toolkit** for [IDataAPI](http://www.idataapi.cn/) for efficiency work
+**idataapi-transform** is a pure python, **full async** support **Toolkit**, to transform data from one location/format to another location/format, provide easy to use **command line interface** and **python module** with powerful features
+
+It's currently used in [IDataAPI](http://www.idataapi.cn/) team for efficiency work
 
 * [中文文档](https://github.com/zpoint/idataapi-transform/blob/master/README_CN.md)
 
@@ -43,7 +45,9 @@ Features:
 * Auto header generation(csv/xlsx)/table generation(mysql) based on your data
 * APIGetter, will request next page automatically，each page will retry max_retry before fail
 * APIBulkGetter support bulk processing for APIGetter/url object, you can feed iterable object or async generator
-
+* easy to use concurrent control for APIBulkGetter
+* support normal call back and async call back
+* persistent task to disk
 -------------------
 
 ### catalog

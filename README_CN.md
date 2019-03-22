@@ -1,5 +1,9 @@
 # idataapi-transform
 
+**idataapi-transform** 是一个纯python实现的，所有功能均支持异步化处理的工具包，你可以使用他将数据从一个位置/格式方便的转换到另一个位置/格式，提供易用的**命令行调用支持**和功能丰富的**python模块支持**
+
+该工具现用于 [IDataAPI](http://www.idataapi.cn/) 团队作为基础工具包，以提高效率
+
 [IDataAPI](http://www.idataapi.cn/) 转换工具
 
 * [English](https://github.com/zpoint/idataapi-transform/blob/master/README.md)
@@ -45,6 +49,9 @@ Features:
 * 自动生成表头(csv/xlsx)/表格(mysql)
 * 对于APIGetter, 会自动翻页，每次翻页会自动重试到限制次数再进行报错
 * APIBulkGetter 支持指定并发数后批量处理 APIGetter/url 对象, 可接受可迭代对象或者异步迭代器
+* APIBulkGetter 中传入并发限制作为参数即可实现并发控制
+* 支持普通回调函数和异步回调函数
+* 支持持久化任务进度到硬盘
 -------------------
 
 ### 目录

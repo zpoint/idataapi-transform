@@ -1,6 +1,10 @@
 # idataapi-transform
 
-##### idataapi 转换工具
+**idataapi-transform** 是一个纯python实现的，所有功能均支持异步化处理的工具包，你可以使用他将数据从一个位置/格式方便的转换到另一个位置/格式，提供易用的**命令行调用支持**和功能丰富的**python模块支持**
+
+该工具现用于 [IDataAPI](http://www.idataapi.cn/) 团队作为基础工具包，以提高效率
+
+##### idataapi 转换工具(简洁版)
 
 -------------------
 
