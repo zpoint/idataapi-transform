@@ -16,6 +16,11 @@ headers = {
     # "Connection": "close"
 }
 
+post_headers = {
+    "Accept-Encoding": "gzip",
+    "Content-Type": "application/x-www-form-urlencoded"
+}
+
 
 class SourceObject(object):
     def __init__(self, response, tag, source, error_url, post_body):
@@ -57,6 +62,12 @@ class APIGetter(BaseGetter):
         self.give_up = False
         self.need_keep_fields = None
         self.origin_filter = None
+        if self.config.http_headers:
+            self.headers = self.config.http_headers
+        elif self.config.post_body:
+            self.headers = post_headers
+        else:
+            self.headers = headers
 
     def init_val(self):
         self.base_url = self.config.source
@@ -141,7 +152,7 @@ class APIGetter(BaseGetter):
                 if self.config.debug_mode:
                     log_str = "HTTP method: %s, url: %s" % (self.method, self.base_url)
                     logging.info(log_str)
-                resp = await self.config.session._request(self.method, self.base_url, headers=headers, data=self.config.post_body)
+                resp = await self.config.session._request(self.method, self.base_url, headers=self.headers, data=self.config.post_body)
                 text = await resp.text()
                 # print(text)
                 result = json.loads(text)
@@ -302,7 +313,7 @@ class APIBulkGetter(BaseGetter):
                               trim_to_max_limit=self.config.trim_to_max_limit,
                               exclude_filtered_to_max_limit=self.config.exclude_filtered_to_max_limit,
                            persistent_to_disk_if_give_up=self.config.persistent_to_disk_if_give_up,
-                           debug_mode=self.config.debug_mode)
+                           debug_mode=self.config.debug_mode, http_headers=self.config.http_headers)
         # persistent
         if self.config.persistent:
             if not self.config.persistent_key:

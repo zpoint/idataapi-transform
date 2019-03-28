@@ -27,7 +27,7 @@ class RAPIConfig(BaseGetterConfig):
                  done_if=None, trim_to_max_limit=DefaultVal.trim_to_max_limit,
                  exclude_filtered_to_max_limit=DefaultVal.exclude_filtered_to_max_limit, post_body=None,
                  persistent_writer=None, persistent_to_disk_if_give_up=True, debug_mode=False, keep_other_fields=False,
-                 keep_fields=("dataType", "appCode"), **kwargs):
+                 keep_fields=("dataType", "appCode"), http_headers=None, **kwargs):
         """
         will request until no more next_page to get, or get "max_limit" items
 
@@ -60,6 +60,7 @@ class RAPIConfig(BaseGetterConfig):
         :param persistent_to_disk_if_give_up: corporate with RAPIBulkConfig, when retry to max_retry times, still fail to get result, whether regard this job as success and persistent to disk or not
         :param debug_mode: whether log every http request url
         :param keep_other_fields: keep field in "keep_fields" in each json_object
+        :param http_headers: http_headers, dict object
         :param args:
         :param kwargs:
 
@@ -102,6 +103,7 @@ class RAPIConfig(BaseGetterConfig):
         self.debug_mode = debug_mode
         self.keep_other_fields = keep_other_fields
         self.keep_fields = keep_fields
+        self.http_headers = http_headers
 
 
 class RCSVConfig(BaseGetterConfig):
@@ -288,7 +290,7 @@ class RAPIBulkConfig(BaseGetterConfig):
                  done_if=None, trim_to_max_limit=DefaultVal.trim_to_max_limit,
                  exclude_filtered_to_max_limit=DefaultVal.exclude_filtered_to_max_limit, persistent=False,
                  persistent_key=None, persistent_start_fresh_if_done=True, persistent_to_disk_if_give_up=True,
-                 debug_mode=False, **kwargs):
+                 debug_mode=False, http_headers=None, **kwargs):
         """
         :param sources: an iterable object (can be async generator), each item must be "url" or instance of RAPIConfig
         :param interval: integer or float, each time you call async generator, you will wait for "interval" seconds
@@ -313,6 +315,7 @@ class RAPIBulkConfig(BaseGetterConfig):
                next time you run the program, there will be no job to schedule
         :param persistent_to_disk_if_give_up: if there's a job fail after retry max_retry times, whether regard this job as success and persistent to disk or not
         :param debug_mode: log every http request url
+        :param http_headers: http_headers, dict object
         :param kwargs:
 
         Example:
@@ -340,6 +343,7 @@ class RAPIBulkConfig(BaseGetterConfig):
         self.persistent_start_fresh_if_done = persistent_start_fresh_if_done
         self.persistent_to_disk_if_give_up = persistent_to_disk_if_give_up
         self.debug_mode = debug_mode
+        self.http_headers = http_headers
 
     def __del__(self):
         if inspect.iscoroutinefunction(self.session.close):
