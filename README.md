@@ -1,6 +1,6 @@
 # idataapi-transform
 
-**idataapi-transform** is a pure python, **full async** support **Toolkit**, to transform data from one location/format to another location/format, provide easy to use **command line interface** and **python module** with powerful features
+**idataapi-transform** is a pure python, **full async** support **Toolkit**, to transform data from one location/format to another location/format, provide **command line interface** for easy use, and **python module** with powerful features
 
 It's currently used in [IDataAPI](http://www.idataapi.cn/) team for efficiency work
 
@@ -809,10 +809,11 @@ If you want to change log directory in the run time
 -------------------
 
 #### ChangeLog
-v 1.6.6 - 1.6.8
+v 1.6.6 - 1.6.9
 * redis manual db fix
 * keep_other_fields, keep_fields
 * mysql charset
+* self define http headers
 
 v 1.6.3 - 1.6.4
 * persistent to disk
