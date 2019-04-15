@@ -75,7 +75,7 @@ class RedisGetter(BaseGetter):
             if len(self.responses) < self.config.per_limit or not self.responses or self.total_count + len(self.responses) >= self.total_size:
                 self.done = True
                 if self.need_del:
-                    await self.config.redis_del_method(self.config.key, 0, -1)
+                    await self.config.redis_del_method(self.config.key)
         else:
 
             try:

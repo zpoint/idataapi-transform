@@ -475,7 +475,7 @@ class RRedisConfig(BaseGetterConfig):
             if self.key_type == "LIST":
                 self.redis_read_method = self.redis_pool_cli.lrange
                 self.redis_len_method = self.redis_pool_cli.llen
-                self.redis_del_method = self.redis_pool_cli.ltrim
+                self.redis_del_method = self.redis_pool_cli.delete
             else:
                 self.redis_read_method = self.redis_pool_cli.hgetall
                 self.redis_len_method = self.redis_pool_cli.hlen
