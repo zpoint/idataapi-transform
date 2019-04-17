@@ -152,7 +152,7 @@ class APIGetter(BaseGetter):
                 if self.config.debug_mode:
                     log_str = "HTTP method: %s, url: %s" % (self.method, self.base_url)
                     logging.info(log_str)
-                resp = await self.config.session._request(self.method, self.base_url, headers=self.headers, data=self.config.post_body)
+                resp = await self.config.session._request(self.method, self.base_url, headers=self.headers, data=self.config.post_body, timeout=self.config.http_timeout)
                 text = await resp.text()
                 # print(text)
                 result = json.loads(text)

@@ -13,6 +13,7 @@ try:
 except Exception as e:
     pass
 
+from aiohttp.client import sentinel
 from .BaseConfig import BaseGetterConfig
 
 from ..ESConfig import get_es_client
@@ -27,7 +28,7 @@ class RAPIConfig(BaseGetterConfig):
                  done_if=None, trim_to_max_limit=DefaultVal.trim_to_max_limit,
                  exclude_filtered_to_max_limit=DefaultVal.exclude_filtered_to_max_limit, post_body=None,
                  persistent_writer=None, persistent_to_disk_if_give_up=True, debug_mode=False, keep_other_fields=False,
-                 keep_fields=("dataType", "appCode"), http_headers=None, **kwargs):
+                 keep_fields=("dataType", "appCode"), http_headers=None, http_timeout=None, **kwargs):
         """
         will request until no more next_page to get, or get "max_limit" items
 
@@ -61,6 +62,7 @@ class RAPIConfig(BaseGetterConfig):
         :param debug_mode: whether log every http request url
         :param keep_other_fields: keep field in "keep_fields" in each json_object
         :param http_headers: http_headers, dict object
+        :param http_timeout: in seconds
         :param args:
         :param kwargs:
 
@@ -104,6 +106,7 @@ class RAPIConfig(BaseGetterConfig):
         self.keep_other_fields = keep_other_fields
         self.keep_fields = keep_fields
         self.http_headers = http_headers
+        self.http_timeout = http_timeout if http_timeout is not None else sentinel
 
 
 class RCSVConfig(BaseGetterConfig):
