@@ -493,9 +493,14 @@ class WMongoConfig(BaseWriterConfig):
                 "port": self.port
             }
             if self.protocol and self.username:
-                self.client = motor.motor_asyncio.AsyncIOMotorClient(
-                    "%s://%s:%s@%s:%s/%s?%s" % (self.protocol, self.username, self.password, kwargs["host"],
-                                                  str(kwargs["port"]), self.database, self.other_params))
+                if "srv" in self.protocol:  # mongodb+srv must not include port number
+                    self.client = motor.motor_asyncio.AsyncIOMotorClient(
+                        "%s://%s:%s@%s/%s?%s" % (self.protocol, self.username, self.password, kwargs["host"],
+                                                 self.database, self.other_params))
+                else:
+                    self.client = motor.motor_asyncio.AsyncIOMotorClient(
+                        "%s://%s:%s@%s:%s/%s?%s" % (self.protocol, self.username, self.password, kwargs["host"],
+                                                      str(kwargs["port"]), self.database, self.other_params))
             else:
                 self.client = motor.motor_asyncio.AsyncIOMotorClient(**kwargs)
             self.collection_cli = self.client[self.database][self.collection]
