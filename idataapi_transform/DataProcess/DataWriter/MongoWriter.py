@@ -4,6 +4,7 @@ import random
 import logging
 import traceback
 from .BaseWriter import BaseWriter
+
 InsertOne = DeleteMany = ReplaceOne = UpdateOne = None
 try:
     from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne

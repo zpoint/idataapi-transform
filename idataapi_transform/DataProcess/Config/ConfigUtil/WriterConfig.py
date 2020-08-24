@@ -404,8 +404,8 @@ class WMySQLConfig(BaseWriterConfig):
 
 class WMongoConfig(BaseWriterConfig):
     def __init__(self, collection, id_hash_func=DefaultVal.default_id_hash_func, max_retry=None, random_min_sleep=None,
-                 random_max_sleep=None, filter_=None, host=None, port=None, username=None, password=None,
-                 database=None, auto_insert_createDate=False, createDate=None, **kwargs):
+                 random_max_sleep=None, filter_=None, protocol=None, host=None, port=None, username=None, password=None,
+                 database=None, other_params=None, auto_insert_createDate=False, createDate=None, **kwargs):
         """
         :param collection: collection name
         :param id_hash_func: function to generate id_ for each item, only if "_id" not in item will I use 'id_hash_func' to generate "_id"
@@ -415,11 +415,13 @@ class WMongoConfig(BaseWriterConfig):
         :param random_min_sleep: if request fail, random sleep at least random_min_sleep seconds before request again
         :param random_max_sleep: if request fail, random sleep at most random_min_sleep seconds before request again
         :param filter_: run "transform --help" to see command line interface explanation for detail
+        :param protocol: connection url protocol
         :param host: mongodb host -> str
         :param port: mongodb port -> int
         :param user: mongodb user -> str
         :param password: mongodb password -> str
         :param database: mongodb database -> str
+        :param other_params: connection url's params after ?
         :param createDate: if not None, add createDate to each item before write to mongodb
         :param auto_insert_createDate: whether insert createDate for each item automatic -> boolean
         :param kwargs:
@@ -447,6 +449,12 @@ class WMongoConfig(BaseWriterConfig):
             password = DefaultVal.mongo_password
         if not database:
             database = DefaultVal.mongo_database
+        if not protocol:
+            protocol =  DefaultVal.mongo_protocol
+        else:
+            raise ValueError("Must define URI Scheme in mongo")
+        if not other_params:
+            other_params = DefaultVal.mongo_other_params
 
         if not DefaultVal.main_config.has_mongo_configured:
             raise ValueError("You must config MongoDB before using MongoDB, Please edit configure file: %s" % (DefaultVal.main_config.ini_path, ))
@@ -459,11 +467,18 @@ class WMongoConfig(BaseWriterConfig):
         self.random_min_sleep = random_min_sleep
         self.random_max_sleep = random_max_sleep
         self.filter = filter_
+        if "srv" in protocol:
+            try:
+                import dns  # required for mongodb connecting with SRV
+            except Exception:
+                raise ValueError("can't find dnspython, install it first!")
+        self.protocol = protocol
         self.host = host
         self.port = port
         self.username = username
         self.password = password
         self.database = database
+        self.other_params = other_params
         self.name = "%s->%s" % (self.database, self.collection)
         self.id_hash_func = id_hash_func
         self.auto_insert_createDate = auto_insert_createDate
@@ -477,10 +492,10 @@ class WMongoConfig(BaseWriterConfig):
                 "host": self.host,
                 "port": self.port
             }
-            if self.username:
+            if self.protocol and self.username:
                 self.client = motor.motor_asyncio.AsyncIOMotorClient(
-                    "mongodb://%s:%s@%s:%s/%s" % (self.username, self.password, kwargs["host"],
-                                                  str(kwargs["port"]), self.database))
+                    "%s://%s:%s@%s:%s/%s?%s" % (self.protocol, self.username, self.password, kwargs["host"],
+                                                  str(kwargs["port"]), self.database, self.other_params))
             else:
                 self.client = motor.motor_asyncio.AsyncIOMotorClient(**kwargs)
             self.collection_cli = self.client[self.database][self.collection]
