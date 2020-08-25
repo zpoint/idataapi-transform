@@ -49,6 +49,9 @@ class DefaultValObject(object):
         self.mongo_protocol = self.main_config["mongo"].get("protocol")
         self.mongo_other_params = self.main_config["mongo"].get("other_params")
 
+        # mongo config
+        self.kafka_servers = self.main_config["kafka"].get("bootstrap.servers")
+
     default_file_mode_r = "r"
     default_file_mode_w = "w"
     default_encoding = "utf8"

@@ -4,3 +4,4 @@ test*
 .idea/*
 config.ini
 *.pyc
+venv/*
