@@ -3,4 +3,6 @@ openpyxl
 elasticsearch-async
 aioredis>=1.0
 PyMySQL>=0.7.5,<0.9;python_version>="3.5.3"
-aiomysql>;python_version>="3.5.3"
+aiomysql
+confluent_kafka
+
