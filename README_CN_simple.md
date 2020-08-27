@@ -41,7 +41,7 @@
 #### 命令行支持及示例
 
 * 从以下任意一格式读数据 **[API, ES, CSV, XLSX, JSON, Redis, MySQL, MongoDB]**
-* 写数据至以下任意一格式 **[CSV, XLSX, JSON, TXT, ES, Redis, MySQL, MongoDB]**
+* 写数据至以下任意一格式 **[CSV, XLSX, JSON, TXT, ES, Redis, MySQL, MongoDB, Kafka]**
 
 ##### 从 API 读取数据 转换为 XLSX 格式
 

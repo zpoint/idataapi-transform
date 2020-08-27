@@ -33,6 +33,7 @@ and convert to
  * **Redis**
  * **MySQL**
  * **MongoDB**
+ * **Kafka**
 
 Features:
 
@@ -807,7 +808,35 @@ If you want to change log directory in the run time
 
 
 -------------------
+#### API to Kafka
+```python
+import asyncio
 
+from idataapi_transform import ProcessFactory, GetterConfig, WriterConfig, ManualConfig
+
+ManualConfig.set_config("conf/idataapi-transform.ini")
+
+
+async def example():
+    urls = [
+        "http://api01.idataapi.cn:8000/article/idataapi?kw=%E9%9A%86%E5%9F%BA%E8%82%A1%E4%BB%BD&KwPosition=3&size=20&catLabel2=%E8%82%A1%E7%A5%A8&apikey=test",
+    ]
+    api_bulk_config = GetterConfig.RAPIBulkConfig(urls, concurrency=1)
+    api_bulk_getter = ProcessFactory.create_getter(api_bulk_config)
+    kafka_config = WriterConfig.WKafkaConfig()
+    with ProcessFactory.create_writer(kafka_config, topic="news") as kafka_writer:
+        async for items in api_bulk_getter:
+            # do whatever you want with items
+            await kafka_writer.write(items)
+
+
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(example())
+
+```
+
+---------------------------
 #### ChangeLog
 v 1.6.6 - 1.6.9
 * redis manual db fix
