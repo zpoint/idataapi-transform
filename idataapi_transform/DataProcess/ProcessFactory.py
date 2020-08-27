@@ -21,6 +21,7 @@ from .DataWriter.XLSXWriter import XLSXWriter
 from .DataWriter.RedisWriter import RedisWriter
 from .DataWriter.MySQLWriter import MySQLWriter
 from .DataWriter.MongoWriter import MongoWriter
+from .DataWriter.KafkaWriter import KafkaWriter
 
 
 class ProcessFactory(object):
@@ -44,7 +45,8 @@ class ProcessFactory(object):
         WriterConfig.WXLSXConfig: XLSXWriter,
         WriterConfig.WRedisConfig: RedisWriter,
         WriterConfig.WMySQLConfig: MySQLWriter,
-        WriterConfig.WMongoConfig: MongoWriter
+        WriterConfig.WMongoConfig: MongoWriter,
+        WriterConfig.WKafkaConfig: KafkaWriter
     }
 
     @staticmethod
@@ -60,14 +62,14 @@ class ProcessFactory(object):
                          "RJsonConfig, RXLSXConfig, RAPIBulkConfig, RRedisConfig, RMySQLConfig, RMongoConfig]")
 
     @staticmethod
-    def create_writer(config):
+    def create_writer(config, **kwargs):
         """
         create a writer based on config
         :return: a writer
         """
         for config_class, writer_class in ProcessFactory.config_writer_map.items():
             if isinstance(config, config_class):
-                return writer_class(config)
+                return writer_class(config, **kwargs)
         else:
             raise ValueError("create_writer must pass one of the instance of [WCSVConfig, WESConfig, WJsonConfig, "
                              "WTXTConfig, WXLSXConfig, WRedisConfig, WMySQLConfig, WMongoConfig]")

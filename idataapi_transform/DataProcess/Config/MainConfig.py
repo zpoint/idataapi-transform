@@ -69,13 +69,19 @@ encoding = utf8
 
 mongo_config_content = """
 [mongo]
+protocal = mongodb  # or mongodb+srv
 host = localhost
 port = 0
 username = 
 password = 
 database = test_database
+other_params = 
 """
 
+kafka_config_content = """
+[kafka]
+bootstrap.servers = localhost:9092
+"""
 
 main_config_box = None
 
@@ -111,6 +117,7 @@ class MainConfig(object):
         self.has_redis_configured = self.__instance.has_redis_configured = self.config_redis()
         self.has_mysql_configured = self.__instance.has_mysql_configured = self.config_mysql()
         self.has_mongo_configured = self.__instance.has_mongo_configured = self.config_mongo()
+        self.has_kafka_configured = self.__instance.has_kafka_configured = self.config_kafka()
 
         self.__instance.ini_path = self.ini_path
 
@@ -179,6 +186,16 @@ class MainConfig(object):
 
         port = self.__instance["mongo"].getint("port")
         return port > 0
+
+    def config_kafka(self):
+        try:
+            self.__instance["kafka"].get("bootstrap.servers")
+        except KeyError as e:
+            with open(self.ini_path, "a+") as f:
+                f.write(kafka_config_content)
+            self.__instance.read(self.ini_path)
+
+        return "bootstrap.servers" in  self.__instance["kafka"]
 
 
 main_config = MainConfig()

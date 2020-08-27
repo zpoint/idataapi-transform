@@ -46,6 +46,11 @@ class DefaultValObject(object):
         self.mongo_username = self.main_config["mongo"].get("username")
         self.mongo_password = self.main_config["mongo"].get("password")
         self.mongo_database = self.main_config["mongo"].get("database")
+        self.mongo_protocol = self.main_config["mongo"].get("protocol")
+        self.mongo_other_params = self.main_config["mongo"].get("other_params")
+
+        # kafka config
+        self.kafka_bootstrap_servers = self.main_config["kafka"].get("bootstrap.servers")
 
     default_file_mode_r = "r"
     default_file_mode_w = "w"

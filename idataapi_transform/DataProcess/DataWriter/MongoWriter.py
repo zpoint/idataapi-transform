@@ -4,6 +4,7 @@ import random
 import logging
 import traceback
 from .BaseWriter import BaseWriter
+
 InsertOne = DeleteMany = ReplaceOne = UpdateOne = None
 try:
     from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
@@ -21,7 +22,7 @@ class MongoWriter(BaseWriter):
         self.key_fields = list()
 
     async def write(self, responses):
-        self.config.get_mongo_cli()  # init mysql pool
+        self.config.get_mongo_cli()  # init mongodb pool
 
         miss_count = 0
         original_length = len(responses)
