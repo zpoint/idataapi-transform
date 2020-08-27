@@ -12,8 +12,8 @@ class Args(object):
     from_desc = "argument 'from' can only set to one of 'API', 'ES', 'CSV', 'XLSX', " \
                 "'JSON'(means json line by line file), 'REDIS', 'MYSQL' or 'MONGO'"
 
-    to_choices = ["csv", "xlsx", "json", "txt", "es", "redis", 'mysql', 'mongo']
-    to_desc = "argument 'to' can only set to one of \"csv\", \"xlsx\", \"json\", \"txt\" \"es\", \"json\", \"redis\", " \
+    to_choices = ["csv", "xlsx", "json", "txt", "es", "redis", 'mysql', 'mongo', 'kafka']
+    to_desc = "argument 'to' can only set to one of \"csv\", \"xlsx\", \"json\", \"txt\" \"es\", \"json\", \"redis\", \"kafka\", " \
               "\"mysql\", \"mongo\", \"json\" will write 'json.dumps(item)' line by line. " \
               "\"txt\" will write each item line by line, each element in each line is separated by 'space' bu default"
 

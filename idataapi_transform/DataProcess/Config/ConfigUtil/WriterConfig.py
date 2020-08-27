@@ -12,6 +12,12 @@ try:
 except Exception as e:
     pass
 
+try:
+    import confluent_kafka
+except Exception:
+    pass
+
+
 from .BaseConfig import BaseWriterConfig
 from ..ESConfig import get_es_client
 from ..DefaultValue import DefaultVal
@@ -505,3 +511,45 @@ class WMongoConfig(BaseWriterConfig):
                 self.client = motor.motor_asyncio.AsyncIOMotorClient(**kwargs)
             self.collection_cli = self.client[self.database][self.collection]
         return self.client
+
+
+class WKafkaConfig(BaseWriterConfig):
+    def __init__(self, max_retry=None, random_min_sleep=None,
+                 random_max_sleep=None, filter_=None, bootstrap_servers=None, **kwargs):
+        """
+        :param max_retry: if request fail, retry max_retry times
+        :param random_min_sleep: if request fail, random sleep at least random_min_sleep seconds before request again
+        :param random_max_sleep: if request fail, random sleep at most random_min_sleep seconds before request again
+        :param filter_: run "transform --help" to see command line interface explanation for detail
+        :param bootstrap_servers: kafka bootstrap.servers -> str
+        :param kwargs:
+
+        Example:
+            data = [json_obj, json_obj, json_obj]
+            mongo_config = WMongoConfig("my_coll")
+            async with ProcessFactory.create_writer(mongo_config) as mongo_writer:
+                await mongo_writer.write(data)
+        """
+        super().__init__()
+        if not random_min_sleep:
+            random_min_sleep = DefaultVal.random_min_sleep
+        if not random_max_sleep:
+            random_max_sleep = DefaultVal.random_max_sleep
+        if not max_retry:
+            max_retry = DefaultVal.max_retry
+        if not bootstrap_servers:
+            bootstrap_servers = DefaultVal.kafka_bootstrap_servers
+        else:
+            raise ValueError("Must define bootstrap.servers in kafka")
+
+        if not DefaultVal.main_config.has_kafka_configured:
+            raise ValueError("You must config kafka before using Kafka, Please edit configure file: %s" % (DefaultVal.main_config.ini_path, ))
+        if "confluent_kafka" not in globals():
+            raise ValueError("module confluent_kafka disabled, please reinstall "
+                             "requirements in linux")
+
+        self.max_retry = max_retry
+        self.random_min_sleep = random_min_sleep
+        self.random_max_sleep = random_max_sleep
+        self.filter = filter_
+        self.bootstrap_servers = bootstrap_servers

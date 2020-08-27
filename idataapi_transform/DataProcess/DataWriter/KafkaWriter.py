@@ -5,6 +5,8 @@ import asyncio
 import confluent_kafka
 from confluent_kafka import KafkaException
 from threading import Thread
+import json
+
 
 
 class AIOProducer:
@@ -61,15 +63,16 @@ class AIOProducer:
 class KafkaWriter(BaseWriter):
     def __init__(self, config, topic, loop=None):
         super().__init__()
-        self.config = config
         self.topic = topic
         self.total_miss_count = 0
         self.success_count = 0
-        self.producer = AIOProducer(configs=self.config, loop=loop)
+        self.producer = AIOProducer(configs={"bootstrap.servers": config.bootstrap_servers}, loop=loop)
 
-    def write(self, responses):
+    async def write(self, responses):
         for each_response in responses:
-            self.producer.produce(self.topic, each_response)
+            if isinstance(each_response, dict):
+                each_response = json.dumps(each_response, indent=2).encode('utf-8')
+            await self.producer.produce(self.topic, each_response)
             self.success_count += 1
         logging.info("%s write %d item" % (self.topic, len(responses)))
 
