@@ -25,7 +25,8 @@ from ..DefaultValue import DefaultVal
 
 class WCSVConfig(BaseWriterConfig):
     def __init__(self, filename, mode=DefaultVal.default_file_mode_w, encoding=DefaultVal.default_encoding,
-                 headers=None, filter_=None, expand=None, qsn=DefaultVal.qsn, **kwargs):
+                 headers=None, filter_=None, expand=None, qsn=DefaultVal.qsn,
+                 quotechar=DefaultVal.default_quote_char, **kwargs):
         """
         :param filename: filename to write
         :param mode: file open mode, i.e "w" or "a+"
@@ -34,6 +35,7 @@ class WCSVConfig(BaseWriterConfig):
         :param filter_: run "transform --help" to see command line interface explanation for detail
         :param expand: run "transform --help" to see command line interface explanation for detail
         :param qsn: run "transform --help" to see command line interface explanation for detail
+        :param quotechar: run "transform --help" to see command line interface explanation for detail
         :param kwargs:
 
         Example:
@@ -52,6 +54,7 @@ class WCSVConfig(BaseWriterConfig):
         self.filter = filter_
         self.expand = expand
         self.qsn = qsn
+        self.quotechar = quotechar
 
 
 class WESConfig(BaseWriterConfig):

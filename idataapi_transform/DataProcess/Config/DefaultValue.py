@@ -66,6 +66,7 @@ class DefaultValObject(object):
     interval = 5
     concurrency = 50
     default_key_type = "LIST"
+    default_quote_char = '"'
     report_interval = 10
     success_ret_code = ("100002", "100301", "100103")
     trim_to_max_limit = False

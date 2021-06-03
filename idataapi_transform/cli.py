@@ -69,7 +69,7 @@ class Args(object):
 
     write_mode_desc = """'w' or 'a+'"""
     key_type_desc = """redis data type to operate, options: [LIST] or [HASH], default: [LIST]"""
-
+    quote_char_desc = """csv only, default quote char is '"'"""
 
 getter_config_map = {
     Args.from_choices[0]: GetterConfig.RAPIConfig,
@@ -115,6 +115,7 @@ def get_arg():
     parser.add_argument("--query_body", default=DefaultVal.query_body, type=str, help=Args.query_body_desc)
     parser.add_argument("--write_mode", default=DefaultVal.default_file_mode_w, type=str, help=Args.write_mode_desc)
     parser.add_argument("--key_type", default=DefaultVal.default_key_type, type=str.upper, help=Args.key_type_desc)
+    parser.add_argument("--quotechar", default=DefaultVal.default_quote_char, type=str, help=Args.quote_char_desc)
     return parser.parse_args()
 
 
@@ -165,7 +166,7 @@ def main():
     to_kwargs["encoding"] = args.w_encoding
     to_kwargs["mode"] = args.write_mode
     to_kwargs["key_type"] = args.key_type
-    for key in ("max_retry", "expand", "qsn"):
+    for key in ("max_retry", "expand", "qsn", "quotechar"):
         to_kwargs[key] = getattr(args, key)
 
     if from_ not in getter_config_map:

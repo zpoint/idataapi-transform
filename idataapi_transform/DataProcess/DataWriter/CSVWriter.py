@@ -15,6 +15,7 @@ class CSVWriter(BaseWriter):
         self.headers = dict() if not self.config.headers else self.config.headers
         self.total_miss_count = 0
         self.success_count = 0
+        # logging.info("self.config.quotechar: %s, %s", self.config.quotechar, repr(self.config.quotechar))
 
     def write(self, responses):
         miss_count = 0
@@ -46,11 +47,11 @@ class CSVWriter(BaseWriter):
         if not self.f_csv:
             if "a" in self.config.mode and self.file_already_exists:
                 self.headers = self.generate_headers(responses, append_mode=True)
-                self.f_csv = csv.DictWriter(self.f_out, self.headers)
+                self.f_csv = csv.DictWriter(self.f_out, self.headers, quotechar=self.config.quotechar)
             else:
                 if not self.headers:
                     self.headers = self.generate_headers(responses)
-                self.f_csv = csv.DictWriter(self.f_out, self.headers)
+                self.f_csv = csv.DictWriter(self.f_out, self.headers, quotechar=self.config.quotechar)
                 self.f_csv.writeheader()
 
 
