@@ -5,7 +5,7 @@ build-backend="flit.buildapi"
 [tool.flit.metadata]
 module="idataapi_transform"
 author="zpoint"
-author-email="zp@zp0int.com"
+author-email="zp0int@qq.com"
 home-page="https://github.com/zpoint/idataapi-transform"
 classifiers=["License :: OSI Approved :: MIT License"]
 requires=["aiohttp", "openpyxl", "elasticsearch-async", "aioredis", "confluent_kafka"]
