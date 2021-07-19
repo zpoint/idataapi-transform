@@ -129,9 +129,9 @@ Features:
 
 ##### 从 Elasticsearch 读取数据 转换为 CSV 格式
 
-从ES中 **index**: **knowledge20170517**, **doc_type**: **question**, 中最多读取 **500** 条数据, 写入到 ./result.csv
+从ES中 **index**: **knowledge20170517**, 中最多读取 **500** 条数据, 写入到 ./result.csv
 
-	transform ES csv "knowledge20170517:question" --max_limit=500
+	transform ES csv "knowledge20170517" --max_limit=500
 
 ##### 从 API 读取数据 转换为 XLSX 格式
 
@@ -156,7 +156,7 @@ JSON 为一行一条数据的 JSON 文件
 ##### 从 Elasticsearch 读取数据 转换至 CSV
 * 以下示例详细展开了部分参数
 * 以 "gbk" **(--w_encoding)** 编码保存 CSV 文件
-* 指定 ES 的 index: knowledge20170517, doc_type: question **(knowledge20170517:question)**
+* 指定 ES 的 index: knowledge20170517 **(knowledge20170517)**
 * 指定如下过滤条件 **(--query_body)**
 
     	body = {
@@ -179,7 +179,7 @@ JSON 为一行一条数据的 JSON 文件
 
 * 终端:
 
-    	transform ES csv "knowledge20170517:question" --w_encoding gbk --query_body '{"size": 100, "_source": {"includes": ["location", "title", "city", "id"]}}' --filter ./my_filter.py
+    	transform ES csv "knowledge20170517" --w_encoding gbk --query_body '{"size": 100, "_source": {"includes": ["location", "title", "city", "id"]}}' --filter ./my_filter.py
 
 ##### 从 API 读取数据 存储至 Redis
 
@@ -847,6 +847,9 @@ if __name__ == "__main__":
 -------------------
 
 #### ChangeLog
+v 2.0.0
+* support ES 7.0+
+
 v 1.6.6 - 1.6.9
 * redis manual db fix
 * keep_other_fields, keep_fields

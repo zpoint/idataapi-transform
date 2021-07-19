@@ -18,7 +18,7 @@ class Args(object):
               "\"txt\" will write each item line by line, each element in each line is separated by 'space' bu default"
 
     source_desc = """
-    argument 'source', When argument '-from' set to 'ES', source should be 'index:doc_type' When 
+    argument 'source', When argument '-from' set to 'ES', source should be 'index' When 
     argument 'from' set tp 'API', source should be 'http://...
     argument 'from' set tp 'REDIS', source should be key name
     argument 'from' set tp 'MYSQL', source should be table name
@@ -26,7 +26,7 @@ class Args(object):
     """
     dest_desc = "argument 'dest', filename to save result, no need for suffix, " \
                 "ie '/Desktop/result', default: './result'\n" \
-                "When argument '-to' set to 'ES', dest should be 'index:doc_type'"
+                "When argument '-to' set to 'ES', dest should be 'index'"
 
     per_limit_desc = "amount of data buffered, when buffer filled, Program will write buffered data to 'dest', default 100"
     max_limit_desc = "write at most 'max_limit' data to 'dest', if 'max_limit' set to 0, means no limit, default to None"
@@ -137,6 +137,13 @@ async def getter_to_writer(getter, writer):
                 safe_writer.write(items)
 
 
+def clean():
+    from idataapi_transform.DataProcess.Config.ESConfig import global_client
+    if global_client is not None:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(global_client.close())
+
+
 def main():
     args = get_arg()
     from_ = getattr(args, "from")
@@ -176,9 +183,7 @@ def main():
 
     if args.to == Args.to_choices[4]:
         # es
-        indices, doc_type = args.dest.split(":")
-        to_args.append(indices)
-        to_args.append(doc_type)
+        to_args.extend(args.dest.split(":"))
     elif args.to in Args.to_choices[5:]:
         # redis, mysql, mongo
         if args.dest == DefaultVal.dest:
@@ -193,6 +198,8 @@ def main():
     writer = ProcessFactory.create_writer(writer_config)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(getter_to_writer(getter, writer))
+    # close
+    clean()
 
 
 if __name__ == "__main__":

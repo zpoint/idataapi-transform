@@ -124,9 +124,9 @@ Features:
 
 ##### read data from Elasticsearch convert to CSV
 
-will read at most **500** items from given **index**: **knowledge20170517**, **doc_type**: **question**, and write to ./result.csv
+will read at most **500** items from given **index**: **knowledge20170517**, and write to ./result.csv
 
-	transform ES csv "knowledge20170517:question" --max_limit=500
+	transform ES csv "knowledge20170517" --max_limit=500
 
 ##### read data from API convert to XLSX
 
@@ -149,7 +149,7 @@ will read items from csv file, and save to **./result.xlsx**
 
 ##### read data from Elasticsearch convert to CSV with parameters
 * save csv with file encoding "gbk" **(--w_encoding)**
-* specific index: knowledge20170517, doc_type: question **(knowledge20170517:question)**
+* specific index: knowledge20170517, **(knowledge20170517)**
 * when read from Elasticsearch, specific request body **(--query_body)**
 
     	body = {
@@ -171,7 +171,7 @@ will read items from csv file, and save to **./result.xlsx**
 
 * Shell:
 
-    	transform ES csv "knowledge20170517:question" --w_encoding gbk --query_body '{"size": 100, "_source": {"includes": ["location", "title", "city", "id"]}}' --filter ./my_filter.py
+    	transform ES csv "knowledge20170517" --w_encoding gbk --query_body '{"size": 100, "_source": {"includes": ["location", "title", "city", "id"]}}' --filter ./my_filter.py
 
 ##### Read data from API write to Redis
 

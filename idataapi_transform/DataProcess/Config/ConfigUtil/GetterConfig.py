@@ -146,7 +146,7 @@ class RCSVConfig(BaseGetterConfig):
 
 
 class RESConfig(BaseGetterConfig):
-    def __init__(self, indices, doc_type, per_limit=None, max_limit=None, scroll="1m", query_body=None,
+    def __init__(self, indices, doc_type=None, per_limit=None, max_limit=None, scroll="1m", query_body=None,
                  return_source=True, max_retry=None, random_min_sleep=None, random_max_sleep=None, filter_=None,
                  hosts=None, headers=None, **kwargs):
         """

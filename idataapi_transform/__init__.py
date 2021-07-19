@@ -31,4 +31,4 @@ class ManualConfig(object):
         main_config_box.config_log(log_path, max_log_file_bytes)
 
 
-__version__ = '1.7.5'
+__version__ = '2.0.0'

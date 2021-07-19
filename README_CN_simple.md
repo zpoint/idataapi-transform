@@ -92,7 +92,7 @@ max_limit 表示最多只获取到这么多条数据
 
 ##### 从 Elasticsearch 读取数据 转换至 CSV (复杂示例)
 * 以 "gbk" **(--w_encoding)** 编码保存 CSV 文件
-* 指定 ES 的 index: knowledge20170517, doc_type: question **(knowledge20170517:question)**
+* 指定 ES 的 index: knowledge20170517 **(knowledge20170517)**
 * 指定如下过滤条件 **(--query_body)**
 
     	body = {
@@ -115,7 +115,7 @@ max_limit 表示最多只获取到这么多条数据
 
 * 终端:
 
-    	transform ES csv "knowledge20170517:question" --w_encoding gbk --query_body '{"size": 100, "_source": {"includes": ["location", "title", "city", "id"]}}' --filter ./my_filter.py
+    	transform ES csv "knowledge20170517" --w_encoding gbk --query_body '{"size": 100, "_source": {"includes": ["location", "title", "city", "id"]}}' --filter ./my_filter.py
 
 ##### 从 API 读取数据 存储至 Redis
 

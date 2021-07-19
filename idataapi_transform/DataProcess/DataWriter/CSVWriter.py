@@ -54,7 +54,6 @@ class CSVWriter(BaseWriter):
                 self.f_csv = csv.DictWriter(self.f_out, self.headers, quotechar=self.config.quotechar)
                 self.f_csv.writeheader()
 
-
         # encoding process
         for each_response in responses:
             for k, v in each_response.items():
@@ -85,7 +84,6 @@ class CSVWriter(BaseWriter):
                 raise ValueError("append mode for csv file: %s, but header field mismatch, exist fields: %s, generated fields: %s" % (self.config.filename, repr(exists_fields), repr(headers)))
             return exists_fields
         return list(headers)
-
 
     def __enter__(self):
         return self

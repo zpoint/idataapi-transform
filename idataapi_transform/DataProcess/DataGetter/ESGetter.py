@@ -29,13 +29,15 @@ class ESScrollGetter(BaseGetter):
 
     async def __anext__(self, retry=1):
         if self.total_size is None:
-            self.result = await self.es_client.search(self.config.indices, self.config.doc_type,
-                                                      scroll=self.config.scroll, body=self.config.query_body)
-            self.total_size = self.result['hits']['total']
-            self.total_size = self.config.max_limit if (self.config.max_limit and self.config.max_limit < self.result['hits']['total']) else self.total_size
+            self.result = await self.es_client.search(
+                index=self.config.indices, doc_type=self.config.doc_type,
+                params={"scroll": self.config.scroll}, body=self.config.query_body
+            )
+            self.total_size = self.result['hits']['total']['value']
+            self.total_size = self.config.max_limit if (self.config.max_limit and self.config.max_limit < self.result['hits']['total']['value']) else self.total_size
             self.total_count += len(self.result['hits']['hits'])
             logging.info("Get %d items from %s, percentage: %.2f%%" %
-                         (len(self.result['hits']['hits']), self.config.indices + "->" + self.config.doc_type,
+                         (len(self.result['hits']['hits']), self.config.indices + "->" + str(self.config.doc_type),
                           (self.total_count / self.total_size * 100) if self.total_size else 0))
 
             origin_length = len(self.result['hits']['hits'])
@@ -62,12 +64,12 @@ class ESScrollGetter(BaseGetter):
                 else:
                     logging.error("Give up es getter, After retry: %d times, still fail to get result: %s, "
                                   "total get %d items, total filtered: %d items, reason: %s" %
-                                  (self.config.max_retry, self.config.indices + "->" + self.config.doc_type,
+                                  (self.config.max_retry, self.config.indices + "->" + str(self.config.doc_type),
                                    self.total_count, self.miss_count, traceback.format_exc()))
                     raise StopAsyncIteration
 
             logging.info("Get %d items from %s, filtered: %d items, percentage: %.2f%%" %
-                         (len(self.result['hits']['hits']), self.config.indices + "->" + self.config.doc_type,
+                         (len(self.result['hits']['hits']), self.config.indices + "->" + str(self.config.doc_type),
                           self.miss_count, (self.total_count / self.total_size * 100) if self.total_size else 0))
 
             origin_length = len(self.result['hits']['hits'])
@@ -89,7 +91,7 @@ class ESScrollGetter(BaseGetter):
                 logging.info("empty result, terminating scroll, scroll id: %s" % (str(self.scroll_id), ))
 
         logging.info("get source done: %s, total get %d items, total filtered: %d items" %
-                     (self.config.indices + "->" + self.config.doc_type, self.total_count, self.miss_count))
+                     (self.config.indices + "->" + str(self.config.doc_type), self.total_count, self.miss_count))
         self.init_val()
         raise StopAsyncIteration
 

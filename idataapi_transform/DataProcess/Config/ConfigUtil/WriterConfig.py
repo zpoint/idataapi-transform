@@ -58,7 +58,7 @@ class WCSVConfig(BaseWriterConfig):
 
 
 class WESConfig(BaseWriterConfig):
-    def __init__(self, indices, doc_type, filter_=None, expand=None, id_hash_func=DefaultVal.default_id_hash_func,
+    def __init__(self, indices, doc_type=None, filter_=None, expand=None, id_hash_func=DefaultVal.default_id_hash_func,
                  appCode=None, actions=None, createDate=None, error_if_fail=True, timeout=None, max_retry=None,
                  random_min_sleep=None, random_max_sleep=None, auto_insert_createDate=True, hosts=None, headers=None,
                  **kwargs):
