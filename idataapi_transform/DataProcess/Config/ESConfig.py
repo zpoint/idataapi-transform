@@ -1,7 +1,7 @@
-import asyncio
 import json
 import time
 import logging
+from collections.abc import Iterable
 from elasticsearch._async.transport import AsyncTransport as OriginAsyncTransport
 from elasticsearch._async.client.utils import _make_path
 from elasticsearch import TransportError
@@ -9,11 +9,13 @@ from elasticsearch.exceptions import ConnectionError, ConnectionTimeout
 from elasticsearch import AsyncElasticsearch
 
 es_hosts = None
+http_auth = None
 
 
-def init_es(hosts, es_headers, timeout_):
-    global es_hosts, AsyncElasticsearch, AsyncTransport
+def init_es(hosts, es_headers, timeout_, http_auth_):
+    global es_hosts, http_auth, AsyncElasticsearch, AsyncTransport
     es_hosts = hosts
+    http_auth = tuple(http_auth_) if isinstance(http_auth_, Iterable) else None
     if not es_hosts:
         return False
 
@@ -160,7 +162,7 @@ def get_es_client(hosts=None, headers=None):
     global global_client
     if not hosts:
         if global_client is None:
-            global_client = AsyncElasticsearch(hosts=es_hosts, headers=headers)
+            global_client = AsyncElasticsearch(hosts=es_hosts, headers=headers, http_auth=http_auth)
         return global_client
     else:
-        return AsyncElasticsearch(hosts=hosts, headers=headers)
+        return AsyncElasticsearch(hosts=hosts, headers=headers, http_auth=http_auth)

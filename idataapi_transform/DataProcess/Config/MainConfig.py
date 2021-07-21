@@ -34,6 +34,9 @@ random_max_sleep = 3
 # request timeout, seconds
 # timeout = 10
 
+# http auth
+# http_auth = ["user", "passwd"]
+
 [log]
 # a directory to save log file
 # path = /Users/zpoint/Desktop/idataapi-transform/logs/
@@ -137,6 +140,7 @@ class MainConfig(object):
     def config_es(self):
         hosts = self.__instance["es"].get("hosts")
         timeout = self.__instance["es"].getint("timeout")
+        http_auth = self.__instance["es"].get("http_auth")
         if hosts:
             try:
                 hosts = json.loads(hosts)
@@ -149,10 +153,14 @@ class MainConfig(object):
                 headers = json.loads(headers)
             except Exception as e:
                 raise ValueError("es headers must be json serialized")
-
+        if http_auth and http_auth != "None":
+            try:
+                http_auth = json.loads(http_auth)
+            except Exception as e:
+                raise ValueError("es http_auth must be json serialized")
         else:
             headers = None
-        return init_es(hosts, headers, timeout)
+        return init_es(hosts, headers, timeout, http_auth)
 
     def config_redis(self):
         try:
